@@ -24,7 +24,7 @@ This project is not affiliated with or endorsed by Nival.
 ## What the Mac version adds
 
 - Native Apple silicon build, Metal renderer, Retina and HDR displays, VSync and frame pacing
-- **Original / Enhanced** graphics, switched live with **F9** or **⌘G**: the 2003 look, or ambient occlusion, bloom, higher-resolution shadows and supersampling
+- **Original / Enhanced** graphics, switched live with **F9** or **⌘G**: the 2003 look, or ambient occlusion, bloom, higher-resolution shadows and supersampling. Every difference, in both modes, is in [ORIGINAL-VS-ENHANCED.md](ORIGINAL-VS-ENHANCED.md)
 - A native **Settings** window (**⌘,**) with every option described, including ones the original game hid
 - **F1** or **⌘/** shows every key, read from your own key bindings
 - **MacBook keys**: Command stands in for keys a laptop lacks (⌘8/5/4/6/1/3 aim like the numpad, ⌘↑/⌘↓ change floors, ⌘S and ⌘L quick save and load, and more)

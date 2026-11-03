@@ -839,7 +839,7 @@ static NSArray<NSString*> *ResolutionTitles(std::vector<std::pair<int, int>> &ou
 - (void)buildGraphics:(S2Page *)p
 {
 	[p section:@"Original / Enhanced"];
-	[p toggle:@"Enhanced graphics" detail:@"Off: original textures, 1024×768, classic terrain, lighting and color. On: restores your enhanced setup. You can also click Original / Enhanced over the game or press ⇧⌘G. The image briefly rebuilds; your mission stays loaded."
+	[p toggle:@"Enhanced graphics" detail:@"Off: original textures, 1024×768, classic terrain, lighting and color. On: restores your enhanced setup. You can also click Original / Enhanced over the game or press ⌘G or F9. The image briefly rebuilds; your mission stays loaded."
 		get:^float { return S2OriginalGraphics() ? 0 : 1; } set:^(float value) { S2SetOriginalGraphics(value == 0); }];
 	[p buttons:@[ @"Maximum fidelity" ] title:@"Highest detail"
 		detail:@"This display's resolution, 2× world pixels, 4096 shadows, 256 light caches, HD textures, 1024 terrain and 16× filtering. Neutral color with restrained effects. Rebuilds the renderer; can substantially reduce frame rate."
