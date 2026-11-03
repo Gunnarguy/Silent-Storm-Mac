@@ -26,11 +26,11 @@
 //
 #include "aiCommander.h"
 //
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataConst.h"
-#include "..\DBFormat\DataMap.h"
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataConst.h"
+#include "../DBFormat/DataMap.h"
 #include "aiWeapon.h"
 #include "aiInventory.h"
 //
@@ -66,7 +66,7 @@ void SAICommandTracker::Clear( NWorld::CUnitServer *pUS )
 		commands.clear();
 		return;
 	}
-	for ( list< CObj<NWorld::CCommand> >::iterator i = commands.begin(); i != commands.end(); )
+	for ( typename list< CObj<NWorld::CCommand> >::iterator i = commands.begin(); i != commands.end(); )
 	{
 		CDynamicCast<NWorld::CCmdUnit> pCU( i->GetPtr() );
 		CDynamicCast<NWorld::CUnitServer> pCmdUS( IsValid( pCU ) ? pCU->pUnit.GetPtr() : (NWorld::CUnit*)0 );
@@ -89,7 +89,7 @@ void SAIUpdateTracker::Add( CAIReaction *pReaction )
 {
 	if ( !IsValid( pReaction ) )
 		return;
-	for ( list< CPtr<CAIReaction> >::iterator i = reactions.begin(); i != reactions.end(); ++i )
+	for ( typename list< CPtr<CAIReaction> >::iterator i = reactions.begin(); i != reactions.end(); ++i )
 		if ( i->GetPtr() == pReaction )
 			return;
 	reactions.push_back( pReaction );
@@ -144,7 +144,7 @@ IAIUnit* SAIUnitsTracker::GetNearestUnit()
 void SAIUnitsTracker::SetUnits( const vector< CObj<IAIUnit> > &src )
 {
 	units.clear();
-	for ( vector< CObj<IAIUnit> >::const_iterator i = src.begin(); i != src.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::const_iterator i = src.begin(); i != src.end(); ++i )
 		units.push_back( i->GetPtr() );
 	Next();
 }
@@ -365,7 +365,7 @@ void CAICommander::GenerateCommand()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAICommander::CheckForFinishedLogics()
 {
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( !IsOwnUnit( *i ) )
 			continue;
@@ -382,7 +382,7 @@ void CAICommander::CheckForFinishedLogics()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAICommander::CheckForUpdates()
 {
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( !IsOwnUnit( *i ) || !CanAIOperateThisUnit( *i ) )
 			continue;
@@ -405,7 +405,7 @@ void CAICommander::OnAISegment()
 		return;
 	if ( pWorld->IsSequence() )
 		return;
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 		if ( IsOwnUnit( *i ) && CanAIOperateThisUnit( *i ) )
 			(*i)->OnAISegment();
 	if ( !pWorld->IsRealTime() && !IsThisPlayerTurn() )
@@ -445,7 +445,7 @@ bool CAICommander::HasUnitWork( IAIUnit *pUnit )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CAICommander::IsSomebodyNeedUpdate()
 {
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( IsOwnUnit( *i ) && CanAIOperateThisUnit( *i ) )
 		{
@@ -459,7 +459,7 @@ bool CAICommander::IsSomebodyNeedUpdate()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CAICommander::IsSomebodyThinking()
 {
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( !IsValid( *i ) || !IsOwnUnit( *i ) )
 			continue;
@@ -474,7 +474,7 @@ bool CAICommander::IsSomebodyThinking()
 void CAICommander::ClearNonFreezeCounters()
 {
 	commandTracker.nNonFreezeCounter = 0;
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 		if ( IsValid( *i ) && IsOwnUnit( *i ) )
 			(*i)->ClearNonFreezeCounter();
 }
@@ -485,7 +485,7 @@ bool CAICommander::IsPossibleFreeze()
 {
 	if ( commandTracker.nNonFreezeCounter > 5000 )
 		return true;
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( !IsValid( *i ) || !IsOwnUnit( *i ) )
 			continue;
@@ -587,7 +587,7 @@ bool CAICommander::IsEndOfTurn()
 		return false;
 	if ( IsPossibleFreeze() )
 		return true;
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( !IsValid( *i ) || !IsOwnUnit( *i ) )
 			continue;
@@ -632,7 +632,7 @@ void CAICommander::OnCancelAction()
 void CAICommander::Synchronize()
 {
 	bool bPruned = false;
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); )
 	{
 		if ( !IsValid( (*i)->GetUnitServer() ) )
 		{
@@ -660,7 +660,7 @@ void CAICommander::Synchronize()
 void CAICommander::RebuildAIUnitCache()
 {
 	worldToAIUnit.clear();
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( IsValid( *i ) && IsValid( (*i)->GetUnitServer() ) )
 			worldToAIUnit[ (*i)->GetUnitServer() ] = i->GetPtr();
@@ -715,7 +715,7 @@ void CAICommander::OnUnitDied( NWorld::CUnitServer *pUnit )
 {
 	// owner-only: the wrapper is SHARED across commanders now (retail identity model) -- without the
 	// filter every commander's broadcast would OnDied() the same CAIUnit once per commander.
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( (*i)->GetUnitServer() == pUnit && IsOwnUnit( *i ) )
 			(*i)->OnDied();
@@ -726,7 +726,7 @@ void CAICommander::OnUnitDied( NWorld::CUnitServer *pUnit )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAICommander::RemoveUnit( NWorld::CUnitServer *pUS )
 {
-	for ( vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); )
+	for ( typename vector< CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); )
 	{
 		if ( (*i)->GetUnitServer() == pUS )
 			i = units.erase( i );
@@ -741,14 +741,14 @@ void CAICommander::RemoveInvalidUnits()
 {
 	// Retail 0x434a40. Removing a player invalidates its master-owned servers;
 	// other commanders must not retain those wrappers/cache entries in a zone save.
-	for ( vector<CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); )
+	for ( typename vector<CObj<IAIUnit> >::iterator i = units.begin(); i != units.end(); )
 	{
 		if ( !IsValid( *i ) || !IsValid( (*i)->GetUnitServer() ) )
 			i = units.erase( i );
 		else
 			++i;
 	}
-	for ( unordered_map<CPtr<NWorld::CUnitServer>, CPtr<IAIUnit>, SPtrHash>::iterator i = worldToAIUnit.begin();
+	for ( typename unordered_map<CPtr<NWorld::CUnitServer>, CPtr<IAIUnit>, SPtrHash>::iterator i = worldToAIUnit.begin();
 		i != worldToAIUnit.end(); )
 	{
 		if ( !IsValid( i->first ) || !IsValid( i->second ) )
@@ -795,7 +795,7 @@ void CAICommander::LockObject( NWorld::CObjectServerBase *pObject )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAICommander::UnLockObject( NWorld::CObjectServerBase *pObject )
 {
-	list< CPtr<NWorld::CObjectServerBase> >::iterator i =
+	typename list< CPtr<NWorld::CObjectServerBase> >::iterator i =
 		find( LockedObjects.begin(), LockedObjects.end(), pObject );
 	if ( i != LockedObjects.end() )
 		LockedObjects.erase( i );
@@ -819,7 +819,7 @@ void CAICommander::UnLockAllObjects()
 // Synchronize), so this returns exactly what the linear scan would.
 IAIUnit *CAICommander::GetAIUnit( NWorld::CUnitServer *pUnit )
 {
-	unordered_map< CPtr<NWorld::CUnitServer>, CPtr<IAIUnit>, SPtrHash >::iterator i = worldToAIUnit.find( pUnit );
+	typename unordered_map< CPtr<NWorld::CUnitServer>, CPtr<IAIUnit>, SPtrHash >::iterator i = worldToAIUnit.find( pUnit );
 	if ( i != worldToAIUnit.end() )
 		return i->second;
 	//
@@ -839,7 +839,7 @@ bool CAICommander::HasVisibleEnemies()
 {
 	list< CPtr<NWorld::CUnit> > visibleUnits;
 	pPlayer->GetVisible( &visibleUnits );
-	for ( list< CPtr<NWorld::CUnit> >::const_iterator i = visibleUnits.begin(); i != visibleUnits.end(); ++i )
+	for ( typename list< CPtr<NWorld::CUnit> >::const_iterator i = visibleUnits.begin(); i != visibleUnits.end(); ++i )
 	{
 		NWorld::IPlayer *pEnemyPlayer = (*i)->GetPlayer();
 		bool bDiplomacyEnemy = GetWorld()->GetDiplomacyState( pPlayer, pEnemyPlayer ) == NDb::DS_ENEMY;

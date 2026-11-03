@@ -1,12 +1,14 @@
 #include "StdAfx.h"
 #include <fmod.h>
 #include <fmod_errors.h>
+#if defined(_WIN32)
 #include <mmsystem.h>                // WAVEFORMATEX et al. -- StdAfx's windows.h is WIN32_LEAN_AND_MEAN, so dsound.h needs this first
 #undef PlaySound                     // mmsystem.h #defines PlaySound -> would mangle NFMSound::PlaySound (declared in FMSound.h below)
 #include <dsound.h>                  // NFMSound::GetSpeakerType: DirectSoundCreate + IDirectSound::GetSpeakerConfig
 #pragma comment( lib, "dsound.lib" )  // self-contained -- no vcxproj edit (DirectSound device-config query)
+#endif
 #include "FMSound.h"
-#include "..\Misc\HPTimer.h"
+#include "../Misc/HPTimer.h"
 
 namespace NFMSound 
 {
@@ -231,7 +233,7 @@ void CSound3D::Update( double dInterval )
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-signed char __stdcall SynchCallback( FSOUND_STREAM *stream, void *buff, int len, int param );
+signed char __stdcall SynchCallback( FSOUND_STREAM *stream, void *buff, int len, intptr_t param );
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class CStream: public CObjectBase
 {
@@ -272,7 +274,7 @@ public:
 			// stream is erased by the next NFMSound::Update)
 			if ( FSOUND_Stream_GetLengthMs( pStream ) < nStartMs )
 				return;
-			FSOUND_Stream_SetSyncCallback( pStream, &SynchCallback, (int)this );
+			FSOUND_Stream_SetSyncCallback( pStream, &SynchCallback, (intptr_t)this );
 			nChannel = FSOUND_Stream_Play( 0, pStream );
 			ASSERT( nChannel != -1 );
 			if ( nStartMs > 0 )
@@ -356,7 +358,7 @@ public:
 		FSOUND_StopSound( nChannel );
 		nChannel = FSOUND_Stream_Play( 0, pStream );
 		FSOUND_Stream_SetTime( pStream, 1040 );
-		bool bRet = FSOUND_Stream_SetSyncCallback( pStream, &SynchCallback, (int)this );
+		bool bRet = FSOUND_Stream_SetSyncCallback( pStream, &SynchCallback, (intptr_t)this );
 		return true;
 		PlayStream( szFileName.c_str(), bLoop );
 		return true;
@@ -405,7 +407,7 @@ public:
 	void SetVolume( int n ) { FSOUND_SetVolumeAbsolute( nChannel, n ); }
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-signed char __stdcall SynchCallback( FSOUND_STREAM *stream, void *buff, int len, int param )
+signed char __stdcall SynchCallback( FSOUND_STREAM *stream, void *buff, int len, intptr_t param )
 {
 	if ( !buff )
 		return false;
@@ -589,6 +591,16 @@ CSample3D *LoadSample3D( const void *pData, int nLength, float fMinDistance, flo
 		return 0;
 	FSOUND_SAMPLE *hSample;
 	hSample = FSOUND_Sample_Load( FSOUND_UNMANAGED, (const char*)pData, FSOUND_HW3D | FSOUND_LOADMEMORY, 0, nLength );
+	if ( !hSample )
+	{
+		// macOS port: a sample the decoder rejects becomes a silent sample instead of a null
+		// dereference in SetMinMaxDistance
+		const unsigned char *p = (const unsigned char*)pData;
+		fprintf( stderr, "[sound] 3D sample rejected: %d bytes, header %02x %02x %02x %02x %02x %02x %02x %02x\n", nLength,
+			nLength > 0 ? p[0] : 0, nLength > 1 ? p[1] : 0, nLength > 2 ? p[2] : 0, nLength > 3 ? p[3] : 0,
+			nLength > 4 ? p[4] : 0, nLength > 5 ? p[5] : 0, nLength > 6 ? p[6] : 0, nLength > 7 ? p[7] : 0 );
+		return new CSample3D();
+	}
 	FSOUND_Sample_SetDefaults( hSample, -1, -1, -1, nPriority );
 	if ( nEndingSamples > nStartSamples )
 		FSOUND_Sample_SetLoopPoints( hSample, nStartSamples, nEndingSamples );
@@ -699,7 +711,7 @@ CSound3D *Play3DSound( const SPlayParams &params )
 	if ( nChannel == -1 )
 	{
 		vector<int> aToDel;
-		for ( CChannels::iterator i = hashChannel.begin(); i != hashChannel.end(); ++i )
+		for ( typename CChannels::iterator i = hashChannel.begin(); i != hashChannel.end(); ++i )
 		{
 			if ( !IsValid( i->second ) || !FSOUND_IsPlaying( i->first ) )
 			{
@@ -707,7 +719,7 @@ CSound3D *Play3DSound( const SPlayParams &params )
 				aToDel.push_back( i->first );
 			}
 		}
-		for ( vector<int>::iterator j = aToDel.begin(); j != aToDel.end(); ++j )
+		for ( typename vector<int>::iterator j = aToDel.begin(); j != aToDel.end(); ++j )
 			hashChannel.erase(*j);
 		//
 		nChannel = FSOUND_PlaySoundEx( FSOUND_FREE, *params.pSample, 0, true );
@@ -742,7 +754,7 @@ CSound3D *Play3DSound( const SPlayParams &params )
 	CSound3D *pSound = new CSound3D( params.pSample, params.position, vFPos, params.nVolume, params.nLoops );
 	pSound->SetFadeOut( params.bFadeIn, params.bFadeOut, params.nFadeSamples );
 	pSound->nChannel = nChannel;
-	// Failed/expired starts have no live channel. Do not track the -1 sentinel:
+	// Failed/expired starts have no live channel. Do not track the -1 marker:
 	// a later channel-allocation retry would otherwise issue StopSound(-1).
 	if ( nChannel != -1 )
 		hashChannel[nChannel] = pSound;
@@ -758,7 +770,7 @@ CStream* PlayStream( const char *pszName, bool bUseExisting, int nStartMs, bool 
 		return 0;
 	if ( bUseExisting )
 	{
-		for ( CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
+		for ( typename CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
 			if ( IsValid( *i ) && (*i)->GetFileName() == pszName )
 				return *i;
 	}
@@ -774,7 +786,7 @@ CStream* SwitchStream( CStream *pOldStream, const char *pszNameNewStream, bool b
 {
 	if ( !IsValid( pOldStream ) )
 		return PlayStream( pszNameNewStream, true, 0, bLoop, fFadeInSec );
-	for ( CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
+	for ( typename CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
 	{
 		if ( IsValid( *i ) && (*i).GetPtr() == pOldStream )
 		{
@@ -789,7 +801,7 @@ CStream* SwitchStream( CStream *pOldStream, const char *pszNameNewStream, bool b
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void FadeOut( CStream *pStream, float fSec )
 {
-	for ( CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
+	for ( typename CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
 	{
 		if ( IsValid( *i ) && (*i).GetPtr() == pStream )
 			pStream->FadeOut( fSec );
@@ -798,7 +810,7 @@ void FadeOut( CStream *pStream, float fSec )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CancelFadeOut( CStream *pStream )
 {
-	for ( CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
+	for ( typename CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
 	{
 		if ( IsValid( *i ) && (*i).GetPtr() == pStream )
 			pStream->CancelFadeOut();
@@ -812,7 +824,7 @@ bool IsStreamFile( CStream *pStream, const char *pszName )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool IsPlaying( CStream *pStream )
 {
-	for ( CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
+	for ( typename CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
 	{
 		if ( IsValid( *i ) && (*i).GetPtr() == pStream )
 			return pStream->IsPlaying();
@@ -824,7 +836,7 @@ bool IsPlaying( CStream *pStream )
 // so a load can resume mid-track); 0xFFFFFFFF when the stream is gone.
 unsigned long GetStreamTime( CStream *pStream )
 {
-	for ( CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
+	for ( typename CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
 	{
 		if ( IsValid( *i ) && (*i).GetPtr() == pStream )
 			return pStream->GetTime();
@@ -843,7 +855,7 @@ void SetMusicMasterVolume( int nMusic )
 {
 	if ( !bIsFMODInitialized )
 		return;
-	for ( CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
+	for ( typename CStreamList::iterator i = streams.begin(); i != streams.end(); ++i )
 		(*i)->SetVolume( nMusic );
 	nMusicVolume = nMusic;
 }
@@ -877,6 +889,9 @@ void SetSpeakerType( ESpeakerType speaker )
 // it would change live sound init, so deferred. dsound.lib is pulled in via the #pragma in this TU's includes.
 ESpeakerType GetSpeakerType()
 {
+#if !defined(_WIN32)
+	return SOUND_SM_STEREO;   // the macOS mixer outputs stereo; Core Audio downmixes or upmixes for the device
+#else
 	IDirectSound *pDS = 0;
 	if ( FAILED( DirectSoundCreate( 0, &pDS, 0 ) ) )
 		return SOUND_SM_STEREO;                       // no device -> stereo
@@ -900,6 +915,7 @@ ESpeakerType GetSpeakerType()
 	}
 	pDS->Release();
 	return result;
+#endif
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void Update( const SListener &listener )
@@ -929,7 +945,7 @@ void Update( const SListener &listener )
 	}
 
 	vector<int> aToDel;
-	for ( CChannels::iterator i = hashChannel.begin(); i != hashChannel.end(); ++i )
+	for ( typename CChannels::iterator i = hashChannel.begin(); i != hashChannel.end(); ++i )
 	{
 		if ( !IsValid( i->second ) || !FSOUND_IsPlaying( i->first ) )
 		{
@@ -944,7 +960,7 @@ void Update( const SListener &listener )
 			i->second->Update( dTimeInterval );
 		}
 	}
-	for ( CStreamList::iterator i = streams.begin(); i != streams.end(); )
+	for ( typename CStreamList::iterator i = streams.begin(); i != streams.end(); )
 	{
 		if ( !IsValid( *i ) || !(*i)->IsPlaying() )
 		{
@@ -958,7 +974,7 @@ void Update( const SListener &listener )
 		}
 	}
 	
-	for ( vector<int>::iterator j = aToDel.begin(); j != aToDel.end(); ++j )
+	for ( typename vector<int>::iterator j = aToDel.begin(); j != aToDel.end(); ++j )
 		hashChannel.erase(*j);
 	
 	/// ???

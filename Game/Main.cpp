@@ -1,30 +1,36 @@
 #include "StdAfx.h"
-#include "..\Main\GInit.h"
+#include "../Main/GInit.h"
 #include "WinFrame.h"
-#include "..\Main\iMain.h"
-#include "..\Input\Bind.h"
-#include "..\ADOImport\BasicDB.h"
-#include "..\DBFormat\DataMap.h"		// NDb::BuildMapLinks (post-load DB relation build)
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Main\GResource.h" // CRAP for lack of anything better, there should actually be version support
-#include "..\Main\iInterMission.h" // CRAP, to start from mission
-#include "..\Main\iLoading.h"      // NGame::InitLoadingScreen / TermLoadingScreen -- loading-screen UI built once at boot
-#include "..\Misc\HPTimer.h"       // NHPTimer::UpdateHPTimerFrequency -- the per-frame TSC recalibration
-#include "..\Main\iSaveManager.h" // CRAP, to start from mission
-#include "..\Main\Sound.h"
-#include "..\Main\SplashScreen.h"
-#include "..\Main\WinInputConv.h" // Win32->NInput bridge: replays WM_KEYDOWN/WM_CHAR (OS auto-repeat)
-#include "..\FileIO\BasicChunk1.h"  // [HARNESS] g_bSaveLoadDiag / SaveLoadDiag
-#include "..\MiscDll\LogStream.h"   // [HARNESS] g_bHarnessLog (console-log tee)
-#include "..\Main\A5Script.h"       // [HARNESS] ProcessCommand (console/lua entry for the command channel)
+#include "../Main/iMain.h"
+#include "../Input/Bind.h"
+#include "../ADOImport/BasicDB.h"
+#include "../DBFormat/DataMap.h"		// NDb::BuildMapLinks (post-load DB relation build)
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Main/GResource.h" // CRAP for lack of anything better, there should actually be version support
+#include "../Main/iInterMission.h" // CRAP, to start from mission
+#include "../Main/iLoading.h"      // NGame::InitLoadingScreen / TermLoadingScreen -- loading-screen UI built once at boot
+#include "../Misc/HPTimer.h"       // NHPTimer::UpdateHPTimerFrequency -- the per-frame TSC recalibration
+#include "../Main/iSaveManager.h" // CRAP, to start from mission
+#include "../Main/Sound.h"
+#include "../Main/SplashScreen.h"
+#include "../Main/WinInputConv.h" // Win32->NInput bridge: replays WM_KEYDOWN/WM_CHAR (OS auto-repeat)
+#include "../FileIO/BasicChunk1.h"  // [HARNESS] g_bSaveLoadDiag / SaveLoadDiag
+#if defined(__APPLE__)
+#include "s2platform.h"              // macOS port: S2ConfigPath, HD texture pack settings
+#endif
+#include "../MiscDll/LogStream.h"   // [HARNESS] g_bHarnessLog (console-log tee)
+#include "../Main/A5Script.h"       // [HARNESS] ProcessCommand (console/lua entry for the command channel)
+#if defined(_WIN32)
 #include <dbghelp.h>                 // [HARNESS] post-load crash backtrace (SymFromAddr / StackWalk64)
 #pragma comment(lib, "dbghelp.lib")
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // [HARNESS] Unhandled-exception filter: on a post-load AV (the "silent close"), log a symbolic
 // backtrace to _saveload.log so the driver can map the fault to a function. Installed only in harness
 // runs (needs a PDB next to Game.exe -- CMake emits one for optimized configs). Writes directly to the
 // file (no engine calls) so it survives a corrupted heap. Terminates after logging (unattended runs).
+#if defined(_WIN32)  // macOS writes its own crash reports (~/Library/Logs/DiagnosticReports)
 static LONG WINAPI HarnessCrashFilter( EXCEPTION_POINTERS *pEP )
 {
 	FILE *pF = fopen( "_saveload.log", "ab" );
@@ -78,6 +84,7 @@ static LONG WINAPI HarnessCrashFilter( EXCEPTION_POINTERS *pEP )
 	}
 	return EXCEPTION_EXECUTE_HANDLER;   // terminate cleanly after logging
 }
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //void DumpMemoryStats() {}
 
@@ -134,6 +141,12 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	// Retail v1.2 0x409f1a: show the logo while loading game.db, before the game window.
 	NSplash::ShowSplashScreen( ".\\res\\s2.bmp", true );
 	NGScene::AddResourceDir( ".\\res" );
+#if defined(__APPLE__)
+	// macOS port: HD texture pack (loose "hd\Textures\<id>" files override res\Textures.res per texture)
+	if ( S2HDTexturePackAvailable() )
+		NGScene::AddResourceDir( ".\\hd" );
+	NGScene::SetHDTextureSources(S2HDTexturesEnabled());
+#endif
 	NGScene::RunResourceLoadingThread();
   // load game database
 	try
@@ -185,7 +198,11 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	}
 
 	// Load config & process params
+#if defined(__APPLE__)
+	NGlobal::LoadConfig( S2ConfigPath( "autoexec.cfg" ) );
+#else
 	NGlobal::LoadConfig( ".\\cfg\\autoexec.cfg" );
+#endif
 
 	vector<string> szParams;
 	bool bDoLoad = false;
@@ -312,8 +329,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 		NMainLoop::Command( new NMainLoop::CICLoad( szLoadSlot.empty() ? NMainLoop::GetQuickSaveSlot( true ) : szLoadSlot ) );
 	else
 		NMainLoop::Command( new CICInterMission( szCfg ) );
+#if defined(_WIN32)
 	if ( g_bHarnessLog )
 		SetUnhandledExceptionFilter( HarnessCrashFilter );   // [HARNESS] symbolic backtrace on post-load AV
+#endif
 	SWinToInputMessageConverter sWinInputConv;
 	for (;;)
 	{
@@ -343,7 +362,11 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	//
 	// Retail v1.2 0x40ae17 removes working snapshots on normal exit, not named saves.
 	NMainLoop::GetSaveManager()->DeleteSlot( NMainLoop::S_SLOT_ACTIVE );
+#if defined(__APPLE__)
+	NGlobal::SaveConfig( S2ConfigPath( "config.cfg" ) );
+#else
 	NGlobal::SaveConfig( ".\\cfg\\config.cfg" );
+#endif
 	NMainLoop::DoneInterface();
 	NGfx::Done3D();
 	NInput::DoneInput();

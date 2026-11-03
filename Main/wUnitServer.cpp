@@ -12,10 +12,10 @@
 #include "wUnitMove.h"
 #include "wUnitAttack.h"
 #include "wUnitExec.h"
-#include "..\DBFormat\DataAI.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\Misc\RandomGen.h"
+#include "../DBFormat/DataAI.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataFormat.h"
+#include "../Misc/RandomGen.h"
 #include "RPGUnit.h"
 #include "aiPath.h"
 #include "aiGrid.h"               // forced relocation requires a tile with movement exits
@@ -24,16 +24,16 @@
 #include "scriptCallLUA.h"		// NScript::luaCallFunction (OnClickUsable)
 #include "RPGGlobal.h"
 #include "RPGDiplomacy.h"
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 #include "rpgCheatConstants.h"
 #include "rpgCritical.h"
 #include "wUnitCommands.h"
-#include "..\Misc\EventsBase.h"   // NGlobal::ThrowEvent
+#include "../Misc/EventsBase.h"   // NGlobal::ThrowEvent
 #include "eventUnit.h"            // NWorld::CEventOnSeeNewEnemy / CEventOnUnitDiedOrLoseConsciousness (AI events)
-#include "..\DBFormat\DataDifficulty.h"
-#include "..\DBFormat\DataMap.h"
+#include "../DBFormat/DataDifficulty.h"
+#include "../DBFormat/DataMap.h"
 #include "eventPlayer.h"
-#include "..\DBFormat\DataAck.h"
+#include "../DBFormat/DataAck.h"
 #include "RPGVision.h"
 #include "aiCommander.h"
 #include "aiMisc.h"               // NAI::IsAIPlayer (retail IsAIUnit @0x3c0340 probe)
@@ -125,7 +125,7 @@ void CPathViewer::GetPoints( vector<SPathPoint> *pRes )
 	pRes->resize( pointsList.size() );
 
 	int nCount = 0;
-	for ( list<IExecMove::SPathPoint>::const_iterator iTemp = pointsList.begin(); iTemp != pointsList.end(); iTemp++ )
+	for ( typename list<IExecMove::SPathPoint>::const_iterator iTemp = pointsList.begin(); iTemp != pointsList.end(); iTemp++ )
 	{
 		(*pRes)[nCount] = SPathPoint( iTemp->nAP, iTemp->nFloor, iTemp->vPoint );
 		nCount++;
@@ -972,7 +972,7 @@ void CUnitServer::GetVisible( vector<CPtr<CUnit> > *pTarget ) const
 {
 	pTarget->resize( visible.size() );
 	int nTemp = 0;
-	for ( list<CPtr<CUnitServer> >::const_iterator i = visible.begin(); i != visible.end(); ++i )
+	for ( typename list<CPtr<CUnitServer> >::const_iterator i = visible.begin(); i != visible.end(); ++i )
 	{
 		(*pTarget)[nTemp] = i->GetPtr();
 		nTemp++;
@@ -1114,7 +1114,7 @@ static bool AddMedalPointsForNoticedMines( NRPG::CGlobalGame *pGame, NRPG::CUnit
 	bool bRes = false;
 	list<CPtr<CObjectBase> > known;
 	pPlayer->GetTrappedObjectsList( &known );
-	for ( list<CPtr<CObjectBase> >::const_iterator i = trappedObjects.begin(); i != trappedObjects.end(); ++i )
+	for ( typename list<CPtr<CObjectBase> >::const_iterator i = trappedObjects.begin(); i != trappedObjects.end(); ++i )
 	{
 		CObjectBase *p = i->GetPtr();
 		if ( IsInSet( known, p ) )
@@ -1147,14 +1147,14 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 			GetWorld()->GetGame()->GetMaxUnitSightDistance( GetUnitRPG()->GetRPGUnit() ) );
 		
 		// retail @0x7c459c: drop hiders that left the GetUnitsNear candidate set
-		for ( list<CPtr<CUnitServer> >::iterator h = hiddenAtSight.begin(); h != hiddenAtSight.end(); )
+		for ( typename list<CPtr<CUnitServer> >::iterator h = hiddenAtSight.begin(); h != hiddenAtSight.end(); )
 			if ( find( res.begin(), res.end(), h->GetPtr() ) == res.end() )
 				h = hiddenAtSight.erase( h );
 			else
 				++h;
 		visible.clear();
 		list<CPtr<CUnitServer> > carriedBodies;   // retail @0x7c460f: carried non-fighting bodies, adopted after the loop
-		for ( list<CPtr<CUnitServer> >::iterator i = res.begin(); i != res.end(); ++i )
+		for ( typename list<CPtr<CUnitServer> >::iterator i = res.begin(); i != res.end(); ++i )
 		{
 			CUnitServer *pEnemy = *i;
 			// retail @0x7c4655: the candidate loop dispatches on CanFight() FIRST -- only a FIGHTING
@@ -1251,11 +1251,11 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 		}
 		// retail @0x7c4abe..0x7c4b5b: adopt carried bodies -- a carried corpse is never probed; it is
 		// visible iff its carrier is ME or a unit I now see.
-		for ( list<CPtr<CUnitServer> >::iterator i = carriedBodies.begin(); i != carriedBodies.end(); ++i )
+		for ( typename list<CPtr<CUnitServer> >::iterator i = carriedBodies.begin(); i != carriedBodies.end(); ++i )
 		{
 			CUnit *pCarrier = (*i)->GetCorpseCarrier();
 			bool bSeeCarrier = ( pCarrier == static_cast<CUnit*>( this ) );
-			for ( list<CPtr<CUnitServer> >::iterator v = visible.begin(); !bSeeCarrier && v != visible.end(); ++v )
+			for ( typename list<CPtr<CUnitServer> >::iterator v = visible.begin(); !bSeeCarrier && v != visible.end(); ++v )
 				bSeeCarrier = ( static_cast<CUnit*>( v->GetPtr() ) == pCarrier );
 			if ( bSeeCarrier )
 				visible.push_back( *i );
@@ -1266,7 +1266,7 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 		// gather radius = the unit's OWN max mine-spot range, GetMineSpotRange(0) (rpg vtbl+0x168,
 		// @0x7c4bca pushes literal 0), NOT a hardcoded constant -- per-unit, skill/perk-driven.
 		GetWorld()->GetMinesNear( GetPosition().GetEyePosition(), &traps, GetUnitRPG()->GetMineSpotRange( 0 ) );
-		for ( list<CPtr<IMine> >::const_iterator i = traps.begin(); i != traps.end(); ++i )
+		for ( typename list<CPtr<IMine> >::const_iterator i = traps.begin(); i != traps.end(); ++i )
 		{
 			IMine *pMine = *i;
 			CObjectBase *pObj = i->GetPtr();
@@ -1301,7 +1301,7 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 				GetPlayer(), trappedObjects ) )
 			NGlobal::ThrowEvent( NWorld::CEventOnSpotMineOrTrap( this ) );
 		// @0x7c4f30: adopt/prune the script-forced visible traps.
-		for ( list<CPtr<CObjectBase> >::iterator i = addToVisibleTraps.begin(); i != addToVisibleTraps.end(); )
+		for ( typename list<CPtr<CObjectBase> >::iterator i = addToVisibleTraps.begin(); i != addToVisibleTraps.end(); )
 		{
 			CObjectBase *p = *i;
 			CDynamicCast<IMine> pMine( p );
@@ -1332,7 +1332,7 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 			GetWorld()->GetGame()->GetMaxUnitSightDistance( GetUnitRPG()->GetRPGUnit() ) );
 		list<IVisible*> items;
 		GetWorld()->GetVisibleItems( area, &items );
-		for ( list<IVisible*>::iterator i = items.begin(); i != items.end(); ++i )
+		for ( typename list<IVisible*>::iterator i = items.begin(); i != items.end(); ++i )
 		{
 			IVisible *p = *i;
 			CObjectBase *pObj = p;                        // the vbase upcast retail does inline
@@ -1358,7 +1358,7 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 		// (@0x7c5404 scans this->visible). Success feeds the PERSISTENT visibleObjects (@0x7c5456).
 		list<IVisible*> dynItems;
 		GetWorld()->GetVisibleDynamicItems( area, &dynItems );
-		for ( list<IVisible*>::iterator i = dynItems.begin(); i != dynItems.end(); ++i )
+		for ( typename list<IVisible*>::iterator i = dynItems.begin(); i != dynItems.end(); ++i )
 		{
 			IVisible *p = *i;
 			CObjectBase *pObj = p;
@@ -1374,7 +1374,7 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 			}
 			if ( !bSee && pParent )
 			{
-				for ( list<CPtr<CUnitServer> >::const_iterator v = visible.begin(); v != visible.end(); ++v )
+				for ( typename list<CPtr<CUnitServer> >::const_iterator v = visible.begin(); v != visible.end(); ++v )
 					if ( static_cast<CObjectBase*>( v->GetPtr() ) == pParent )
 					{
 						bSee = true;
@@ -1397,7 +1397,7 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 		trappedObjects.clear();
 		list<CPtr<IMine> > traps;
 		GetWorld()->GetMinesNear( CVec3(0,0,0), &traps, 1e10f );
-		for ( list<CPtr<IMine> >::const_iterator i = traps.begin(); i != traps.end(); ++i )
+		for ( typename list<CPtr<IMine> >::const_iterator i = traps.begin(); i != traps.end(); ++i )
 			trappedObjects.push_back( i->GetPtr() );
 	}
 	//
@@ -1659,7 +1659,7 @@ int CUnitServer::ProcessAttack( NWorld::IWorld *pWorld, int nUserID, NRPG::CAtta
 	{
 		// Retail 0x7c3a93..0x7c3abc also pays the prepared reward if damage
 		// removes the target entirely; do not access the invalid target here.
-		for ( list< CPtr<CUnitServer> >::iterator i = xpUnits.begin(); i != xpUnits.end(); ++i )
+		for ( typename list< CPtr<CUnitServer> >::iterator i = xpUnits.begin(); i != xpUnits.end(); ++i )
 			(*i)->GetUnitRPG()->GetRPGUnit()->AddXP( fXP );
 		return nRet;
 	}
@@ -1715,7 +1715,7 @@ int CUnitServer::ProcessAttack( NWorld::IWorld *pWorld, int nUserID, NRPG::CAtta
 		tDeathTime = GetWorld()->GetTime()->GetValue();
 		// Retail 0x7c3ebd..0x7c3eec rewards the first incapacitation only,
 		// not subsequent attacks that kill an already-unconscious body.
-		for ( list< CPtr<CUnitServer> >::iterator i = xpUnits.begin(); i != xpUnits.end(); ++i )
+		for ( typename list< CPtr<CUnitServer> >::iterator i = xpUnits.begin(); i != xpUnits.end(); ++i )
 			(*i)->GetUnitRPG()->GetRPGUnit()->AddXP( fXP );
 	}
 	return nRet;
@@ -1756,7 +1756,7 @@ int CUnitServer::GetCarefulShotExtraAP()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CUnitServer::HasLostFromSightAliveUnits() 
 { 
-	for ( list< CPtr<CUnitServer> >::iterator i = lostUnits.begin(); i != lostUnits.end(); ++i )
+	for ( typename list< CPtr<CUnitServer> >::iterator i = lostUnits.begin(); i != lostUnits.end(); ++i )
 	{
 		if ( (*i)->CanFight() )
 			return true;
@@ -1974,14 +1974,14 @@ void CUnitServer::ProcessCriticalsAndRegenerations()
 		{
 			vector< CPtr<CPlayer> > players;
 			GetWorld()->GetPlayersList( &players );
-			for ( vector< CPtr<CPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
+			for ( typename vector< CPtr<CPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
 			{
 				if ( GetWorld()->GetDiplomacyState( static_cast<CUnit*>( this ), *i ) != NDb::DS_ENEMY )
 					continue;
 				list< CPtr<CUnitServer> > units;
 				(*i)->GetUnitsThatCanFight( &units );
 				float fXP = GetUnitRPG()->GetXP( units.size() );
-				for ( list< CPtr<CUnitServer> >::iterator u = units.begin(); u != units.end(); ++u )
+				for ( typename list< CPtr<CUnitServer> >::iterator u = units.begin(); u != units.end(); ++u )
 					(*u)->GetUnitRPG()->GetRPGUnit()->AddXP( fXP );
 			}
 		}
@@ -2028,7 +2028,7 @@ bool CUnitServer::IsAIUnit() const
 bool BeginDeactivatingItem( CUnitServer *pUS, NDb :: EItemSubType subType )
 {
 	// @0x3bf800 -- retail deactivates the active item for ANY subtype (incl. SUBTYPE_NONE,
-	// which short-circuits to the "no place" sentinel -1 -> stowed to backpack, WITHOUT querying
+	// which short-circuits to the "no place" marker -1 -> stowed to backpack, WITHOUT querying
 	// the inventory). Jan03's `subType != SUBTYPE_NONE` outer gate (returned false for NONE) was
 	// dropped; follow the decode (authoritative).
 	if ( !pUS->animator.IsActiveItem() )

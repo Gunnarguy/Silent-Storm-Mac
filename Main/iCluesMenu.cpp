@@ -3,12 +3,12 @@
 #include "iMain.h"
 #include "G2DView.h"
 #include "RPGGlobal.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
-#include "..\DBFormat\DataScenario.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
+#include "../DBFormat/DataScenario.h"
 #include "Interface.h"
 #include "iCommonUI.h"
 #include "iCluesMenu.h"
@@ -23,7 +23,7 @@ namespace NUI
 static wstring ConvertLineBreaks( const wstring &szStr )
 {
 	wstring szRet;
-	for ( wstring::const_iterator i = szStr.begin(); i != szStr.end(); )
+	for ( typename wstring::const_iterator i = szStr.begin(); i != szStr.end(); )
 	{
 		switch ( wchar_t(*i) )
 		{
@@ -315,7 +315,7 @@ void CCluesUI::GenerateList( EFilter eFilter )
 			pGame->pScenarioTracker->GetAvailableClues( &cluesList );
 
 			int nCount = 0;
-			for( list< CPtr<NScenario::CScenarioZone> >::const_iterator iZone = zonesList.begin(); iZone != zonesList.end(); iZone++ )
+			for( typename list< CPtr<NScenario::CScenarioZone> >::const_iterator iZone = zonesList.begin(); iZone != zonesList.end(); iZone++ )
 			{
 				// retail @0x1bb930: separator = the zone's localized pName CString, not sSmallDescription
 				AddSeparator( GetDBString( (*iZone)->GetDBZone()->pName ), &nCount );
@@ -336,7 +336,7 @@ void CCluesUI::GenerateList( EFilter eFilter )
 			pGame->pScenarioTracker->GetAvailableClues( &cluesList );
 
 			int nCount = 0;
-			for( list< CPtr<NScenario::CScenarioZone> >::const_iterator iZone = zonesList.begin(); iZone != zonesList.end(); iZone++ )
+			for( typename list< CPtr<NScenario::CScenarioZone> >::const_iterator iZone = zonesList.begin(); iZone != zonesList.end(); iZone++ )
 			{
 				AddSeparator( GetDBString( (*iZone)->GetDBZone()->pName ), &nCount );
 				GenerateListByPoint( *iZone, cluesList, &nCount );
@@ -351,7 +351,7 @@ void CCluesUI::GenerateList( EFilter eFilter )
 			// retail @0x1bb930 case 3: list the campaign's collected UI hints (CGlobalGame::hintsSet);
 			// item text = title, stored description = the hint's full pString
 			int nCount = 0;
-			for( vector< CDBPtr<NDb::CUIHint> >::const_iterator iHint = pGame->hintsSet.begin(); iHint != pGame->hintsSet.end(); ++iHint )
+			for( typename vector< CDBPtr<NDb::CUIHint> >::const_iterator iHint = pGame->hintsSet.begin(); iHint != pGame->hintsSet.end(); ++iHint )
 			{
 				wstring wsText = GetDBString( 20994 ) + NStr::Format( L"%d. %s", nCount + 1, GetDBString( (*iHint)->pTitle ).c_str() );
 				pList->AddItem( nCount, new CJournalItem( SWindowInfo( pList, SPoint( 0, 0 ), SPoint( pList->GetSize().x, 0 ), "", STYLE_ENABLED | STYLE_VISIBLE ), wsText, (*iHint)->pString ) );
@@ -385,7 +385,7 @@ void CCluesUI::GenerateListSimple( int nNum, const wstring &wsAdd, const list<CP
 {
 	int &nCount = (*pConut);
 
-	for( list<CPtr<NScenario::CScenarioClue> >::const_iterator iTemp = cluesList.begin(); iTemp != cluesList.end(); iTemp++ )
+	for( typename list<CPtr<NScenario::CScenarioClue> >::const_iterator iTemp = cluesList.begin(); iTemp != cluesList.end(); iTemp++ )
 	{
 		// DB string 20994 ("Jornal ListItems Format" markup, <font face=Courier size=16pt><color=0xFF5A5959>)
 		wstring wsTemp = GetDBString( 20994 ) + NStr::Format( L"%d. %s", nNum, GetDBString( (*iTemp)->GetDBClue()->pDescription ).c_str() );
@@ -402,7 +402,7 @@ void CCluesUI::GenerateListByZone( NScenario::CScenarioZone *pZone, const list<C
 	int &nCount = (*pConut);
 
 	list<CPtr<NScenario::CScenarioClue> > zoneCluesList;
-	for ( list<CPtr<NScenario::CScenarioClue> >::const_iterator iClue = cluesList.begin(); iClue != cluesList.end(); iClue++ )
+	for ( typename list<CPtr<NScenario::CScenarioClue> >::const_iterator iClue = cluesList.begin(); iClue != cluesList.end(); iClue++ )
 	{
 		if ( pGame->pScenarioTracker->GetZoneInWhichClueWasFound( *iClue ) != pZone )
 			continue;
@@ -419,7 +419,7 @@ void CCluesUI::GenerateListByPoint( NScenario::CScenarioZone *pZone, const list<
 	int &nCount = (*pConut);
 
 	list<CPtr<NScenario::CScenarioClue> > zoneCluesList;
-	for ( list<CPtr<NScenario::CScenarioClue> >::const_iterator iClue = cluesList.begin(); iClue != cluesList.end(); iClue++ )
+	for ( typename list<CPtr<NScenario::CScenarioClue> >::const_iterator iClue = cluesList.begin(); iClue != cluesList.end(); iClue++ )
 	{
 		list< CPtr<NScenario::CScenarioZone> > openedZonesList;
 		pGame->pScenarioTracker->GetZonesWhichCanBeOpened( *iClue, &openedZonesList );
@@ -431,7 +431,7 @@ void CCluesUI::GenerateListByPoint( NScenario::CScenarioZone *pZone, const list<
 			pGame->pScenarioTracker->GetAvailableZones( &zonesList );
 
 			bool bFound = false;
-			for( list< CPtr<NScenario::CScenarioZone> >::const_iterator iZone = openedZonesList.begin(); iZone != openedZonesList.end(); iZone++ )
+			for( typename list< CPtr<NScenario::CScenarioZone> >::const_iterator iZone = openedZonesList.begin(); iZone != openedZonesList.end(); iZone++ )
 			{
 				if ( find( zonesList.begin(), zonesList.end(), *iZone ) == zonesList.end() )
 					continue;

@@ -4,11 +4,11 @@
 #include "wMain.h"
 #include "wOSBase.h"
 #include "wObject.h"
-#include "..\DBFormat\DataAI.h"
-#include "..\DBFormat\DataRPG.h"    // NDb::CRPGKey (HasKey @0x3bcfb0 key-number match)
-#include "..\DBFormat\DataMisc.h"   // NDb::CRPGPicklock (the pick attempt @0x3bdb70)
-#include "..\Misc\RandomGen.h"      // SRand (the tick-seeded local pick roll)
-#include "..\MiscDll\LogStream.h"   // csSystem pick-attempt log lines (retail verbatim)
+#include "../DBFormat/DataAI.h"
+#include "../DBFormat/DataRPG.h"    // NDb::CRPGKey (HasKey @0x3bcfb0 key-number match)
+#include "../DBFormat/DataMisc.h"   // NDb::CRPGPicklock (the pick attempt @0x3bdb70)
+#include "../Misc/RandomGen.h"      // SRand (the tick-seeded local pick roll)
+#include "../MiscDll/LogStream.h"   // csSystem pick-attempt log lines (retail verbatim)
 #include "RPGUnitInfo.h"
 #include "RPGUnitMission.h"         // NRPG::IUnitMission (GetInventory/GetSkillValue/HasPerk)
 #include "RPGItemSet.h"             // NRPG::CPicklockItem (WorkingPicklock @0x3bcd60)
@@ -43,7 +43,7 @@ int CSimpleExecQueue::GetActionAP( int nAlreadyReservedAP ) const
 { 
 	int nTemp = 0;
 	NAI::SUnitPosition pos = pUS->GetPosition(), dst = pos;
-	for( list<CObj<CCommandExecute> >::const_iterator iTemp = execList.begin(); iTemp != execList.end(); iTemp++ )
+	for( typename list<CObj<CCommandExecute> >::const_iterator iTemp = execList.begin(); iTemp != execList.end(); iTemp++ )
 	{
 		nTemp += (*iTemp)->GetActionAP( nAlreadyReservedAP + nTemp );
 		CObj<NAI::CPath> pPath = (*iTemp)->GetCurrentPath();
@@ -154,7 +154,7 @@ void CSimpleExecQueue::Segment()
 CPathConflictsRemover* CExecQueue::GetPathConflictsRemover()
 {
 	// @0x3bd240 -- the remover of the first execList entry that has one (movers return theirs, others 0).
-	list<CObj<CCommandExecute> >::iterator it;
+	typename list<CObj<CCommandExecute> >::iterator it;
 	for ( it = execList.begin(); it != execList.end(); ++it )
 	{
 		CPathConflictsRemover *pcr = (*it)->GetPathConflictsRemover();
@@ -169,7 +169,7 @@ NAI::CPath* CSimpleExecQueue::GetCurrentPath() const
 	if ( !execList.empty() )
 	{
 		NAI::CPath *pRes = 0;
-		list<CObj<CCommandExecute> >::const_iterator it;
+		typename list<CObj<CCommandExecute> >::const_iterator it;
 		for ( it = execList.begin(); it != execList.end(); ++it )
 		{
 			CObj<NAI::CPath> pCurrent = (*it)->GetCurrentPath();
@@ -217,7 +217,7 @@ void CExecQueue::GetDesiredPlace( NAI::SPathPlace *pRes, NAI::EFindPathParams *p
 	*pRes = pUS->GetPosition().pos.p;
 	*pParams = NAI::PF_DEFAULT;
 	*pActive = ITEM_NO_MATTER;
-	list<CObj<CCommandExecute> >::iterator i;
+	typename list<CObj<CCommandExecute> >::iterator i;
 	for ( i = execList.begin(); i != execList.end(); ++i )
 	{
 		CDynamicCast<IExecMove> pMove(*i);
@@ -239,7 +239,7 @@ void CExecQueue::FullCancel()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CExecQueue::GetPathPoints( list<SPathPoint> *pRes )
 {
-	for ( list<CObj<CCommandExecute> >::iterator i = execList.begin(); i != execList.end(); ++i )
+	for ( typename list<CObj<CCommandExecute> >::iterator i = execList.begin(); i != execList.end(); ++i )
 	{
 		CDynamicCast<IExecMove> pMove(*i);
 		if (pMove)
@@ -257,7 +257,7 @@ void CExecQueue::SetNewPath( NAI::CPath *pPath, NAI::EFindPathParams _eParams, E
 	if ( !pOldCommand )
 		pHold->Cancel();
 	AddPath( pPath, _eParams, eActive, pOldCommand );
-	list<CObj<CCommandExecute> >::iterator i, firstToAdd = oldExecList.end(); 
+	typename list<CObj<CCommandExecute> >::iterator i, firstToAdd = oldExecList.end(); 
 	NAI::SPathPlace p;
 	NAI::EFindPathParams params;
 	ENeedActiveItem active = ITEM_NO_MATTER;
@@ -441,7 +441,7 @@ void CExecQueue::CheckOpenCloseOnce()
 		bool bOpen; 
 		IObject *pObj; 
 		pOpen->GetParams( &bOpen, &pObj );
-		list<CObj<CCommandExecute> >::iterator it;
+		typename list<CObj<CCommandExecute> >::iterator it;
 		for ( it = execList.begin(); it != execList.end(); ++it )
 		{
 			CDynamicCast<CExecOpenClose> pOpenBefore( *it );

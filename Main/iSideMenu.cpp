@@ -16,15 +16,15 @@
 #include "iDesktopWindow.h"
 #include "iSideMenu.h"
 #include "iHeroMenu.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataDifficulty.h"
-#include "..\DBFormat\DataSound.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataCamera.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataDifficulty.h"
+#include "../DBFormat/DataSound.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataCamera.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 const int
 	N_SIDE_AXIS = 1,
@@ -165,6 +165,7 @@ public:
 	CSideMenuUI( const SWindowInfo &sInfo, NGame::CRenderBaseInterface *pInterface );
 
 	ESide GetSide() const { return eSide; }
+	void TestSetSide( ESide _eSide ) { eSide = _eSide; }   // macOS port test hook
 	EDifficulty GetDifficulty() const { return eDifficulty; }
 
 	void Draw( const STime &sTime, NGScene::I2DGameView *pView );
@@ -257,7 +258,10 @@ public:
 
 	void Step();
 	bool ProcessEvent( const NInput::SEvent &sEvent );
+	void TestPick( int nSide );   // macOS port test hook (console "sidemenu_pick n", hidden runs only)
 };
+////////////////////////////////////////////////////////////////////////////////////////////////////
+static CPtr<CSideMenuInterface> s_pActiveSideMenu;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CSideMenuInterface
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -277,7 +281,25 @@ void CSideMenuInterface::Initialize()
 	pSideMenuUI = new NUI::CSideMenuUI( NUI::SWindowInfo( GetInterface(), NUI::SPoint( 0, 0 ), NUI::SPoint( 1024, 768 ), "mainmenuUI" ), this );
 	NUI::LoadTemplate( pSideMenuUI, NDb::GetUIContainer( 353 ) );
 	pSideMenuUI->ShowWindow( NUI::SWTYPE_SHOW );
+	s_pActiveSideMenu = this;
+	fprintf( stderr, "[test-hook] sidemenu ready\n" );   // marker for drive.py waits
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void CSideMenuInterface::TestPick( int nSide )
+{
+	pSideMenuUI->TestSetSide( nSide == 2 ? NUI::CSideMenuUI::SIDE_ALLIES : NUI::CSideMenuUI::SIDE_AXIS );
+	NMainLoop::Command( new NGame::CICHeroMenu( NDb::GetDBSide( pSideMenuUI->GetSide() ), NDb::GetDBDifficulty( 1 ) ) );
+}
+static void SideMenuPickCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	if ( !getenv( "S2_HEADLESS" ) || !IsValid( s_pActiveSideMenu ) || szParams.empty() )
+		return;
+	const string szValue( szParams[0].begin(), szParams[0].end() );
+	s_pActiveSideMenu->TestPick( atoi( szValue.c_str() ) );
+}
+START_REGISTER(iSideMenuTest)
+	REGISTER_CMD( "sidemenu_pick", SideMenuPickCmd )
+FINISH_REGISTER
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CSideMenuInterface::ProcessEvent( const NInput::SEvent &sEvent )
 {

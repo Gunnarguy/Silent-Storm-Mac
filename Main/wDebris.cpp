@@ -2,15 +2,15 @@
 #include "wDebris.h"
 #include "wInterface.h"
 #include "GAnimParticles.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataGeometry.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataGeometry.h"
 #include "aiMap.h"
 #include "aiStability.h"
 #include "GAnimation.h"
 #include "RPGItemInfo.h"
 #include "Transform.h"
-#include "..\Misc\RandomGen.h"
+#include "../Misc/RandomGen.h"
 #include "RPGAttackMech.h"
 #include "GSceneUtils.h"
 #include "GView.h"
@@ -149,13 +149,13 @@ void CDebrisController::Add( CDItem *pItem, NAnimation::CASphereSet *pAnim )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CDebrisController::InnerSegment( list<STrackItem> *pRes )
 {
-	for ( list<STrackItem>::iterator i = items.begin(); i != items.end(); )
+	for ( typename list<STrackItem>::iterator i = items.begin(); i != items.end(); )
 	{
 		i->pAnim->Calc( GetWorldTime() );
 		//
 		if ( i->pAnim->HasStopped() )
 		{
-			list<STrackItem>::iterator k = i++;
+			typename list<STrackItem>::iterator k = i++;
 			k->pItem->SetFloor( k->pAnim->GetFloor() );
 			pRes->splice( pRes->end(), items, k );
 		}
@@ -185,7 +185,7 @@ struct SRangeTest
 void CDebrisController::GetInSphere( const SSphere &sphere, list< CObj<CDFrozenItem> > *pRes )
 {
 	SRangeTest<CDFrozenItem> testFI( sphere, *pRes );
-	for ( list<CObj<CDFrozenItem> >::iterator i = showFrozenItems.begin(); i != showFrozenItems.end(); )
+	for ( typename list<CObj<CDFrozenItem> >::iterator i = showFrozenItems.begin(); i != showFrozenItems.end(); )
 	{
 		if ( testFI( *i ) )
 			i = showFrozenItems.erase( i );
@@ -198,7 +198,7 @@ void CDebrisController::GetInSphere( const SSphere &sphere, list< CObj<CDFrozenI
 // on-ground world item carrying `pInvItem`: the first showFrozenItems entry whose GetInvItem() matches.
 CDFrozenItem* CDebrisController::GetFrozenItem( NRPG::IInventoryItem *pInvItem )
 {
-	for ( list< CObj<CDFrozenItem> >::iterator i = showFrozenItems.begin(); i != showFrozenItems.end(); ++i )
+	for ( typename list< CObj<CDFrozenItem> >::iterator i = showFrozenItems.begin(); i != showFrozenItems.end(); ++i )
 	{
 		CDFrozenItem *p = i->GetPtr();
 		if ( p != 0 && p->GetInvItem() == pInvItem )
@@ -219,7 +219,7 @@ CDFrozenItem* CDebrisController::FindFrozenItem( int nDbID )
 	sphere.fRadius = 65535.0f;
 	list<IVisible*> items;
 	GetVisibleItems( sphere, &items );
-	for ( list<IVisible*>::iterator i = items.begin(); i != items.end(); ++i )
+	for ( typename list<IVisible*>::iterator i = items.begin(); i != items.end(); ++i )
 	{
 		CDFrozenItem *p = dynamic_cast<CDFrozenItem*>( *i );
 		if ( p != 0 && p->GetInvItem() != 0 && p->GetInvItem()->GetDBItem()->GetRecordID() == nDbID )
@@ -279,7 +279,7 @@ void CDebrisController::ActivateDebris( const SSphere &sphere, NAI::IAIMap *pAIM
 	bc.Add( sphere.ptCenter, sphere.fRadius );
 	list<CObj<CDFrozenItem> > affected;
 	GetInSphere( sphere, &affected );
-	for ( list<CObj<CDFrozenItem> >::iterator i = affected.begin(); i != affected.end(); ++i )
+	for ( typename list<CObj<CDFrozenItem> >::iterator i = affected.begin(); i != affected.end(); ++i )
 	{
 		CDFrozenItem *p = *i;
 		CVec3 pos = p->GetPos();
@@ -305,7 +305,7 @@ void CDebrisController::ActivateDebris( CDFrozenItem *pItem, NAI::IAIMap *pAIMap
 	// retail holds a ref across the unlink (RTDynamicCast ref + trailing ReleaseObj @0x34a240) --
 	// showFrozenItems is the OWNER list, so the erase below would otherwise destroy the item
 	CObj<CDFrozenItem> pHold( pItem );
-	for ( list<CObj<CDFrozenItem> >::iterator i = showFrozenItems.begin(); i != showFrozenItems.end(); ++i )
+	for ( typename list<CObj<CDFrozenItem> >::iterator i = showFrozenItems.begin(); i != showFrozenItems.end(); ++i )
 	{
 		if ( i->GetPtr() == pItem )
 		{
@@ -353,7 +353,7 @@ void CDebrisController::GetClueObjects( list<CPtr<CObjectBase> > *pRes )
 {
 	if ( !pRes )
 		return;
-	for ( list<CPtr<CDFrozenItem> >::iterator i = clueItems.begin(); i != clueItems.end(); )
+	for ( typename list<CPtr<CDFrozenItem> >::iterator i = clueItems.begin(); i != clueItems.end(); )
 	{
 		CDFrozenItem *pItem = i->GetPtr();
 		if ( !IsValid( pItem ) )
@@ -385,7 +385,7 @@ CDFrozenItem* CDebrisController::AddFrozenItem( NAI::IAIMap *pMap, const CVec3 &
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CDebrisController::RemoveFrozenItem( NRPG::IInventoryItem *pInvItem )
 {
-	list<CObj<CDFrozenItem> >::iterator it;
+	typename list<CObj<CDFrozenItem> >::iterator it;
 	for ( it = showFrozenItems.begin(); it != showFrozenItems.end(); ++it )
 	{
 		if ( (*it)->GetInvItem() == pInvItem )
@@ -399,7 +399,7 @@ void CDebrisController::RemoveFrozenItem( NRPG::IInventoryItem *pInvItem )
 // Retail v1.2 0x74a860: release frozen hint pickups once the hint sequence is exhausted.
 void CDebrisController::RemoveAllHintItems()
 {
-	for ( list<CObj<CDFrozenItem> >::iterator it = showFrozenItems.begin(); it != showFrozenItems.end(); )
+	for ( typename list<CObj<CDFrozenItem> >::iterator it = showFrozenItems.begin(); it != showFrozenItems.end(); )
 	{
 		if ( dynamic_cast<NRPG::IHintItem*>( (*it)->GetInvItem() ) )
 			it = showFrozenItems.erase( it );
@@ -413,7 +413,7 @@ void CDebrisController::GetVisibleItems( const SSphere &sphere, list<IVisible*> 
 	// retail FilterVisibleItems<CDFrozenItem> @0x34bc40: dead entries erased; the range test point is
 	// the item's GetPos() (the IItem-base vtbl+4 @0x34c290, m.GetTranslation()) -- the multi-point
 	// GetVisiblePos is only for the LOS rays, not the gather.
-	for ( list<CPtr<CDFrozenItem> >::iterator i = visibleItems.begin(); i != visibleItems.end(); )
+	for ( typename list<CPtr<CDFrozenItem> >::iterator i = visibleItems.begin(); i != visibleItems.end(); )
 	{
 		CDFrozenItem *p = *i;
 		if ( IsValid(p) )
@@ -432,7 +432,7 @@ void CDebrisController::GetVisibleItems( const SSphere &sphere, list<IVisible*> 
 // CURRENT physics position (CDItem::GetPos @0x34a030, the refreshed root-bone pos).
 void CDebrisController::GetVisibleDynamicItems( const SSphere &sphere, list<IVisible*> *pRes )
 {
-	for ( list<CPtr<CDItem> >::iterator i = visibleDynamicItems.begin(); i != visibleDynamicItems.end(); )
+	for ( typename list<CPtr<CDItem> >::iterator i = visibleDynamicItems.begin(); i != visibleDynamicItems.end(); )
 	{
 		CDItem *p = *i;
 		if ( IsValid(p) )
@@ -453,7 +453,7 @@ bool CDebrisController::Segment( NAI::IAIMap *pMap, SSphere *pInvalidate )
 	{
 		list<STrackItem> stopped;
 		InnerSegment( &stopped );
-		for ( list<STrackItem>::iterator i = stopped.begin(); i != stopped.end(); ++i )
+		for ( typename list<STrackItem>::iterator i = stopped.begin(); i != stopped.end(); ++i )
 		{
 			CDItem *pI = i->pItem;
 			CDGPtr< CFuncBase<NAnimation::SSkeletonPose> > pPos = pI->GetAnimation();
@@ -480,7 +480,7 @@ bool CDebrisController::Segment( NAI::IAIMap *pMap, SSphere *pInvalidate )
 		}
 	}
 	//
-	for ( list< CPtr<CDFrozenItem> >::iterator i = pTrash->itemsToRemove.begin();
+	for ( typename list< CPtr<CDFrozenItem> >::iterator i = pTrash->itemsToRemove.begin();
 		i != pTrash->itemsToRemove.end(); ++i )
 	{
 		CDFrozenItem *pItem = *i;

@@ -9,7 +9,7 @@
 #include "aiEvent.h"
 #include "RPGUnitMission.h"
 #include "RPGUnit.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataRPG.h"
 //
 #include "aiFearReaction.h"
 //

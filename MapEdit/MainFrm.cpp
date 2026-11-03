@@ -22,9 +22,9 @@
 #include "MEUserSettings.h"
 #include "MEParams.h"
 #include "UserSettingsSetup.h"
-#include "..\Main\DiscretePos.h"
-#include "..\Main\iMain.h"
-#include "..\Input\Bind.h"
+#include "../Main/DiscretePos.h"
+#include "../Main/iMain.h"
+#include "../Input/Bind.h"
 #include "DiplomacyFrame.h"
 #include "StoreItemsDlg.h"
 
@@ -695,7 +695,7 @@ BOOL CMainFrame::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
   }
 	if ( nCode != CN_UPDATE_COMMAND_UI && (nID >= ID_VARIANT_START && nID < ID_VARIANT_END) )
 	{
-		unordered_map<int, int>::const_iterator it = m_CmdID2VarID.find( nID );
+		typename unordered_map<int, int>::const_iterator it = m_CmdID2VarID.find( nID );
 		if ( it != m_CmdID2VarID.end() )
 		{
 			theApp.SetActiveVariant( it->second );
@@ -762,7 +762,7 @@ void CMainFrame::RemoveAllVariants()
 void CMainFrame::SetActiveVariant( int nVariantID )
 {
   const int n = m_pVarToolBar->GetBtnCount();
-	unordered_map<int, int>::const_iterator it = m_VarID2CmdID.find( nVariantID );
+	typename unordered_map<int, int>::const_iterator it = m_VarID2CmdID.find( nVariantID );
 	if ( it == m_VarID2CmdID.end() )
 		return;
 	iActiveVariantID = nVariantID;

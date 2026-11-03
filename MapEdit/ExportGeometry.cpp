@@ -1,14 +1,14 @@
 #include "StdAfx.h"
 #include "MapEdit.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../DBFormat/DataFormat.h"
 #include "ItemsMgr.h"
-#include "..\Main\aiVolumeCalcer.h"
-#include "..\Main\BuildingClip.h"
-#include "..\Main\GGeometry.h"
-#include "..\Main\GObjectInfo.h"
+#include "../Main/aiVolumeCalcer.h"
+#include "../Main/BuildingClip.h"
+#include "../Main/GGeometry.h"
+#include "../Main/GObjectInfo.h"
 #include "Export.h"
-#include "..\Main\Grid.h"
-#include "..\Main\BSPtree.h"
+#include "../Main/Grid.h"
+#include "../Main/BSPtree.h"
 #include "AIGeometryFormat.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CLoadGeometryInfo
@@ -129,7 +129,7 @@ typedef unordered_map<int, CInt> CInfoHash;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CheckNeighbour( const SPieceInfo &piece, int nNeighb, const CInfoHash &infohash, const vector<SPieceInfo> &info, CStoredPieceMap &pieces )
 {
-	CInfoHash::const_iterator i = infohash.find( nNeighb );
+	typename CInfoHash::const_iterator i = infohash.find( nNeighb );
 	if ( i == infohash.end() && i->second > 0 )
 		return;
 	const SPieceInfo &pieceN = info[i->second];
@@ -140,8 +140,8 @@ void CheckNeighbour( const SPieceInfo &piece, int nNeighb, const CInfoHash &info
 
 	if ( !DoesIntersect( b, bn ) )
 		return;
-	CStoredPieceMap::iterator ia = pieces.find( piece.nPieceID );
-	CStoredPieceMap::iterator ib = pieces.find( pieceN.nPieceID );
+	typename CStoredPieceMap::iterator ia = pieces.find( piece.nPieceID );
+	typename CStoredPieceMap::iterator ib = pieces.find( pieceN.nPieceID );
 	if ( ia != pieces.end() && ib != pieces.end() )
 		FindLink( piece.nPieceID, ia->second, pieceN.nPieceID, ib->second );
 }
@@ -212,7 +212,7 @@ void UpdateAIGeometryInfo( int nID )
 		if ( !pieces.empty() )
 		{
 			CObj<NAI::CGeometryInfo> pValue = new NAI::CGeometryInfo;
-			for ( CStoredPieceMap::const_iterator i = pieces.begin(); i != pieces.end(); ++i )
+			for ( typename CStoredPieceMap::const_iterator i = pieces.begin(); i != pieces.end(); ++i )
 				pValue->AddPiece( i->first, i->second.verts, i->second.tris, i->second.fVolume, i->second.juncs );
 			// Загружаем также обычную геометрию, по ней определяем какие стержни для схемы здания есть у кусков
 			/*
@@ -227,7 +227,7 @@ void UpdateAIGeometryInfo( int nID )
 			}
 			*/
 			vector<SPieceInfo> piecesinfo;
-			for ( NAI::CGeometryInfo::CPieceMap::iterator it = pValue->pieces.begin(); it != pValue->pieces.end(); ++it )
+			for ( typename NAI::CGeometryInfo::CPieceMap::iterator it = pValue->pieces.begin(); it != pValue->pieces.end(); ++it )
 			{
 				const int nPieceID = it->first;
 				int x, y, z;
@@ -268,8 +268,8 @@ void AIGeometryUpdateDBData( CItemsMgr *pItems, const vector<int> &nItemIDs )
 		const CPropMap *pProps = pItems->GetPropList( nItemIDs[i] );
 		if ( !pProps )
 			continue;
-		CPropMap::const_iterator iVol = pProps->find( "Volume" );
-		CPropMap::const_iterator e = pProps->end();
+		typename CPropMap::const_iterator iVol = pProps->find( "Volume" );
+		typename CPropMap::const_iterator e = pProps->end();
 		if ( e == iVol )
 			break;
 		

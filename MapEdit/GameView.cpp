@@ -9,24 +9,24 @@
 #include "Placement.h"
 
 #include "preferences.h"
-#include "..\Misc\Geom.h"
-#include "..\Misc\StrProc.h"
-#include "..\ADOImport\BasicDB.h"
-#include "..\Input\Bind.h"
-#include "..\Input\Input.h"
-#include "..\Main\Gfx.h"
-#include "..\Main\iMain.h"
-#include "..\Main\iMapEditor.h"
+#include "../Misc/Geom.h"
+#include "../Misc/StrProc.h"
+#include "../ADOImport/BasicDB.h"
+#include "../Input/Bind.h"
+#include "../Input/Input.h"
+#include "../Main/Gfx.h"
+#include "../Main/iMain.h"
+#include "../Main/iMapEditor.h"
 #include "iWysiwyg.h"
-#include "..\Main\GResource.h"
-#include "..\Main\Grid.h"
-#include "..\Main\Sound.h"
-#include "..\Main\wInterface.h"
-#include "..\Main\iMission.h"
-#include "..\Main\RPGGlobal.h"
+#include "../Main/GResource.h"
+#include "../Main/Grid.h"
+#include "../Main/Sound.h"
+#include "../Main/wInterface.h"
+#include "../Main/iMission.h"
+#include "../Main/RPGGlobal.h"
 #include "MEUserSettings.h"
 #include "MEParams.h"
-#include "..\Main\GInit.h"
+#include "../Main/GInit.h"
 #include "dbDefs.h"
 #include "TreeSelItemDlg.h"
 #include "UserSettingsSetup.h"
@@ -34,12 +34,12 @@
 #include "NameAndFolder.h"
 #include "ItemsMgr.h"
 #include "MESerialize.h"
-#include "..\Main\MELayers.h"
-#include "..\DBFormat\DataMap.h"
+#include "../Main/MELayers.h"
+#include "../DBFormat/DataMap.h"
 #include "FinDBCmd.h"
 #include "AnimItemsDlg.h"
 #include "RPGItemsContainerDlg.h"
-#include "..\MiscDll\Commands.h"
+#include "../MiscDll/Commands.h"
 #include "WaypointDB.h"
 #include "TextEditor.h"
 #include "AnimFlagsDlg.h"
@@ -387,15 +387,15 @@ void SetCamera( ICamera::SCameraPos *pRes, float *pfFOV, const SResTree *pTree, 
 		const CPropMap *pProps = pTree->pItemsTree->GetPropList( nItemID );
 		if ( pProps )
 		{
-			CPropMap::const_iterator iax = pProps->find( szPref + "CameraAnchorX" );
-			CPropMap::const_iterator iay = pProps->find( szPref + "CameraAnchorY" );
-			CPropMap::const_iterator iaz = pProps->find( szPref + "CameraAnchorZ" );
-			CPropMap::const_iterator id = pProps->find( szPref + "CameraDistance" );
-			CPropMap::const_iterator iy = pProps->find( szPref + "CameraYaw" );
-			CPropMap::const_iterator ip = pProps->find( szPref + "CameraPitch" );
-			CPropMap::const_iterator ir = pProps->find( szPref + "CameraRoll" );
-			CPropMap::const_iterator ifov = pProps->find( szPref + "CameraFOV" );
-			CPropMap::const_iterator e = pProps->end();
+			typename CPropMap::const_iterator iax = pProps->find( szPref + "CameraAnchorX" );
+			typename CPropMap::const_iterator iay = pProps->find( szPref + "CameraAnchorY" );
+			typename CPropMap::const_iterator iaz = pProps->find( szPref + "CameraAnchorZ" );
+			typename CPropMap::const_iterator id = pProps->find( szPref + "CameraDistance" );
+			typename CPropMap::const_iterator iy = pProps->find( szPref + "CameraYaw" );
+			typename CPropMap::const_iterator ip = pProps->find( szPref + "CameraPitch" );
+			typename CPropMap::const_iterator ir = pProps->find( szPref + "CameraRoll" );
+			typename CPropMap::const_iterator ifov = pProps->find( szPref + "CameraFOV" );
+			typename CPropMap::const_iterator e = pProps->end();
 			if ( iax == e || iay == e || iaz == e || id == e || iy == e || ip == e || ir == e || ifov == e )
 				return;
 			pRes->ptAnchor.x = iax->second->GetValue();
@@ -1023,7 +1023,7 @@ void SyncActiveScript()
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nID, nVar );
 	if ( !pProps )
 		return;
-	CPropMap::const_iterator i = pProps->find( "ScriptID" );
+	typename CPropMap::const_iterator i = pProps->find( "ScriptID" );
 	int nScripID = i != pProps->end() ? i->second->GetValue() : -1;
 	pTree->pItemsTree->ReleasePropList( pProps );
 	//
@@ -1033,7 +1033,7 @@ void SyncActiveScript()
 		scriptEditor.ShowWindow( SW_HIDE );
 		return;
 	}
-	CPropMap::const_iterator icode = pSProps->find( "CodeText" );
+	typename CPropMap::const_iterator icode = pSProps->find( "CodeText" );
 	if ( icode == pSProps->end() )
 		return;
 	scriptEditor.SetScriptID( nScripID );

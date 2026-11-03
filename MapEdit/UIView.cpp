@@ -184,7 +184,7 @@ void CUIView::PostNcDestroy()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 inline vector<CUIView::SRect>::iterator CUIView::GetRect( int nID )
 {
-	vector<SRect>::iterator i;
+	typename vector<SRect>::iterator i;
 	for ( i = rects.begin(); i != rects.end(); ++i )
 		if ( i->nID == nID )
 			break;
@@ -245,7 +245,7 @@ void CUIView::OnDraw( CDC* pDC )
 		// активные объекты прорисовывыем сверху
 		for ( int i = 0; i < activeRects.size(); ++i )
 		{
-			vector<SRect>::iterator it = GetRect( activeRects[i] );
+			typename vector<SRect>::iterator it = GetRect( activeRects[i] );
 			if ( it != rects.end() )
 				it->track.Draw( &dcBuf, false );
 		}
@@ -259,7 +259,7 @@ void CUIView::OnDraw( CDC* pDC )
 static CString GetStrType( CUIControl *pCtrl )
 {
 	const CPropMap *pProps = pCtrl->GetPropMap();
-	CPropMap::const_iterator it = pProps->find( "Type" );
+	typename CPropMap::const_iterator it = pProps->find( "Type" );
 	return it != pProps->end() ? (const char*)it ->second->GetValue() : "";
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -291,8 +291,8 @@ void CUIView::SetUIContainer( int nUIContainerID, const CPropMap *pProps )
 	}
 	if ( pProps )
 	{
-		CPropMap::const_iterator iw = pProps->find( "Width" );
-		CPropMap::const_iterator ih = pProps->find( "Height" );
+		typename CPropMap::const_iterator iw = pProps->find( "Width" );
+		typename CPropMap::const_iterator ih = pProps->find( "Height" );
 		if ( iw != pProps->end() && ih != pProps->end() )
 			sizeContainer = CSize( iw->second->GetValue(), ih->second->GetValue() );
 		SetScrollSizes( MM_TEXT, sizeContainer );
@@ -331,7 +331,7 @@ void CUIView::OnLButtonDown(UINT nFlags, CPoint point)
 	bool bHit = false;
 	for ( int i = 0; i < activeRects.size(); ++i )
 	{
-		vector<SRect>::iterator it = GetRect( activeRects[i] );
+		typename vector<SRect>::iterator it = GetRect( activeRects[i] );
 		if ( it == rects.end() )
 			continue;
 		CTracker &tr = it->track;
@@ -404,11 +404,11 @@ BOOL CUIView::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUIView::ClearActiveControl( int nRectInd )
 {
-	for ( vector<int>::iterator i = activeRects.begin(); i != activeRects.end(); ++i )
+	for ( typename vector<int>::iterator i = activeRects.begin(); i != activeRects.end(); ++i )
 		if ( *i == nRectInd )
 		{
 			activeRects.erase( i );
-			vector<SRect>::iterator it = GetRect( *i );
+			typename vector<SRect>::iterator it = GetRect( *i );
 			if ( it != rects.end() )
 			{
 				it->track.m_nStyle = TRACKER_STYLE;
@@ -434,7 +434,7 @@ void CUIView::SetActiveControl( int nRectID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CUIView::AddActiveControl( int nRectID )
 {
-	vector<SRect>::iterator i = GetRect( nRectID );
+	typename vector<SRect>::iterator i = GetRect( nRectID );
 	if ( i == rects.end() )
 		return false;
 
@@ -468,12 +468,12 @@ void CUIView::DeleteActiveControls()
 		return;
 	for ( int i = 0; i < todelete.size(); ++i )
 	{
-		vector<SRect>::iterator it = GetRect( todelete[i] );
+		typename vector<SRect>::iterator it = GetRect( todelete[i] );
 		if ( it != rects.end() && pContainer->RemoveControl( it->pCtrl ) )
 			it->pCtrl = 0;
 	}
 	//
-	for ( vector<SRect>::iterator it = rects.begin(); it != rects.end(); )
+	for ( typename vector<SRect>::iterator it = rects.begin(); it != rects.end(); )
 		if ( !IsValid( it->pCtrl ) )
 			it = rects.erase( it );
 		else

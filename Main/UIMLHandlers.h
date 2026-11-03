@@ -147,7 +147,7 @@ public:
 				if ( wsID.compare( L"size" ) == 0  )
 				{
 					WCHAR wsString[128];
-					int nParams = swscanf( wsParam.c_str(), L"%d%2s", &sState.sFont.nSize, wsString );
+					int nParams = swscanf( wsParam.c_str(), L"%d%2ls", &sState.sFont.nSize, wsString );
 
 					if ( nParams > 1 )
 					{

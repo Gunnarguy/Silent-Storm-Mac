@@ -92,6 +92,9 @@ private:
 	// sequence holder and original dialog height are tags 20, 21 and 22.
 	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CDesktopWindow*)this); f.Add(2,&pMission); f.Add(3,&pTransition); f.Add(4,&nPanelsStateSave); f.Add(5,&nID); f.Add(6,&sStageTime); f.Add(7,&eStage); f.Add(8,&nStage); f.Add(9,&parsedPhrasesSet); f.Add(10,&unitsSet); f.Add(11,&phrasesSet); f.Add(12,&pTopBackground); f.Add(13,&pBottomBackground); f.Add(14,&szDialogCode); f.Add(15,&pDialog); f.Add(16,&pBack); f.Add(17,&pNext); f.Add(18,&pExit); f.Add(19,&unitViewsSet); f.Add(20,&pSound); f.Add(21,&pSequenceHolder); f.Add(22,&nDialogHeight); return 0; }
 
+public:
+	void TestNext() { if ( eStage == SHOWDIALOG ) SetStage( nStage + 1 ); }   // macOS test hook: console "dialog_next"
+	void TestCancel() { HideDesktop(); }
 protected:
 	void SetStage( int nStage );
 	void UpdatePhrases( NGScene::I2DGameView *pView );

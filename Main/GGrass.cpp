@@ -6,9 +6,9 @@
 #include "aiRender.h"
 #include "wTSFlags.h"
 #include "GParticleInfo.h"
-#include "..\Misc\randomGen.h"
-#include "..\DBFormat\DataTerrain.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../Misc/randomGen.h"
+#include "../DBFormat/DataTerrain.h"
+#include "../DBFormat/DataFormat.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
 {
@@ -309,13 +309,13 @@ CGrassTracker* CGrass::CreateTracker( CTerrainInfoHolder *pInfo )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGrass::Wave( const CVec3 &pt )
 {
-	for ( TTrackersMap::iterator iTemp = trackersMap.begin(); iTemp != trackersMap.end(); iTemp++ )
+	for ( typename TTrackersMap::iterator iTemp = trackersMap.begin(); iTemp != trackersMap.end(); iTemp++ )
 		iTemp->second->Wave( pt );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGrass::Update( STime currentTime )
 {
-	for ( TTrackersMap::iterator iTemp = trackersMap.begin(); iTemp != trackersMap.end(); iTemp++ )
+	for ( typename TTrackersMap::iterator iTemp = trackersMap.begin(); iTemp != trackersMap.end(); iTemp++ )
 		iTemp->second->Update( currentTime );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////

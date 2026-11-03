@@ -5,8 +5,8 @@
 #endif // _MSC_VER > 1000
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "Streams.h"
-#include "..\Misc\Basic2.h"
-#include "..\Misc\BasicFactory.h"
+#include "../Misc/Basic2.h"
+#include "../Misc/BasicFactory.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 externA5 CClassFactory<CObjectBase> *pSSClasses;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -108,6 +108,19 @@ private:
 	typedef std::unordered_map<void*,bool,SDefaultPtrHash> CPObjectsHash;
 	CPObjectsHash storedObjects;
 	std::list<CObjectBase*> toStore;
+	// Saves identify objects by a 4-byte "server pointer". With 64-bit pointers the low half is not
+	// unique, so each stored object gets a sequential key instead. Files keep the same layout, and
+	// keys from 32-bit Windows saves still load: on read the 4 bytes are only ever a lookup key.
+	std::unordered_map<void*, unsigned int, SDefaultPtrHash> saveKeys;
+	unsigned int nNextSaveKey;
+	unsigned int ObjectKey( CObjectBase *p )
+	{
+		if ( !p ) return 0;
+		unsigned int &k = saveKeys[p];
+		if ( k == 0 ) k = ++nNextSaveKey;
+		return k;
+	}
+	static void* KeyPtr( unsigned int k ) { return (void*)(uintptr_t)k; }
 
 	bool ReadShortChunk( CChunkLevel &src, int &nPos, CChunkLevel &res );
 	bool WriteShortChunk( CChunkLevel &dst, chunk_id dwID, const unsigned char *pData, int nLength );
@@ -263,7 +276,7 @@ private:
 			data.insert( data.begin(), CountChunks( 1 ), T1() );
 		}
 		int i = 1;
-		for ( std::list<T1,T2>::iterator k = data.begin(); k != data.end(); ++k, ++i )
+		for ( typename std::list<T1,T2>::iterator k = data.begin(); k != data.end(); ++k, ++i )
 			Add( 1, &(*k), i );
 		FinishChunk();
 	}
@@ -313,7 +326,7 @@ private:
 		else
 		{
 			int i = 1;
-			for ( std::unordered_map<T1,T2,T3,T4>::iterator pos = data.begin(); pos != data.end(); ++pos, ++i )
+			for ( typename std::unordered_map<T1,T2,T3,T4>::iterator pos = data.begin(); pos != data.end(); ++pos, ++i )
 			{
 				T1 idx = pos->first;
 				Add( 1, &idx, i );
@@ -342,13 +355,15 @@ private:
 			DataChunk( 3, &a[0][0], sizeof(T) * nXSize * nYSize, 1 );
 	}
 public:
+	// lets record types read a chunk list in file order (see NDatabase::Serialize)
+	int CountSubChunks( const chunk_id idChunk ) { return CountChunks( idChunk ); }
 	enum EMode
 	{
 		READ,
 		WRITE,
 		WRITE_COMPRESSED
 	};
-	CStructureSaver( CDataStream &res, EMode mode ): destStream(res), bPackResult(mode == WRITE_COMPRESSED)
+	CStructureSaver( CDataStream &res, EMode mode ): destStream(res), bPackResult(mode == WRITE_COMPRESSED), nNextSaveKey(0)
 	{ 
 		Start( mode == READ ); 
 	}

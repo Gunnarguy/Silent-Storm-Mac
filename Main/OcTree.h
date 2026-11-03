@@ -7,7 +7,7 @@
 // Retail v1.2 node shape: the Jan03 `CVec3 ptBase` was replaced by the cached bound sphere `s`
 // (PDB COcTreeNode: s@12, fSize@28, links@32, pUpLink@64). The serializer @0x167450 writes
 // {2 fSize, 10..17 links, 20 pUpLink, 21 s} -- tag 1 (ptBase) is READ-ONLY legacy for v1.0 saves,
-// rebuilt through the s.fRadius==0 sentinel. Dev's old tag-1 read left every node's base zeroed on
+// rebuilt through the s.fRadius==0 marker. Dev's old tag-1 read left every node's base zeroed on
 // a v1.2 load -> all static geometry collapsed onto origin-corner bound spheres -> whole-map
 // frustum culling by camera accident (the "void" saves). Same template also backs the NAI octree.
 template <class TFinal, int N_MIN_NODE>
@@ -83,7 +83,7 @@ public:
 			return links[nIdx]->GetNode( ptCenter, fRadius );
 		}
 	}
-	// retail @0x167450: writes {2,10..17,20,21}; tag 1 is read-only v1.0 legacy (sentinel rebuild)
+	// retail @0x167450: writes {2,10..17,20,21}; tag 1 is read-only v1.0 legacy (marker rebuild)
 	int operator&( CStructureSaver &f )
 	{
 		CVec3 vMin;

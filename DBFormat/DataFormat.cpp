@@ -24,7 +24,7 @@
 #include "DataChest.h"
 #include "DataPhys.h"
 
-#include "..\Misc\StrProc.h"
+#include "../Misc/StrProc.h"
 
 const int N_DEF_BUMP_ID = 606;
 static void ErrOut( const string &str, int nID )
@@ -525,7 +525,7 @@ void CSkeleton::Import()
 CAnimation* CSkeleton::GetAnimation( const CAnimation::EType nType, const int nFlags, 
 	const char *pszParams, int nClassSexFlags, CSide *pSide, bool bMostPossible ) const
 {
-	CAnimationMap::const_iterator it = pAnimations.find( nType );
+	typename CAnimationMap::const_iterator it = pAnimations.find( nType );
 	if ( it == pAnimations.end() )
 		return 0;
 	return it->second.GetAnimation( nFlags, pszParams, nClassSexFlags, pSide, bMostPossible );

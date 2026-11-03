@@ -15,7 +15,7 @@ struct SAlways
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CPath * CMultiMovesTable::ConstructPath( const SPathPlace &dst )
 {
-	CMultiMovesTable::CMovesHash::iterator k = data.find( dst );
+	typename CMultiMovesTable::CMovesHash::iterator k = data.find( dst );
 	if ( k == data.end() )
 		return 0;
 	list<SPathPlace> points;
@@ -23,14 +23,14 @@ CPath * CMultiMovesTable::ConstructPath( const SPathPlace &dst )
 	points.push_front( cur );
 	while ( cur.GetData() != src.GetData() )
 	{
-		CMultiMovesTable::CMovesHash::iterator k = data.find( cur );
+		typename CMultiMovesTable::CMovesHash::iterator k = data.find( cur );
 		ASSERT ( k != data.end() );
 		cur = k->second.parentPos;
 		points.push_front( cur );
 	}
 	CPath *pRes = new CPath;
 	pRes->pNet = pNet;
-	for ( list<SPathPlace>::iterator i = points.begin(); i != points.end(); ++i )
+	for ( typename list<SPathPlace>::iterator i = points.begin(); i != points.end(); ++i )
 		pRes->AddNewPoint( *i );
 
 	pRes->Improve( false, dst, pNet, PF_DEFAULT ); // CRAP - dst is not needed
@@ -64,7 +64,7 @@ void CMultiMovesTable::PrepareAllPaths( list<SPathPlace> *pRes,
 	if ( pRes == 0 )
 		return;
 	pRes->clear();
-	for ( CMultiMovesTable::CMovesHash::iterator k = data.begin(); k != data.end(); ++k )
+	for ( typename CMultiMovesTable::CMovesHash::iterator k = data.begin(); k != data.end(); ++k )
 	{
 		pRes->push_back( k->first );
 	}

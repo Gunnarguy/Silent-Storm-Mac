@@ -11,8 +11,8 @@
 #include "wUnitServer.h"
 #include "wMain.h"           // NWorld::CWorld::GetDiplomacyState
 //
-#include "..\DBFormat\DataRPG.h"   // NDb::EShootMode
-#include "..\DBFormat\DataMap.h"   // NDb::DS_ENEMY (EDiplomacyState)
+#include "../DBFormat/DataRPG.h"   // NDb::EShootMode
+#include "../DBFormat/DataMap.h"   // NDb::DS_ENEMY (EDiplomacyState)
 //
 #include "aiState.h"
 //
@@ -81,7 +81,7 @@ void SAIState::GetUnits( vector< CPtr<IAIUnit> > *pUnits, bool bAllies, bool bIn
 		return;
 	list< CPtr<NWorld::CUnitServer> > units;
 	pWorld->GetAllUnits( &units );
-	for ( list< CPtr<NWorld::CUnitServer> >::const_iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CPtr<NWorld::CUnitServer> >::const_iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( !IsValid( *i ) || !(*i)->CanFight() )
 			continue;
@@ -124,7 +124,7 @@ void SAIState::Synchronize()
 		return;
 	NWorld::CPlayer *pMyPlayer = pAICommander->GetPlayer();
 	const vector< CObj<IAIUnit> > &units = pAICommander->GetUnitsList();
-	for ( vector< CObj<IAIUnit> >::const_iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CObj<IAIUnit> >::const_iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( !IsValid( *i ) || !IsValid( (*i)->GetUnitServer() ) )
 			continue;
@@ -154,7 +154,7 @@ IAIUnit* SAIState::GetDangerousAttackableEnemy( IAIUnit *pAIUnit )
 	else
 		pEnemyUnits = pAlly->GetUnits();
 	//
-	for ( vector< CPtr<IAIUnit> >::iterator i = pEnemyUnits->begin(); i != pEnemyUnits->end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = pEnemyUnits->begin(); i != pEnemyUnits->end(); ++i )
 	{
 		CPtr<NWorld::CUnitServer> pUS = (*i)->GetUnitServer();
 		if ( IsValid( pUS ) && pUS->CanFight() )
@@ -175,7 +175,7 @@ IAIUnit* SAIState::GetDangerousAttackableEnemy( IAIUnit *pAIUnit )
 	//
 	int nBestD = -1;
 	CPtr<IAIUnit> pGoodEnemy;
-	for ( list< CPtr< IAIUnit > >::iterator i = goodEnemies.begin(); i != goodEnemies.end(); ++i )
+	for ( typename list< CPtr< IAIUnit > >::iterator i = goodEnemies.begin(); i != goodEnemies.end(); ++i )
 	{
 		int nD = 0, nMaxToHit, nHitCover;
 		NDb::EShootMode eTmpShootMode;
@@ -211,7 +211,7 @@ void SAIState::MakeEnemyGroups()
 	list< CPtr<NWorld::CUnitServer> > units;
 	vector< CPtr<NWorld::CUnitServer> > enemies, protectedUnits;
 	pWorld->GetAllUnits( &units );
-	for ( list< CPtr<NWorld::CUnitServer> >::const_iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CPtr<NWorld::CUnitServer> >::const_iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( !IsValid( *i ) || !(*i)->CanFight() )
 			continue;
@@ -253,7 +253,7 @@ int SAIState::GetEnemyHP()
 {
 	int nRes = 0;
 	vector< CPtr<IAIUnit> > *pUnits = pEnemy->GetUnits();
-	for ( vector< CPtr<IAIUnit> >::iterator i = pUnits->begin(); i != pUnits->end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = pUnits->begin(); i != pUnits->end(); ++i )
 		nRes += (*i)->GetHP();
 	//
 	return nRes;
@@ -263,7 +263,7 @@ int SAIState::GetAllyHP()
 {
 	int nRes = 0;
 	vector< CPtr<IAIUnit> > *pUnits = pAlly->GetUnits();
-	for ( vector< CPtr<IAIUnit> >::iterator i = pUnits->begin(); i != pUnits->end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = pUnits->begin(); i != pUnits->end(); ++i )
 		nRes += (*i)->GetHP();
 	//
 	return nRes;

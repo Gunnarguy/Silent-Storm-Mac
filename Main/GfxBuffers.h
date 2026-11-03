@@ -26,7 +26,7 @@ namespace NGfx
 		INPLACE,
 		INPLACE_READONLY
 	};
-	enum EFace
+	enum EFace : int
 	{
 		POSITIVE_X,
 		POSITIVE_Y,
@@ -217,7 +217,7 @@ class CTextureLock
 		char *pStart = (char*)pLock->GetBuffer();
 		int nStride = pLock->GetStride();
 		raws.resize( Max( 1, nYSize ) );
-		std::vector<void*>::iterator tek = raws.begin(), fin = raws.end();
+		typename std::vector<void*>::iterator tek = raws.begin(), fin = raws.end();
 		while ( tek != fin )
 		{
 			*tek++ = pStart;

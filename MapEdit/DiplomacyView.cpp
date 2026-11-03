@@ -2,9 +2,9 @@
 #include "mapedit.h"
 #include "DiplomacyView.h"
 #include "ItemsMgr.h"
-#include "..\Misc\StrProc.h"
-#include "..\Main\RPGDiplomacy.h"
-#include "..\DBFormat\DataMap.h"
+#include "../Misc/StrProc.h"
+#include "../Main/RPGDiplomacy.h"
+#include "../DBFormat/DataMap.h"
 #include "dbDefs.h"
 
 #ifdef _DEBUG
@@ -153,7 +153,7 @@ void CDiplomacyView::SetActiveDiplomacy( int nItemID )
 	m_wndList.EnableWindow( TRUE );
 	for ( int i = 0; i < N_PLAYERS; ++i )
 	{
-		CPropMap::const_iterator it = pProps->find( string( "Diplomacy" ) + IToA( i + 1 ) );
+		typename CPropMap::const_iterator it = pProps->find( string( "Diplomacy" ) + IToA( i + 1 ) );
 		if ( it == pProps->end() )
 			continue;
 		SetPlayerDiplomacy( i, (int)it->second->GetValue() );
@@ -179,7 +179,7 @@ void CDiplomacyView::SavePlayerDiplomacy( int nPlayer )
 	const CPropMap *pProps = pItems->GetPropList( nActiveDiplomacyID );
 	if ( !pProps )
 		return;
-	CPropMap::const_iterator it = pProps->find( string( "Diplomacy" ) + IToA( nPlayer + 1 ) );
+	typename CPropMap::const_iterator it = pProps->find( string( "Diplomacy" ) + IToA( nPlayer + 1 ) );
 	if ( it != pProps->end() )
 	{
 		NRPG::SDiplomacy sDiplomacy;

@@ -188,7 +188,7 @@ public:
 	void SetGlobalVar( const string &szName, const string &szValue ) { globalVars[ szName ] = szValue; }
 	string GetGlobalVar( const string &szName, const string &szDefault = "" )
 	{
-		unordered_map< string, string >::iterator it = globalVars.find( szName );
+		typename unordered_map< string, string >::iterator it = globalVars.find( szName );
 		return ( it != globalVars.end() ) ? it->second : szDefault;
 	}
 };

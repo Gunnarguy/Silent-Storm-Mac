@@ -220,6 +220,7 @@ public:
 		float fU2 = tPlace.vUVs[1].nU * (1.0f/NGfx::N_VEC_FULL_TEX_SIZE);
 		float fV2 = tPlace.vUVs[1].nV * (1.0f/NGfx::N_VEC_FULL_TEX_SIZE);
 		DWORD dwResColor = dwPColor;
+#if defined(_M_IX86)
 		__asm
 		{
 			mov eax, dwColor
@@ -247,6 +248,22 @@ public:
 			packuswb mm0, mm0
 			movd dwResColor, mm0
 		}
+#else
+		{
+			// exact C version of the MMX colour modulate: (colour * particle colour) scaled by alpha/2
+			s2mmx mm2 = movd_load( &dwColor ), mm3 = movd_load( &dwResColor );
+			DWORD dwA = dwColor >> 25;
+			DWORD dwK = dwA | ( dwA << 8 ) | ( dwA << 16 ) | 0x7f000000;
+			s2mmx mm0 = punpcklbw( ~0ull, mm2 ), mm1 = punpcklbw( ~0ull, mm3 );
+			mm0 = psrlw( mm0, 1 ); mm1 = psrlw( mm1, 1 );
+			mm0 = pmulhw( mm0, mm1 );
+			s2mmx mm6 = punpcklbw( ~0ull, (s2mmx)dwK );
+			mm0 = pmulhw( mm0, mm6 );
+			mm0 = psrlw( mm0, 5 );
+			mm0 = packuswb( mm0, mm0 );
+			dwResColor = (DWORD)mm0;
+		}
+#endif
 		StartMMXBound( &bcPart.ptMin, &bcPart.ptMax );
 		NGfx::SGeomVecT1C1 *pRes = &pWriteBuffer->res[pWriteBuffer->nTarget];
 		pWriteBuffer->nTarget += 4;

@@ -7,7 +7,7 @@
 #include "DG.h"
 #include "GResource.h"
 #include "GPixelFormat.h"
-#include "..\Misc\2DArray.h"
+#include "../Misc/2DArray.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGfx
 {
@@ -39,6 +39,9 @@ class CSWTexture : public CResourceLoader<int, CSWTextureData>
 	OBJECT_BASIC_METHODS(CSWTexture);
 	CObj<CFileRequest> pRequest;
 	bool bIsReady;
+#if defined(__APPLE__)
+	unsigned textureGeneration = 0;
+#endif
 	void LoadTexture();
 protected:
 	virtual void Recalc();

@@ -1,8 +1,8 @@
 #include "StdAfx.h"
 #include "GGeometry.h"
 #include "Bound.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
 #include "GGeometryUtil.h"
 
 namespace NGfx
@@ -61,7 +61,7 @@ void MergePositions( vector<WORD> *pMatches, vector<CVec3> *pPositions )
 	for ( int k = 0; k < positions.size(); ++k )
 	{
 		int nRes;
-		CPosHash::iterator i = posHash.find( positions[k] );
+		typename CPosHash::iterator i = posHash.find( positions[k] );
 		if ( i == posHash.end() )
 		{
 			nRes = mergedPositions.size();
@@ -257,7 +257,7 @@ void CObjectInfo::MergePositions()
 	{
 		int nRes;
 		SCompoundPosKey key( positions[k], weights[k] );
-		CPosHash::iterator i = posHash.find( key );
+		typename CPosHash::iterator i = posHash.find( key );
 		if ( i == posHash.end() )
 		{
 			nRes = mergedPositions.size();

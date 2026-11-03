@@ -6,7 +6,7 @@
 #include "ParamsView.h"
 #include "Attributes.h"
 #include "ItemsMgr.h"
-#include "..\Misc\StrProc.h"
+#include "../Misc/StrProc.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -77,7 +77,7 @@ void CParamsView::UpdateAttributes()
 	pAttrList->GetList( &attrs );
 
 	m_wndList.DeleteAllItems();
-	for ( CAttrMap::const_iterator i = attrs.begin(); i != attrs.end(); ++i )
+	for ( typename CAttrMap::const_iterator i = attrs.begin(); i != attrs.end(); ++i )
 		m_wndList.InsertItem( LVIF_TEXT | LVIF_PARAM, 0, i->first.c_str(), 0, 0, 0, i->second );		
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,7 +199,7 @@ void CParamsView::AddVariantFlags( int nVarID, const unordered_map<int, bool> &f
 	for ( int i = 0; i < nAttrs; ++i )
 	{
 		int nID = m_wndList.GetItemData( i );
-		unordered_map<int, bool>::const_iterator it = flags.find( nID );
+		typename unordered_map<int, bool>::const_iterator it = flags.find( nID );
 		if ( flags.end() == it || !it->second )
 			m_wndList.SetItemText( i, nSub, "-" );
 		else
@@ -225,7 +225,7 @@ void CParamsView::SetFlags( const string &szFlags )
 	for ( int i = 0; i < nAttrs; ++i )
 	{
 		CString szAttr = m_wndList.GetItemText( i, 0 );
-		vector<string>::const_iterator it = find( vStrings.begin(), vStrings.end(), (LPCSTR)szAttr );
+		typename vector<string>::const_iterator it = find( vStrings.begin(), vStrings.end(), (LPCSTR)szAttr );
 		if ( vStrings.end() == it )
 			m_wndList.SetItemText( i, nSub, "-" );
 		else

@@ -35,7 +35,7 @@ template<class TYPE> inline bool CHistory<TYPE>::CanForward() const
 {
 	if ( history.empty() || history.end() == activeIt )
 		return false;
-	vector<TYPE>::const_iterator it = activeIt;
+	typename vector<TYPE>::const_iterator it = activeIt;
 	if ( history.end() != ++it )
 		return true;
 	return false;
@@ -52,7 +52,7 @@ template<class TYPE> inline void CHistory<TYPE>::Push( const TYPE &event )
 {
 	if ( activeIt != history.end() )
 	{
-		vector<TYPE>::iterator it = activeIt;
+		typename vector<TYPE>::iterator it = activeIt;
 		++it;
 		history.erase( it, history.end() );
 	}
@@ -113,7 +113,7 @@ template<class TYPE> inline void CHistory<TYPE>::EraseTail()
 {
 	if ( activeIt != history.end() )
 	{
-		vector<TYPE>::iterator it = activeIt;
+		typename vector<TYPE>::iterator it = activeIt;
 		++it;
 		history.erase( it, history.end() );
 	}

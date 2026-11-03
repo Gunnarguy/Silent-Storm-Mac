@@ -1,13 +1,14 @@
 #ifndef _AI_MAP_COLOURER_H
 #define _AI_MAP_COLOURER_H
 
-#include "..\Misc\2DArray.h"
+#include "../Misc/2DArray.h"
 #include "aiMapProxy.h"
 #include "aiWaveSearch.h"
 #include "aiSimpleWaveSearch.h"
 
 namespace NAI
 {
+class CLayerColorConstraints;  // a friend declaration alone does not make the name visible in standard C++
 enum ESpecialColor
 {
 	EC_LADDER_COLOR = 32000,

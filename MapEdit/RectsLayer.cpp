@@ -11,8 +11,8 @@
 #include "ItemsMgr.h"
 #include "TreeSelItemDlg.h"
 #include "RouteDlg.h"
-#include "..\Input\Bind.h"
-#include "..\Main\iMain.h"
+#include "../Input/Bind.h"
+#include "../Main/iMain.h"
 
 BEGIN_MESSAGE_MAP(CRectsLayer, CLayerCtrl)
 //{{AFX_MSG_MAP(CRectsLayer)

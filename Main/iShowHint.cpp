@@ -2,12 +2,12 @@
 #include "Gfx.h"
 #include "iMain.h"
 #include "G2DView.h"
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"			// csSystem (the "Added N XP points for hint" log)
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
-#include "..\DBFormat\DataMisc.h"			// NDb::CUIHint (nSequenceID / pTitle / pString)
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"			// csSystem (the "Added N XP points for hint" log)
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
+#include "../DBFormat/DataMisc.h"			// NDb::CUIHint (nSequenceID / pTitle / pString)
 #include "Interface.h"
 #include "iCommonUI.h"
 #include "iMission.h"
@@ -152,6 +152,7 @@ public:
 	void Step();
 	void OnGetFocus();
 	bool ProcessEvent( const NInput::SEvent &eEvent );
+	void TestClose();   // macOS port test hook: console "hint_close" (same as the cancel binding)
 	void RenderFrame();
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -160,9 +161,11 @@ CShowHintInterface::CShowHintInterface():
 {
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+static CPtr<CShowHintInterface> s_pActiveHint;   // macOS port test hook target (weak)
 void CShowHintInterface::Initialize( IMission *_pMission, int _nEventID, NDb::CUIHint *_pHint,
 	NGScene::CScreenshotTexture *pScreenShotTexture )
 {
+	s_pActiveHint = this;
 	pMission = _pMission;
 	nEventID = _nEventID;
 	pHint = _pHint;
@@ -208,16 +211,32 @@ bool CShowHintInterface::ProcessEvent( const NInput::SEvent &sEvent )
 
 	if ( bindClose.ProcessEvent( sEvent ) )
 	{
-		// release @0x23a4a0: post the interface-event (carries nEventID) to the mission -- unblocks the lua
-		// WaitForUI(id) that queued this hint -- then tear down the modal.
-		if ( IsValid( pMission ) )
-			pMission->DoEvent( new NWorld::CCmdInterfaceEvent( nEventID ) );
-		NMainLoop::Command( new NMainLoop::CICExitModal() );
+		TestClose();
 		return true;
 	}
 
 	return false;
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void CShowHintInterface::TestClose()
+{
+	{
+		// release @0x23a4a0: post the interface-event (carries nEventID) to the mission -- unblocks the lua
+		// WaitForUI(id) that queued this hint -- then tear down the modal.
+		if ( IsValid( pMission ) )
+			pMission->DoEvent( new NWorld::CCmdInterfaceEvent( nEventID ) );
+		NMainLoop::Command( new NMainLoop::CICExitModal() );
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+static void HintCloseCmd( const string &, const vector<wstring> &, void * )
+{
+	if ( IsValid( s_pActiveHint ) ) { csSystem << "hint_close" << endl; s_pActiveHint->TestClose(); s_pActiveHint = 0; }
+	else csSystem << "hint_close: no hint open" << endl;
+}
+START_REGISTER(iShowHintTest)
+	REGISTER_CMD( "hint_close", HintCloseCmd )
+FINISH_REGISTER
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CShowHintInterface::RenderFrame()
 {

@@ -4,9 +4,9 @@
 #include "FontFormat.h"
 #include "GFont.h"
 #include "GLocale.h"
-#include "..\Misc\StrProc.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 ///
 #include "GSceneUtils.h"
 #include "Transform.h"
@@ -55,7 +55,7 @@ static void GetFontFormatInfo( NGScene::I2DGameView *pView, const NGScene::SFont
 	float fScale = (float)sSearch.nSize / pFontInfo->pInfo->GetLineSpace();
 	pFontInfo->scale.x = fScale;
 	pFontInfo->scale.y = fScale;
-	// WIDESCREEN (Sentinels @0x44cbcc-0x44cbdc): scale.y = fScale * (vp.y/vp.x) * 4/3, so glyph
+	// WIDESCREEN: scale.y = fScale * (vp.y/vp.x) * 4/3, so glyph
 	// height tracks vp.y/768 while width keeps vp.x/1024. Gated wider-than-4:3 => 4:3/5:4 bit-identical.
 	if ( vScreen.x * 3.0f > vScreen.y * 4.0f )
 		pFontInfo->scale.y = fScale * ( vScreen.y * 1024.0f ) / ( vScreen.x * 768.0f );
@@ -135,7 +135,7 @@ void CMLTextObject::Generate( NGScene::I2DGameView *pView )
 	// outline border in screen pixels: nOutlineBorder * viewportW / 1024 (retail @0x7218e0)
 	const CVec2 vScreen = pView->GetViewportSize();
 	const float fS = float( sState.nOutlineBorder ) * vScreen.x / 1024.0f;
-	// WIDESCREEN (Sentinels @0x44cd34-0x44cd3e): the ring's vertical offset scales by vp.y/768
+	// WIDESCREEN: the ring's vertical offset scales by vp.y/768
 	const float fSY = ( vScreen.x * 3.0f > vScreen.y * 4.0f )
 		? float( sState.nOutlineBorder ) * vScreen.y / 768.0f : fS;
 
@@ -233,7 +233,7 @@ void CMLTextObject::Render( list<CTRect<float> > *pRender, const CTPoint<float> 
 	const float fPosY = sGlobalPosition.y + sPosition.y;
 
 	float fLastX = 0;
-	for ( list<float>::const_iterator iTemp = edges.begin(); iTemp != edges.end(); iTemp++ )
+	for ( typename list<float>::const_iterator iTemp = edges.begin(); iTemp != edges.end(); iTemp++ )
 	{
 		pRender->push_back( CTRect<float>( fLastX + fPosX, fPosY, *iTemp + fPosX, sSize.y + fPosY ) );
 		fLastX = *iTemp;
@@ -548,7 +548,7 @@ void CMLLayout::SetState( const SState &_sState )
 // plain float store of (fMaxX, fY) -- no rounding anywhere in the reflow.
 void CMLLayout::Generate( NGScene::I2DGameView *pView, float fWidth )
 {
-	for( list<SCmdPair>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+	for( typename list<SCmdPair>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 	{
 		CPtr<IMLObject> pObject = iTemp->pObject;
 
@@ -563,7 +563,7 @@ void CMLLayout::Generate( NGScene::I2DGameView *pView, float fWidth )
 	sInfo.fLastLineHeight = 0;
 	sInfo.sLeft = SRange( 0, -1.0f );
 	sInfo.sRight = SRange( fWidth, -1.0f );
-	for( list<SCmdPair>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+	for( typename list<SCmdPair>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 	{
 		ECommand eCommand = iTemp->eCmd;
 		if ( eCommand == CMD_BREAKLINE )
@@ -626,7 +626,7 @@ void CMLLayout::Generate( NGScene::I2DGameView *pView, float fWidth )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CMLLayout::Render( list<CTRect<float> > *pRender, const CTPoint<float> &sPosition, const CTRect<float> &sWindow )
 {
-	for( list<SCmdPair>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+	for( typename list<SCmdPair>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 	{
 		CPtr<IMLObject> pObject = iTemp->pObject;
 
@@ -637,7 +637,7 @@ void CMLLayout::Render( list<CTRect<float> > *pRender, const CTPoint<float> &sPo
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CMLLayout::Render( NGScene::I2DGameView *pView, const CTPoint<float> &sPosition, const CTRect<float> &sWindow )
 {
-	for( list<SCmdPair>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+	for( typename list<SCmdPair>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 	{
 		CPtr<IMLObject> pObject = iTemp->pObject;
 
@@ -698,7 +698,7 @@ void CMLLayout::AssembleLine( SReflowInfo *pInfo )
 		break;
 	}
 
-	for( list<CPtr<IMLObject> >::iterator iTemp = pInfo->line.begin(); iTemp != pInfo->line.end(); iTemp++ )
+	for( typename list<CPtr<IMLObject> >::iterator iTemp = pInfo->line.begin(); iTemp != pInfo->line.end(); iTemp++ )
 	{
 		const CTPoint<float> &sSize = (*iTemp)->GetSize();
 		SState::EVERTAlign eVAlign = (*iTemp)->GetState().eVAlign;
@@ -725,7 +725,7 @@ void CMLLayout::AssembleLine( SReflowInfo *pInfo )
 // retail @0x321b50 (float throughout)
 void CMLLayout::ProcessWraped( SReflowInfo *pInfo )
 {
-	for( list<CPtr<IMLObject> >::iterator iTemp = pInfo->leftWraped.begin(); iTemp != pInfo->leftWraped.end(); iTemp++ )
+	for( typename list<CPtr<IMLObject> >::iterator iTemp = pInfo->leftWraped.begin(); iTemp != pInfo->leftWraped.end(); iTemp++ )
 	{
 		const CTPoint<float> &sSize = (*iTemp)->GetSize();
 
@@ -735,7 +735,7 @@ void CMLLayout::ProcessWraped( SReflowInfo *pInfo )
 		pInfo->sLeft.fValue += sSize.x;
 		pInfo->sLeft.fHeight = max( pInfo->sLeft.fHeight, sSize.y + pInfo->fY );
 	}
-	for( list<CPtr<IMLObject> >::iterator iTemp = pInfo->rightWraped.begin(); iTemp != pInfo->rightWraped.end(); iTemp++ )
+	for( typename list<CPtr<IMLObject> >::iterator iTemp = pInfo->rightWraped.begin(); iTemp != pInfo->rightWraped.end(); iTemp++ )
 	{
 		const CTPoint<float> &sSize = (*iTemp)->GetSize();
 
@@ -915,7 +915,7 @@ void CML::Generate( NGScene::I2DGameView *pView, int nWidth )
 			bTAG = false;
 			if ( !paramsSet.empty() )
 			{
-				unordered_map<wstring,CObj<IMLHandler> >::const_iterator iTemp = tagsMap.find( paramsSet.front() );
+				typename unordered_map<wstring,CObj<IMLHandler> >::const_iterator iTemp = tagsMap.find( paramsSet.front() );
 				if ( ( iTemp != tagsMap.end() ) && ( iTemp->second != 0 ) )
 					iTemp->second->Exec( this, pLayout, paramsSet );
 			}

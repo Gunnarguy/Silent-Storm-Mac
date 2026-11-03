@@ -1,8 +1,8 @@
 #ifndef __WALLS_H__
 #define __WALLS_H__
 
-#include "..\Misc\Geom.h"
-#include "..\Main\BuildingInfo.h"
+#include "../Misc/Geom.h"
+#include "../Main/BuildingInfo.h"
 #include <map>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -33,7 +33,7 @@ class CWallsPlan : public CObjectBase
   int     nID;
   int     nFloor;
 	CWallHash wallHash;
-	CWallHash::const_iterator itCurrent;
+	typename CWallHash::const_iterator itCurrent;
 
 	CDGPtr< CPtrFuncBase<NBuilding::CBuildInfo> > pBuildInfo;
 	const CPlacement *pPlacement;

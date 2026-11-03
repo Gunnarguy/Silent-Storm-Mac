@@ -72,7 +72,7 @@ void CUnitMissionForMedals::AddMedalPoints()
 // release linear scan `for ( it = begin; it != end && *it != pAttack; ++it )`.
 static bool AlreadyRecorded( const vector<CPtr<IUnitMission> > &list, IUnitMission *pAttack )
 {
-	for ( vector<CPtr<IUnitMission> >::const_iterator i = list.begin(); i != list.end(); ++i )
+	for ( typename vector<CPtr<IUnitMission> >::const_iterator i = list.begin(); i != list.end(); ++i )
 	{
 		if ( i->GetPtr() == pAttack )
 			return true;
@@ -106,7 +106,7 @@ void CUnitMissionForMedals::Segment()
 	if ( !bFinished )
 		return;
 	// Still pending while ANY awaited bullet is a live object (non-null, destroyed-bit clear).
-	for ( vector<CPtr<CObjectBase> >::iterator i = waitForBullets.begin(); i != waitForBullets.end(); ++i )
+	for ( typename vector<CPtr<CObjectBase> >::iterator i = waitForBullets.begin(); i != waitForBullets.end(); ++i )
 	{
 		if ( IsValid( *i ) )
 			return;

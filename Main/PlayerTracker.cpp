@@ -7,9 +7,9 @@
 #include "RPGMerc.h"
 #include "RPGGlobal.h"
 #include "RPGUnitInfo.h"
-#include "..\Misc\StrProc.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../Misc/StrProc.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataFormat.h"
 #include "aiPath.h"
 #include "Interface.h"
 #include "iMission.h"
@@ -116,7 +116,7 @@ void CPlayerTracker::GetUnits( vector< CPtr<IUnitTracker> > *pUnits ) const
 void CPlayerTracker::GetSelectedUnits( vector< CPtr<IUnitTracker> > *pUnits ) const
 {
 	pUnits->reserve( unitsSet.size() );
-	for ( vector< CObj<CUnitTracker> >::const_iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CObj<CUnitTracker> >::const_iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 	{
 		if ( (*iTemp)->IsSelected() )
 			pUnits->push_back( (*iTemp).GetPtr() );

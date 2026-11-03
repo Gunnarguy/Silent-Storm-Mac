@@ -3,11 +3,11 @@
 #include "LSHead.h"        // NLSHead::CHeadInfo complete type (SetHead / GetHead)
 #include "RPGItemSet.h"
 #include "A5Script.h"
-#include "..\Misc\RandomGen.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataChest.h"	// NDb::CRPGChestReal / SLootItem (ctor pBackpack consumption)
+#include "../Misc/RandomGen.h"
+#include "../MiscDll/LogStream.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataChest.h"	// NDb::CRPGChestReal / SLootItem (ctor pBackpack consumption)
 #include "rpgPerk.h"
 #include "rpgPerkConstants.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -292,6 +292,7 @@ CUnit::CUnit( NDb::CRPGPers *_pPers, NDb::CComplexHead *_pHead, bool _bHero, NDb
 	if ( IsValid( pPers->pPanzerklein ) ) 
 		pInventory->SetPanzerklein( pPers->pPanzerklein, 0 );
 	pDefaultWeapon = dynamic_cast<CMeleeWeaponItem*>( CreateMeleeWeaponItem( NDb::GetMeleeWeapon( N_DEFAULT_WEAPON_ID ) ) );
+	pDefaultWeaponHold = pDefaultWeapon.GetPtr();
 
 	//pInventory->Equip( NDb::SLOT_WEAPON, CreateWeaponItem( pPers->pWeapon ) );
 	vector< CPtr<IInventoryItem> > items;
@@ -324,7 +325,7 @@ CUnit::CUnit( NDb::CRPGPers *_pPers, NDb::CComplexHead *_pHead, bool _bHero, NDb
 	// list; the pers list fills the backpack only when no chest was rolled.
 	if ( IsValid( _pBackpack ) )
 	{
-		for ( vector<NDb::SLootItem>::const_iterator it = _pBackpack->items.begin(); it != _pBackpack->items.end(); ++it )
+		for ( typename vector<NDb::SLootItem>::const_iterator it = _pBackpack->items.begin(); it != _pBackpack->items.end(); ++it )
 		{
 			if ( !IsValid( it->pItem ) || !IsValid( it->pItem->pSuccessor ) )
 				continue;
@@ -337,7 +338,7 @@ CUnit::CUnit( NDb::CRPGPers *_pPers, NDb::CComplexHead *_pHead, bool _bHero, NDb
 		}
 	}
 	else
-	for ( vector<NDb::SItemAssign>::const_iterator it = pPers->items.begin(); it != pPers->items.end(); ++it )
+	for ( typename vector<NDb::SItemAssign>::const_iterator it = pPers->items.begin(); it != pPers->items.end(); ++it )
 	{
 		const NDb::SItemAssign &assign = *it;
 		for( int i = 0; i < assign.nQuantity; ++i )
@@ -514,6 +515,11 @@ void CUnit::AddXP( float fXPToAdd )
 			pPerksTree->AddPerkPoints( nNewLevel - nOldLevel );
 		csRPG << CC_YELLOW << pPers->pName->szStr << " level up ( " << Skills( NDb::ST_LEVEL ) << "-th level )" << endl;
 	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+float CSkilledObject::GetSkillCapByXP( int eSkill ) const
+{
+	return fXP <= 0 ? 0.f : log( 1.f + 0.02f * fXP ) * ( 1.f / (20.f * LN161 / float(cap[eSkill])) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Retail v1.2 0x6bbff0: use the fractional XP cap and DB-defined training rate.
@@ -697,6 +703,10 @@ CWeaponItem* CUnit::GetWeaponItem() const
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CMeleeWeaponItem* CUnit::GetMeleeWeaponItem() const
 {
+	// pDefaultWeapon is a weak CPtr with no owner: the first temporary CObj around the fists (an unarmed AI unit's melee
+	// command) destroyed them, and the next to-hit read through the cleared record.
+	if ( !IsValid( pDefaultWeaponHold ) )
+		pDefaultWeaponHold = pDefaultWeapon.GetPtr();
 	IInventoryItem *pItem = pInventory->GetActive();
 	if ( !pItem )
 		return pDefaultWeapon;

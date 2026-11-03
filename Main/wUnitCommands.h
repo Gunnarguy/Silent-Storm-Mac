@@ -8,7 +8,7 @@
 #include "weActiveItem.h"
 namespace NDb
 {
-	enum EShootMode;
+	enum EShootMode : int;
 }
 namespace NRPG
 {
@@ -16,7 +16,7 @@ namespace NRPG
 	class IWeaponItemInfo;
 	class IInventoryItem;
 	class IGrenadeItemInfo;
-	enum EGrenadeMode;
+	enum EGrenadeMode : int;
 }
 namespace NWorld
 {
@@ -26,7 +26,7 @@ class CUnit;
 class CUnitServer;
 class IPassageObject;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EUnitCommandResult
+enum EUnitCommandResult : int
 {
 	// Retail wire values: SActionInfo stores this enum verbatim. Numeric order
 	// also determines the result priority when probing multiple selected units.

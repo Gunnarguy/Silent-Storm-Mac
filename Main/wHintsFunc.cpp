@@ -25,7 +25,7 @@ void FindClosePositionOnSurface( IAIMap *pMap, const CVec3 &ptFrom, CVec3 *pRes 
 	pMap->Trace( ray, &hits, 0x8000 );	// hg / shg defaults (shg == STH_UNION_TERR_HG, retail arg 1)
 	// res.z = highest surface below the origin; enter.fT is the depth along the (downward) ray
 	bool bFirst = true;
-	for ( vector<SInterval>::const_iterator it = hits.begin(); it != hits.end(); ++it )
+	for ( typename vector<SInterval>::const_iterator it = hits.begin(); it != hits.end(); ++it )
 	{
 		const float fDepth = it->enter.fT;
 		if ( fDepth < 0 )
@@ -48,7 +48,7 @@ namespace NWorld
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void PlaceHintsToMap( CDebrisController *pDebris, NAI::IAIMap *pMap, const vector<SHintSlot> &hints )
 {
-	for ( vector<SHintSlot>::const_iterator slot = hints.begin(); slot != hints.end(); ++slot )
+	for ( typename vector<SHintSlot>::const_iterator slot = hints.begin(); slot != hints.end(); ++slot )
 	{
 		// CPtr does the retail AddRef-on-create / ReleaseRef-on-exit (dead items are released too).
 		CPtr<NRPG::IInventoryItem> pItem = NRPG::CreateHintItem();

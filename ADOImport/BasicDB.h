@@ -4,8 +4,8 @@
 #pragma once
 #endif // _MSC_VER > 1000
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "..\Misc\basic2.h"
-#include "..\FileIO\BasicChunk1.h"
+#include "../Misc/basic2.h"
+#include "../FileIO/BasicChunk1.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class CDBRecord;
 namespace NDatabase {
@@ -39,8 +39,11 @@ public:
 	CDBPtr() {}
 	CDBPtr( T *_ptr ): CBase( _ptr ) {}
 	CDBPtr( const CDBPtr &a ): CBase( a.Get() ) {}
-	CDBPtr& operator=( T *_ptr ) { Set( _ptr ); return *this; }
-	CDBPtr& operator=( const CDBPtr &a ) { SetObject( a.Get() ); return *this; }
+	CDBPtr& operator=( T *_ptr ) { this->Set( _ptr ); return *this; }
+	// MSVC accepted copy-init through two user conversions (CPtr<T> -> T* -> CDBPtr<T>)
+	template<class TOther> CDBPtr( const TOther &a, typename std::enable_if<!std::is_same<TOther, CDBPtr>::value && std::is_convertible<const TOther&, T*>::value, int>::type = 0 ): CBase( (T*)a ) {}
+	template<class TOther> typename std::enable_if<!std::is_same<TOther, CDBPtr>::value && std::is_convertible<const TOther&, T*>::value, CDBPtr&>::type operator=( const TOther &a ) { this->Set( (T*)a ); return *this; }
+	CDBPtr& operator=( const CDBPtr &a ) { this->SetObject( a.Get() ); return *this; }
 	//
 	int operator&( CStructureSaver &f ) 
 	{ 
@@ -59,11 +62,11 @@ public:
 				ASSERT( pTable );
 				if ( pTable )
 					*this = ( pTable->GetRecord( nID ) );
-				ASSERT( nID == -1 || GetPtr() );
+				ASSERT( nID == -1 || this->GetPtr() );
 			}
 			else
 			{
-				CDBRecord *pRec = (CDBRecord*)GetPtr();
+				CDBRecord *pRec = (CDBRecord*)this->GetPtr();
 				int nID = pRec ? pRec->GetRecordID() : -1;
 				f.Add( 1, &nID );
 			}
@@ -110,7 +113,7 @@ public:
 class CDBIteratorBase
 {
   const CDBTableBase &table;
-  CDBTableBase::CRecordHash::const_iterator i;
+  typename CDBTableBase::CRecordHash::const_iterator i;
 protected:
   CDBRecord* Get() const { return i->second; }
   CDBIteratorBase( const CDBTableBase &t ): table(t) { MoveFirst(); }
@@ -189,9 +192,9 @@ namespace NDatabase
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define REGISTER_DATABASE_CLASS( N, table, name ) NDatabase::AddTable( N, table, \
-(NDatabase::RecordCreateFunc)name##::New##name );
+(NDatabase::RecordCreateFunc)name::New##name );
 #define REGISTER_DATABASE_CLASS_TEMPL( N, table, name,className ) NDatabase::AddTable( N, table, \
-(NDatabase::RecordCreateFunc)name##::New##className );
+(NDatabase::RecordCreateFunc)name::New##className );
 #define REGISTER_DATABASE_RELATION( table ) NDatabase::AddRelation( table );
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #endif

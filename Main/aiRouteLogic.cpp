@@ -36,7 +36,7 @@ void CTaskCommandLookToPosition::Do()
 	if ( !IsValid( pUnitServer ) )
 		return;
 	SUnitPosition cur = pUnitServer->GetPosition();
-	// a real (non-sentinel) current place: pose bits 30-31 not both set (the decode's 0xc0000000 gate)
+	// a real (non-marker) current place: pose bits 30-31 not both set (the decode's 0xc0000000 gate)
 	if ( ( (unsigned)cur.pos.p.GetData() & 0xc0000000u ) != 0xc0000000u )
 	{
 		IPathNetwork *pNet = pUnitServer->GetWorld()->GetPathNetwork();
@@ -484,7 +484,7 @@ IAILogic* CreateAICheckPositionLogic( IAIUnit *pUnit, CUnitArea *pArea, const SP
 	// optional hide prefix (hide-probability roll)
 	if ( random.Get( 0, 99 ) < (unsigned)pUnit->GetHideProbability() )
 		cmds.push_back( new CTaskCommandHide() );
-	SPathPlace checkPlace( (int)0xfdffffff );   // SPathPlace(int) ctor (nData is private) -- the invalid sentinel
+	SPathPlace checkPlace( (int)0xfdffffff );   // SPathPlace(int) ctor (nData is private) -- the invalid marker
 	if ( GetCheckPosition( pUnit, pArea, pos, &checkPlace ) )
 	{
 		if ( HasPath( pUnit, pUnit->GetUnitPosition().pos.p, checkPlace, RUN, false ) )

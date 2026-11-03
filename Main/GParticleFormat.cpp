@@ -102,11 +102,11 @@ void CParticlesLoader::RecalcValue( CFileRequest *pRequest )
 	for ( int nP = 0; nP < pValue->nParticles; ++nP )
 	{
 		SParticle &particle = pValue->particles[nP];
-		particle.pos.keys = (TKey<CVec3>*)(pData + (int)particle.pos.keys);
-		particle.rot.keys = (TKey<float>*)(pData + (int)particle.rot.keys);
-		particle.scale.keys = (TKey<CVec2>*)(pData + (int)particle.scale.keys);
-		particle.color.keys = (TKey<DWORD>*)(pData + (int)particle.color.keys);
-		particle.sprite.keys = (TKey<short>*)(pData + (int)particle.sprite.keys);
+		particle.pos.keys = (TKey<CVec3>*)(pData + particle.pos.RawFileOffset());
+		particle.rot.keys = (TKey<float>*)(pData + particle.rot.RawFileOffset());
+		particle.scale.keys = (TKey<CVec2>*)(pData + particle.scale.RawFileOffset());
+		particle.color.keys = (TKey<DWORD>*)(pData + particle.color.RawFileOffset());
+		particle.sprite.keys = (TKey<short>*)(pData + particle.sprite.RawFileOffset());
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -140,11 +140,11 @@ void CParticlesLoader::Recalc()
 		for ( int nP = 0; nP < pValue->nParticles; ++nP )
 		{
 			SParticle &particle = pValue->particles[nP];
-			particle.pos.keys = (TKey<CVec3>*)(pData + (int)particle.pos.keys);
-			particle.rot.keys = (TKey<float>*)(pData + (int)particle.rot.keys);
-			particle.scale.keys = (TKey<CVec2>*)(pData + (int)particle.scale.keys);
-			particle.color.keys = (TKey<DWORD>*)(pData + (int)particle.color.keys);
-			particle.sprite.keys = (TKey<short>*)(pData + (int)particle.sprite.keys);
+			particle.pos.keys = (TKey<CVec3>*)(pData + particle.pos.RawFileOffset());
+			particle.rot.keys = (TKey<float>*)(pData + particle.rot.RawFileOffset());
+			particle.scale.keys = (TKey<CVec2>*)(pData + particle.scale.RawFileOffset());
+			particle.color.keys = (TKey<DWORD>*)(pData + particle.color.RawFileOffset());
+			particle.sprite.keys = (TKey<short>*)(pData + particle.sprite.RawFileOffset());
 		}
 	}
 	catch(...)

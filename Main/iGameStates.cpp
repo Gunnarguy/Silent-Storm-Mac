@@ -14,19 +14,19 @@
 #include "RPGGlobal.h"
 #include "RPGItemInfo.h"
 #include "RPGUnitInfo.h"
-#include "..\Input\Bind.h"
+#include "../Input/Bind.h"
 #include "Interface.h"
 #include "iMission.h"
 #include "iChapterMap.h"
 #include "iOptionsMenu.h"
 #include "iGameStates.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataSound.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataSound.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
 #include "iMissionUI.h"
 #include "iCommonUI.h"			// NUI::CSlotInfo -- the drag-drop slot target descriptor (CStateDragItem::GetTargetCmd @0x1dc960)
 #include "UICommCtrls.h"		// NUI::CTextFrame -- the retail unit-hover tooltip window ("enemyToolTip")
@@ -148,7 +148,7 @@ static void SayAckForAll( IMission *pMission, NWorld::EInterfaceAcks eAck )
 {
 	vector< CPtr<NGame::IUnitTracker> > unitsSet;
 	pMission->GetSelectedUnits( &unitsSet );
-	for ( vector< CPtr<NGame::IUnitTracker> >::iterator i = unitsSet.begin(); i != unitsSet.end(); ++i )
+	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator i = unitsSet.begin(); i != unitsSet.end(); ++i )
 		pMission->DoEvent( new NWorld::CCmdPlayAck( (*i)->GetUnit(), eAck ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -552,12 +552,12 @@ bool CStateFriend::OnLButtonUp( int nX, int nY )
 	GetMission()->CanDoCommand( pProbe, false, &sInfo );
 	if ( sInfo.eResult == NWorld::UCR_OK )
 	{
-		for ( vector< CPtr<NGame::IUnitTracker> >::iterator i = unitsSet.begin(); i != unitsSet.end(); ++i )
+		for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator i = unitsSet.begin(); i != unitsSet.end(); ++i )
 			GetMission()->Command( (*i)->GetUnit(), new NWorld::CCmdTalk( pUnit ) );
 	}
 	else if ( sInfo.eResult == NWorld::UCR_NOT_HERO )
 	{
-		for ( vector< CPtr<NGame::IUnitTracker> >::iterator i = unitsSet.begin(); i != unitsSet.end(); ++i )
+		for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator i = unitsSet.begin(); i != unitsSet.end(); ++i )
 			GetMission()->Command( (*i)->GetUnit(), new NWorld::CCmdNotHeroWantsToTalk() );
 	}
 	else if ( !unitsSet.empty() )
@@ -680,7 +680,7 @@ void CStateMove::DoMove( bool bInstant, bool bRun )
 		return;
 	}
 	vector< NAI::SPosition > unitPlaces;
-	for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 	{
 		NAI::SPosition posUnit = (*iTemp)->GetUnit()->GetPosition().pos;
 		unitPlaces.push_back( posUnit );
@@ -843,7 +843,7 @@ bool CStateAttack::OnLButtonUp( int nX, int nY )
 
 	vector< CPtr<NGame::IUnitTracker> > unitsSet;
 	GetMission()->GetSelectedUnits( &unitsSet );
-	for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 		GetMission()->Command( (*iTemp)->GetUnit(), pCmd );
 
 	// retail plays NO success confirmation for an attack order ("order acknowledged" is
@@ -1011,7 +1011,7 @@ void CStateAttack::UpdateCursorInfo()
 		int nMin = 100, nMax = -1;
 		vector< CPtr<NGame::IUnitTracker> > unitsSet;
 		GetMission()->GetSelectedUnits( &unitsSet );
-		for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+		for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 		{
 			CPtr<NWorld::IWorld> pWorld = GetMission()->GetWorld();
 
@@ -1033,7 +1033,7 @@ void CStateAttack::UpdateCursorInfo()
 					pTileCmd->ptTarget, NAI::THL_MIDDLE, false );
 			}
 
-			// retail UpdateCursorInfo @0x1da200: the composite to-hit returns the -1 sentinel for an
+			// retail UpdateCursorInfo @0x1da200: the composite to-hit returns the -1 marker for an
 			// impossible attack (melee swing out of arm's reach, blocked direction); such units are
 			// EXCLUDED from the min/max fold, and when EVERY selected unit reports -1 no percentage
 			// is shown at all (`if (iVar6 != -1)` around the fold, `if (iVar9 != -1)` around the print).
@@ -1708,7 +1708,7 @@ bool CStateUntrap::OnLButtonUp( int nX, int nY )
 	vector< CPtr<NGame::IUnitTracker> > unitsSet;
 	GetMission()->GetSelectedUnits( &unitsSet );
 
-	for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 		GetMission()->Command( (*iTemp)->GetUnit(), pCmd );
 
 	if ( GetType() == FORCED )
@@ -1796,7 +1796,7 @@ void CStateSelection::Handle()
 
 	vector<CPtr<NGame::IUnitTracker> > unitsSet;
 	GetMission()->GetUnits( &unitsSet );
-	for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 	{
 		CVec2 vScreenPos;
 		if ( !TestRayInFrustrum( (*iTemp)->GetUnit()->GetPosition().GetCP(), &sTS, vScreenRect, &vScreenPos ) )
@@ -1911,7 +1911,7 @@ bool CStateRotate::OnLButtonUp( int nX, int nY )
 	if ( !GetMission()->GetTracePosition( &pos ) )
 		return true;
 
-	for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 	{
 		NAI::EDirection eDir = GetMission()->GetWorld()->GetPathNetwork()->GetClosestDir( (*iTemp)->GetUnit()->GetPosition().pos.p, pos.p );
 		NAI::SPosition sPos = (*iTemp)->GetUnit()->GetPosition().pos;
@@ -2002,7 +2002,7 @@ bool CStateSetTrap::OnLButtonUp( int nX, int nY )
 	vector< CPtr<NGame::IUnitTracker> > unitsSet;
 	GetMission()->GetSelectedUnits( &unitsSet );
 
-	for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 		GetMission()->Command( (*iTemp)->GetUnit(), pCmd );
 
 	SayAckForAll( GetMission(), NWorld::IA_CONFIRMATION );	// retail: set-trap is a go-there order
@@ -2063,7 +2063,7 @@ bool CStateSetMine::OnLButtonUp( int nX, int nY )
 	vector< CPtr<NGame::IUnitTracker> > unitsSet;
 	GetMission()->GetSelectedUnits( &unitsSet );
 
-	for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 		GetMission()->Command( (*iTemp)->GetUnit(), pCmd );
 
 	SayAckForAll( GetMission(), NWorld::IA_CONFIRMATION );	// retail: set-mine is a go-there order
@@ -2169,7 +2169,7 @@ bool CStateFirstAid::OnLButtonUp( int nX, int nY )
 	vector< CPtr<NGame::IUnitTracker> > unitsSet;
 	GetMission()->GetSelectedUnits( &unitsSet );
 
-	for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 		GetMission()->Command( (*iTemp)->GetUnit(), pCmd );
 
 	SayAckForAll( GetMission(), NWorld::IA_CONFIRMATION );	// retail: first-aid is a go-there order
@@ -2250,7 +2250,7 @@ bool CStatePose::Initialize( IMission *pMission )
 
 	vector< CPtr<NGame::IUnitTracker> > unitsSet;
 	pMission->GetSelectedUnits( &unitsSet );
-	for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 	{
 		// retail @0x1db700 anchors the re-path on GetSetPosePosition (CUnit vtbl+0x48), NOT GetPosition:
 		// a moving unit re-paths from the tile it is stepping INTO, not backwards to the one it left.
@@ -2277,7 +2277,7 @@ bool CStateDropCorpse::Initialize( IMission *pMission )
 
 	vector< CPtr<NGame::IUnitTracker> > unitsSet;
 	GetMission()->GetSelectedUnits( &unitsSet );
-	for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 	{
 		if ( (*iTemp)->GetUnit()->IsCarryingCorpse() )
 			GetMission()->Command( (*iTemp)->GetUnit(), new NWorld::CCmdDropCorpse );

@@ -2,7 +2,7 @@
 #include "GPixelFormat.h"
 #include "mmpFormat.h"
 #include "SWTexture.h"
-#include "..\Misc\StrProc.h"
+#include "../Misc/StrProc.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
 {
@@ -47,6 +47,16 @@ static void CreateChecker( CSWTextureData *pTexture )
 bool CSWTexture::IsReady()
 { 
 	Touch();
+#if defined(__APPLE__)
+	if (textureGeneration != TextureSourceGeneration())
+	{
+		textureGeneration = TextureSourceGeneration();
+		pRequest = 0;
+		pValue = 0;
+		bIsReady = false;
+		Updated();
+	}
+#endif
 	if ( bIsReady )
 		return true;
 	if ( IsValid(pRequest) )
@@ -72,6 +82,11 @@ void CSWTexture::LoadTexture()
 		CFileRequest &file = *pRequest;
 		SMMPFileHeader hdr;
 		file->Read( &hdr, sizeof(hdr) );
+#if defined(__APPLE__)
+		static const bool bLog = getenv( "S2_LOG_TEXTURES" ) != 0;
+		if ( bLog )
+			fprintf( stderr, "[swtexture] %d %dx%d fmt %d\n", GetKey(), hdr.nSizeX, hdr.nSizeY, (int)hdr.format );
+#endif
 
 		// fill with data
 		switch ( hdr.format )
@@ -158,6 +173,7 @@ void CBilinearTexture::Recalc()
 		nUPos = 0;
 		NGfx::SPixel8888 *pPictureSrc = &pic[ nVPos >> 15 ][0];
 		NGfx::SPixel8888 *pDst = &pValue->mips[0][y][0];
+#if defined(_M_IX86)
 		__asm
 		{
 			movd mm4, nYMul
@@ -167,10 +183,16 @@ void CBilinearTexture::Recalc()
 			punpckldq mm4, mm4
 			punpckldq mm5, mm5
 		}
+#else
+		s2mmx mm4 = (uint32_t)nYMul, mm5 = (uint32_t)nYMul1;
+		mm4 = punpckldq( punpcklwd( mm4, mm4 ), punpcklwd( mm4, mm4 ) );
+		mm5 = punpckldq( punpcklwd( mm5, mm5 ), punpcklwd( mm5, mm5 ) );
+#endif
 		for ( int x = 0; x < nXSize; ++x )
 		{
 			int nXMul = ( nUPos & 0x7fff );
 			NGfx::SPixel8888 *pSrc = &pPictureSrc[nUPos>>15];
+#if defined(_M_IX86)
 			__asm
 			{
 				mov esi, pSrc
@@ -210,12 +232,35 @@ void CBilinearTexture::Recalc()
 				packuswb mm0, mm0
 				movd [esi], mm0
 			}
+#else
+			{
+				// exact C version of the MMX bilinear sample
+				s2mmx mm6 = (uint32_t)nXMul;
+				mm6 = punpckldq( punpcklwd( mm6, mm6 ), punpcklwd( mm6, mm6 ) );
+				const BYTE *pRow = (const BYTE*)pSrc;
+				s2mmx mm0 = punpcklbw( 0, movd_load( pRow ) );
+				s2mmx mm1 = punpcklbw( 0, movd_load( pRow + 4 ) );
+				s2mmx mm2 = punpcklbw( 0, movd_load( pRow + nNextY ) );
+				s2mmx mm3 = punpcklbw( 0, movd_load( pRow + nNextY + 4 ) );
+				mm0 = psrlw( mm0, 1 ); mm1 = psrlw( mm1, 1 ); mm2 = psrlw( mm2, 1 ); mm3 = psrlw( mm3, 1 );
+				mm1 = psubw( mm1, mm0 ); mm3 = psubw( mm3, mm2 );
+				mm0 = psrlw( mm0, 1 ); mm2 = psrlw( mm2, 1 );
+				mm1 = pmulhw( mm1, mm6 ); mm3 = pmulhw( mm3, mm6 );
+				mm0 = paddw( mm0, mm1 ); mm2 = paddw( mm2, mm3 );
+				mm0 = pmulhw( mm0, mm5 ); mm2 = pmulhw( mm2, mm4 );
+				mm0 = paddw( mm0, mm2 );
+				mm0 = paddw( mm0, movq_load( &shift ) );
+				mm0 = psrlw( mm0, 5 );
+				mm0 = packuswb( mm0, mm0 );
+				movd_store( pDst, mm0 );
+			}
+#endif
 			pDst++;
 			nUPos += nDU;
 		}
 		nVPos += nDV;
 	}
-	_asm emms
+	S2_EMMS();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace

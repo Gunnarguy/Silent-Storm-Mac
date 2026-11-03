@@ -21,7 +21,7 @@ SAttackRayInfo::SAttackRayInfo()
 	  fMinClearDistance( 0 ), fMaxRange( 0 )
 {
 	// pUS / pIgnore / pTarget = null, trailPoints empty, atk default. `from` default-constructs:
-	// from.pos.p is the SPathPlace default sentinel (nData = -1 with nFinal cleared == 0xFDFFFFFF).
+	// from.pos.p is the SPathPlace default marker (nData = -1 with nFinal cleared == 0xFDFFFFFF).
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // 12-arg ctor @0x291330
@@ -44,7 +44,7 @@ SAttackRayInfo::SAttackRayInfo( const CAttackPortion &_atk, const CVec3 &_vOrigi
 	  bTargetIsHit( _bTargetIsHit ), fMinClearDistance( _fMinClearDistance ), fMaxRange( _fMaxRange ),
 	  atk( _atk ), pTarget( _pTarget )
 {
-	// pUS / pIgnore = null. `from` default-constructs: from.pos.p is the SPathPlace default sentinel
+	// pUS / pIgnore = null. `from` default-constructs: from.pos.p is the SPathPlace default marker
 	// (0xFDFFFFFF), from.pos.pNet = null.
 	// ORIGINAL BUG (confirmed via disasm @0x291450): from.bRun is never written by this ctor, so it
 	// is left indeterminate -- reproduced by not touching from.bRun.
@@ -57,7 +57,7 @@ void MakeSplinter( SAttackRayInfo *dst, const CAttackPortion *atk, const CVec3 *
 	if ( !dst )
 		return;
 	dst->pUS = 0;
-	// from.pos.p = SPathPlace() invalid sentinel (0xFDFFFFFF), from.pos.pNet = null.
+	// from.pos.p = SPathPlace() invalid marker (0xFDFFFFFF), from.pos.pNet = null.
 	dst->from.pos = NAI::SPosition();
 	// ORIGINAL BUG (confirmed @0x291f00): from.bRun is never written -> left as-is.
 	dst->bFirstTurn = false;
@@ -136,13 +136,13 @@ void PerformMeleeAttackPortion( NWorld::IWorld *pWorld, NAI::IAIMap *pAIMap, con
 {
 	vector<NAI::SInterval> intersect;
 	vector<IAttackable*> ignore;
-	for ( vector<IAttackable*>::const_iterator it = ignores.begin(); it != ignores.end(); ++it )
+	for ( typename vector<IAttackable*>::const_iterator it = ignores.begin(); it != ignores.end(); ++it )
 		ignore.push_back( *it );
 	CAttackPortion tmp( a );
 	tmp.rTtrajectory = ray;   // Jan03 write the combat code reads (see CGame::ProcessRangedAttackPortion note)
 	pAIMap->Trace( ray, &intersect, NWorld::TS_FRAGMENTED );
 
-	for ( vector<NAI::SInterval>::iterator i = intersect.begin(); i != intersect.end(); ++i )
+	for ( typename vector<NAI::SInterval>::iterator i = intersect.begin(); i != intersect.end(); ++i )
 	{
 		if ( !( i->enter.fT > 0 ) )
 			continue;
@@ -176,7 +176,7 @@ void CalcCoverIntervals( NAI::CFastRenderer::SResult *pList, const SAttackRayInf
 	NDb::CRPGArmor *pFallbackArmor, vector<SCoverInterval> *pOut )
 {
 	float fAP = (float)ray.atk.nK;
-	pOut->push_back( SCoverInterval( -1e30f, fAP ) );	// sentinel: profile before anything is hit
+	pOut->push_back( SCoverInterval( -1e30f, fAP ) );	// marker: profile before anything is hit
 	vector<CObjectBase*> seen;
 	seen.push_back( ray.pIgnore );
 	for ( NAI::CFastRenderer::SResult *node = pList; node; node = node->pNext )
@@ -217,13 +217,13 @@ static void CalcNormals( NAI::IAIMap *pAIMap, vector<STrailPoint> *pTrail,
 	CRay ray; ray.ptOrigin = vOrigin; ray.ptDir = vDir;
 	vector<NAI::SInterval> intersections;
 	pAIMap->Trace( ray, &intersections, NWorld::TS_FRAGMENTED );
-	for ( vector<STrailPoint>::iterator i = pTrail->begin(); i != pTrail->end(); ++i )
+	for ( typename vector<STrailPoint>::iterator i = pTrail->begin(); i != pTrail->end(); ++i )
 	{
 		if ( i->nFloor == 100 )
 			continue;
 		bool bExit = vDir * i->vNormal <= 0;
 		float fNearest = 1e38f;
-		for ( vector<NAI::SInterval>::const_iterator j = intersections.begin(); j != intersections.end(); ++j )
+		for ( typename vector<NAI::SInterval>::const_iterator j = intersections.begin(); j != intersections.end(); ++j )
 		{
 			if ( j->pSrc->pUserData != i->pObject )
 				continue;
@@ -330,7 +330,7 @@ void TraceLooseRaySegment( NAI::IAIMap *pAIMap, const SAttackRayInfo &rayInfo, v
 	vector<CObjectBase*> seen;
 	seen.push_back( rayInfo.pIgnore );
 
-	for ( vector<NAI::SInterval>::iterator i = intersect.begin(); i != intersect.end(); ++i )
+	for ( typename vector<NAI::SInterval>::iterator i = intersect.begin(); i != intersect.end(); ++i )
 	{
 		// Retail 1.2 0x691e60: skip the surface just left by a reflected ray,
 		// while retaining intervals that straddle the clear-distance boundary.

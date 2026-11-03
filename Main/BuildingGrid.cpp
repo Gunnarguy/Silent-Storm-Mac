@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "..\Misc\2DArray.h"
+#include "../Misc/2DArray.h"
 #include "BuildingGrid.h"
 #include "BuildingInfo.h" // WALL_HEIGHT
 #include "Grid.h"
@@ -303,7 +303,7 @@ void CBuildingGrid::GetUpdatedParts( vector<SPart> *pParts )
 		ASSERT(0);
 		return;
 	}
-	for (unordered_map<SPart, bool, SPart>::const_iterator i = updatedParts.begin(); i != updatedParts.end(); ++i )
+	for (typename unordered_map<SPart, bool, SPart>::const_iterator i = updatedParts.begin(); i != updatedParts.end(); ++i )
 //		if ( i->second )
 		pParts->push_back( i->first );
 	updatedParts.clear();

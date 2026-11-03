@@ -9,9 +9,9 @@
 #include "GView.h"
 #include "Grid.h"
 #include "GMatShare.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\Misc\StrProc.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
+#include "../Misc/StrProc.h"
 #include "GGrass.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
@@ -86,7 +86,7 @@ void CTerrainModelPart::Recalc()
 	objData.verts.clear();
 	objData.geometry.SetTriangles( ptpPart->faces );
 
-	for ( vector<CVec3>::const_iterator iTemp = ptpPart->verts.begin(); iTemp != ptpPart->verts.end(); iTemp++ )
+	for ( typename vector<CVec3>::const_iterator iTemp = ptpPart->verts.begin(); iTemp != ptpPart->verts.end(); iTemp++ )
 	{
 		SVertex vVertex;
 		objData.verts.push_back( *SetupMapVertex( &vVertex, *iTemp, nrRegion, ptiInfo ) );

@@ -2,8 +2,8 @@
 #include "GAutoDetect.h"
 #include "Gfx.h"
 #include "GfxBuffers.h"
-#include "..\MiscDll\Commands.h"   // NGlobal::GetVar / SetVar / CValue
-#include "..\Misc\HPTimer.h"       // NHPTimer::GetClockRate
+#include "../MiscDll/Commands.h"   // NGlobal::GetVar / SetVar / CValue
+#include "../Misc/HPTimer.h"       // NHPTimer::GetClockRate
 #include <math.h>                  // fabs -- v1.2 @0xf69b0 epsilon preset match
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene

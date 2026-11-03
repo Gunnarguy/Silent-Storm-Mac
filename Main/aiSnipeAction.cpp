@@ -16,7 +16,7 @@
 #include "wMain.h"            // NWorld::CWorld: GetGame / GetPathNetwork
 #include "RPGGame.h"          // NRPG::IGame::CheckPositionVisibility
 #include "RPGUnit.h"          // NRPG::CUnit::GetSightFOV (@0x2ba6c0) for the retail sight cone
-#include "..\DBFormat\DataRPG.h" // NDb::SM_Snipe
+#include "../DBFormat/DataRPG.h" // NDb::SM_Snipe
 //
 #include "aiActions.h"
 //
@@ -122,7 +122,7 @@ void CAIBeginSnipeAction::GetInfoInner( const SPlaceWithAP &, SInfo *pInfo ) con
 	EDirection direction = pNet->GetClosestDir( selfPos.pos.p, enemyPos.pos.p );
 	// Retail v1.2 0x4a4cdb: RUN, four AP, not the target's full turn budget.
 	GetNearestPlaces( pEnemy->GetUnitServer(), enemyPos.pos.p, 4, NAI::RUN, &places );
-	for ( vector<SPathPlace>::const_iterator i = places.begin(); i != places.end(); ++i )
+	for ( typename vector<SPathPlace>::const_iterator i = places.begin(); i != places.end(); ++i )
 	{
 		SPosition targetPos( *i, pNet );
 		targetPos.p.SetDirection( direction );

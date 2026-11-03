@@ -42,7 +42,7 @@ void CFinElement::SetModel( int modelID )
 int CFinElement::GetModelID() const
 {
 	const CPropMap *pProps = GetPropList();
-	CPropMap::const_iterator it = pProps->find( "ModelID" );
+	typename CPropMap::const_iterator it = pProps->find( "ModelID" );
 	if ( it == pProps->end() )
 		return -1;
   return it->second->GetValue();
@@ -80,7 +80,7 @@ int CFinElement::AddProperty( int type, int viewType, const char *szPropName )
 // Связать св-во szPropName с таблицей nTableID
 bool CFinElement::SetRelation( const char *szPropName, int nTableID )
 {
-  CPropMap::iterator it = propMap.find( szPropName );
+  typename CPropMap::iterator it = propMap.find( szPropName );
   
   if ( it == propMap.end() )
     return false;
@@ -101,7 +101,7 @@ void CFinElement::ClearPropMap()
 void CFinElement::SetValue( const string &szPropName, const CVariant value )
 {
 	const CPropMap *pProps = GetPropList();
-	CPropMap::const_iterator i = pProps->find( szPropName );
+	typename CPropMap::const_iterator i = pProps->find( szPropName );
 	if ( i == pProps->end() )
 		return;
 	i->second->SetValue( value, false );

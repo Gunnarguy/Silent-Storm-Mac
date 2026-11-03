@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "..\Misc\HPTimer.h"
+#include "../Misc/HPTimer.h"
 #include "aiJob.h"
 //
 namespace NAI
@@ -77,8 +77,8 @@ void CAIJobManager::RemoveDependences( IAIJob *pAIJob )
 	ASSERT( IsValid( pAIJob ) );
 	Dependences.erase( pAIJob );
 	//
-	for ( DependencesHash::iterator i = Dependences.begin(); i != Dependences.end(); ++i )
-		for ( list< CPtr<IAIJob> >::iterator j = i->second.begin(); j != i->second.end(); )
+	for ( typename DependencesHash::iterator i = Dependences.begin(); i != Dependences.end(); ++i )
+		for ( typename list< CPtr<IAIJob> >::iterator j = i->second.begin(); j != i->second.end(); )
 			if ( (*j) == pAIJob )
 				j = i->second.erase( j );
 			else
@@ -87,15 +87,15 @@ void CAIJobManager::RemoveDependences( IAIJob *pAIJob )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAIJobManager::Refresh()
 {
-	for ( vector< CPtr<IAIJob> >::iterator i = jobs.begin(); i != jobs.end(); ++i )
+	for ( typename vector< CPtr<IAIJob> >::iterator i = jobs.begin(); i != jobs.end(); ++i )
 	{
 		if ( !IsValid( *i ) && find( jobsToRemove.begin(), jobsToRemove.end(), *i ) == jobsToRemove.end() )
 			jobsToRemove.push_back( *i );
 	}
 	// delete old tasks
-	for ( list< CPtr<IAIJob> >::iterator i = jobsToRemove.begin(); i != jobsToRemove.end(); ++i )
+	for ( typename list< CPtr<IAIJob> >::iterator i = jobsToRemove.begin(); i != jobsToRemove.end(); ++i )
 	{
-		vector< CPtr<IAIJob> >::iterator t = find( jobs.begin(), jobs.end(), *i );
+		typename vector< CPtr<IAIJob> >::iterator t = find( jobs.begin(), jobs.end(), *i );
 		if ( t != jobs.end() )
 		{
 			RemoveDependences( *t );
@@ -122,7 +122,7 @@ void CAIJobManager::RemoveDelayed( IAIJob *pAIJob )
 		}
 	}
 	//
-	for ( vector< CPtr<IAIJob> >::iterator i = jobs.begin(); i != jobs.end(); ++i )
+	for ( typename vector< CPtr<IAIJob> >::iterator i = jobs.begin(); i != jobs.end(); ++i )
 		if ( (*i)->GetParentJob() == pAIJob )
 			RemoveDelayed( *i );
 }
@@ -156,7 +156,7 @@ bool CAIJobManager::IsWaiting( IAIJob *pAIJob )
 	if ( nHighestPriJobs > 0 && !pAIJob->IsHighestPriority() )
 		return true;
 	list< CPtr<IAIJob> > &ExpectedJobs = Dependences[pAIJob];
-	for ( list< CPtr<IAIJob> >::iterator i = ExpectedJobs.begin(); i != ExpectedJobs.end(); ++i )
+	for ( typename list< CPtr<IAIJob> >::iterator i = ExpectedJobs.begin(); i != ExpectedJobs.end(); ++i )
 	{
 		if ( !(*i)->IsJobFinished() )
 			return true;

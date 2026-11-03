@@ -10,11 +10,8 @@
 // CAINormalReaction::Update @0x0047f190, Defence/Guard/Retreat <- their reactions) - there is no
 // ChooseLogic in the commander.
 //
-// SCOPE: this ports the framework + the core of CAINormalReaction. The release's deeper machinery - the
-// per-unit threat state SAIUnitState (pEnemy/pPossibleEnemy/pAlly/bScared), the event system, and the
-// sibling reactions (Defence/Assassin/Guard/Retreat/Fear) - is the absent Tier-A threat-tracker brain and
-// is NOT ported yet; CAINormalReaction here drives the Attack/AfterCombat path off the commander's
-// existing enemy detection (pAIState->GetCurrentAIEnemy), with bWasCombat state.
+// SCOPE: the framework, CAINormalReaction, and the sibling reactions (Defence/Assassin/Guard/Retreat/Fear, each in
+// its own file) over the per-unit threat state SAIUnitState and the event system of aiEvent.h.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NWorld { class CUnitServer; }
 struct SMapUnit;   // MapBuild.h (global) -- the map-prescribed unit spec ( eLogic / nRoamingRadius / pGuardAnimation )

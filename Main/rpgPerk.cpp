@@ -1,8 +1,8 @@
 #include "stdafx.h"
 //
-#include "..\DBFormat\DataPerk.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\Misc\RandomGen.h"		// SRand (TakeRandomPerks)
+#include "../DBFormat/DataPerk.h"
+#include "../MiscDll/LogStream.h"
+#include "../Misc/RandomGen.h"		// SRand (TakeRandomPerks)
 #include "rpgPerk.h"
 //
 #include <fstream>
@@ -65,7 +65,7 @@ void CPerksTree::LoadTree( int nTreeID )
 				continue;
 			//
 			const vector< CPtr<NDb::CDBPerk> > &parents = pDBNode->parentPerks;
-			for ( vector< CPtr<NDb::CDBPerk> >::const_iterator p = parents.begin(); p != parents.end(); ++p )
+			for ( typename vector< CPtr<NDb::CDBPerk> >::const_iterator p = parents.begin(); p != parents.end(); ++p )
 			{
 				if ( IsValid( *p ) )
 					pPerk->AddParent( GetOrCreatePerk( *p ) );
@@ -77,7 +77,7 @@ void CPerksTree::LoadTree( int nTreeID )
 void CPerksTree::GetAllPerks( vector< CPtr<CPerk> > *pPerks ) const
 {
 	pPerks->clear();
-	for (unordered_map< int, CObj<CPerk> >::const_iterator i = perks.begin(); i != perks.end(); ++i )
+	for (typename unordered_map< int, CObj<CPerk> >::const_iterator i = perks.begin(); i != perks.end(); ++i )
 	{
 		if ( !IsValid( i->second ) )
 		{
@@ -92,7 +92,7 @@ void CPerksTree::GetAllPerks( vector< CPtr<CPerk> > *pPerks ) const
 void CPerksTree::GetTakenPerks( vector< CPtr<CPerk> > *pPerks ) const
 {
 	pPerks->clear();
-	for (unordered_map< int, CObj<CPerk> >::const_iterator i = perks.begin(); i != perks.end(); ++i )
+	for (typename unordered_map< int, CObj<CPerk> >::const_iterator i = perks.begin(); i != perks.end(); ++i )
 	{
 		if ( !IsValid( i->second ) )
 		{
@@ -112,7 +112,7 @@ void CPerksTree::GetAvailablePerks( vector< CPtr<CPerk> > *pPerks ) const
 	if ( nPerkPoints <= 0 )
 		return;
 
-	for (unordered_map< int, CObj<CPerk> >::const_iterator i = perks.begin(); i != perks.end(); ++i )
+	for (typename unordered_map< int, CObj<CPerk> >::const_iterator i = perks.begin(); i != perks.end(); ++i )
 	{
 		if ( !IsValid( i->second ) )
 		{
@@ -142,7 +142,7 @@ void CPerksTree::Draw( string szFileName )
 	file.open( str.c_str(), ios_base::out | ios_base::trunc );
 	file << "digraph g\n{\n  concentrate=true;\n  nodesep=.3;\n  ranksep=.3;\n";
 	// 
-	for (unordered_map< int, CObj<CPerk> >::const_iterator i = perks.begin(); i != perks.end(); ++i )
+	for (typename unordered_map< int, CObj<CPerk> >::const_iterator i = perks.begin(); i != perks.end(); ++i )
 	{
 		char szID[128];
 		sprintf( szID, "ID_%d", i->first );
@@ -154,7 +154,7 @@ void CPerksTree::Draw( string szFileName )
 		file << " label = \"" << i->second->GetDBPerk()->szUserName << "\"];" << endl;
 	}
 	//
-	for (unordered_map< int, CObj<CPerk> >::const_iterator i = perks.begin(); i != perks.end(); ++i )
+	for (typename unordered_map< int, CObj<CPerk> >::const_iterator i = perks.begin(); i != perks.end(); ++i )
 	{
 		char szID1[128], szID2[128];
 		sprintf( szID1, "ID_%d", i->first );

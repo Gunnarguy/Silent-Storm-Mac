@@ -1,7 +1,14 @@
+#include <set>
 #include "StdAfx.h"
-#include "..\ADOImport\BasicDB.h"
-#include "..\Misc\BasicFactory.h"
-#include "..\FileIO\BasicChunk1.h"
+#include "../ADOImport/BasicDB.h"
+#include "../Misc/BasicFactory.h"
+#include "../FileIO/BasicChunk1.h"
+#include <cstdlib>
+#include <cstdio>
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
+#if defined(_WIN32)
 #include <strstream>
 
 #import "C:\Program Files (x86)\Common Files\System\ADO\msado15.dll" no_namespace rename("EOF", "EndOfFile")
@@ -68,6 +75,32 @@ public:
 	// cached index sequence consistent).
 	bool HasField( const char *pszField ) const { return find( fields.begin(), fields.end(), pszField ) != fields.end(); }
 };
+#else
+// The ADO path imports Nival's development SQL Server database into game.db. The game only reads the
+// shipped game.db (CDBTableDataStorage below), so off Windows the import side is an empty table.
+struct S2EmptyField { operator const char*() const { return ""; } operator const wchar_t*() const { return L""; } };
+class COLETable
+{
+public:
+	bool Open( const char *, int = -1 ) { return false; }
+	void Close() {}
+	void MoveFirst() {}
+	void MoveNext() {}
+	bool IsEof() { return true; }
+	int GetInt( int ) { return 0; }
+	bool GetBool( int ) { return false; }
+	float GetFloat( int ) { return 0; }
+	S2EmptyField GetString( int ) { return S2EmptyField(); }
+	int GetInt( const char * ) { return 0; }
+	bool GetBool( const char * ) { return false; }
+	float GetFloat( const char * ) { return 0; }
+	S2EmptyField GetString( const char * ) { return S2EmptyField(); }
+	const string& GetFieldName( int ) { static string s; return s; }
+	bool HasField( const char * ) const { return false; }
+};
+static void EstablishConnection( const char * ) {}
+static void CloseConnection() {}
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CDBTableDataStorage - the release/Steam runtime DB-load representation.
 //
@@ -162,6 +195,7 @@ REGISTER_SAVELOAD_CLASS( 0xa1843130, CDBTableDataStorage )
 // when set, the Import path reads from this columnar storage instead of the ADO COLETable
 static CDBTableDataStorage *pStorageSource = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+#if defined(_WIN32)
 static void PrintProviderError(_ConnectionPtr pConnection)
 {
 	ErrorPtr  pErr  = NULL;
@@ -210,7 +244,7 @@ int COLETable::GetFieldIndex( const char *pszField )
 #endif
 		return fieldIndices[nCurrentField++];
 	}
-	vector<string>::iterator r = find( fields.begin(), fields.end(), pszField );
+	typename vector<string>::iterator r = find( fields.begin(), fields.end(), pszField );
 	int nPos = 0;
 	if ( r == fields.end() )
 	{
@@ -361,6 +395,7 @@ _bstr_t COLETable::GetString( int nField )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+#endif
 namespace NDatabase
 {
 	CClassFactory<CDBRecord>& GetRecordTypes()
@@ -429,7 +464,7 @@ void NDatabase::AddTable( int nTableID, const char *pszTableName,
 {
 	CTablesHash &tables = GetTables();
 	list<STableDescr> &tableDescrs = GetTableDescrs();
-	CTablesHash::iterator i = tables.find( nTableID );
+	typename CTablesHash::iterator i = tables.find( nTableID );
 	if ( i != tables.end() )
 	{
 		ASSERT(0); // already registered
@@ -446,7 +481,7 @@ void NDatabase::AddTable( int nTableID, const char *pszTableName,
 CDBTableBase* NDatabase::GetTable( int nTableID )
 {
 	CTablesHash &tables = GetTables();
-	CTablesHash::iterator i = tables.find( nTableID );
+	typename CTablesHash::iterator i = tables.find( nTableID );
 	if ( i != tables.end() )
 		return &i->second;
 	return 0;
@@ -455,7 +490,7 @@ CDBTableBase* NDatabase::GetTable( int nTableID )
 static CDBTableBase* NDatabase::GetTableByName( const char *pszTable )
 {
 	list<STableDescr> &tableDescrs = GetTableDescrs();
-	list< STableDescr >::iterator i;
+	typename list< STableDescr >::iterator i;
 	for ( i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
 	{
 		if ( i->szTable == pszTable )
@@ -485,7 +520,7 @@ void NDatabase::ClearDatabaseTables()
 	tables.clear();
 	GetRelations().clear();
 	list<STableDescr> &tableDescrs = GetTableDescrs();
-	for ( list<STableDescr>::iterator i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
+	for ( typename list<STableDescr>::iterator i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
 		tables[ i->nTableID ];
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -501,8 +536,8 @@ void NDatabase::Import()
 	list<STableDescr> &tableDescrs = GetTableDescrs();
 	list< SRelation > &relations = GetRelations();
 	EstablishConnection( szDataSource.c_str() );
-	list<STableDescr>::iterator i;
-	list<SRelation>::iterator k;
+	typename list<STableDescr>::iterator i;
+	typename list<SRelation>::iterator k;
 	//
 	// 1st phase - create all records & load relations
 	for ( i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
@@ -560,7 +595,7 @@ void NDatabase::Refresh( int nTableID )
 	list<STableDescr> &tableDescrs = GetTableDescrs();
 	EstablishConnection( szDataSource.c_str() );
 	// 1st phase - refresh records
-	list<STableDescr>::iterator i;
+	typename list<STableDescr>::iterator i;
 	for ( i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
 		if ( nTableID == i->nTableID )
 			break;
@@ -585,13 +620,23 @@ void NDatabase::Refresh( int nTableID )
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Retail v1.2 0x401460/0x4014a0/0x4014f0/0x4015c0: missing columns and
-// fdfdfdfd overlay sentinels leave the previous value untouched and return false.
+// fdfdfdfd overlay markers leave the previous value untouched and return false.
 bool NDatabase::ImportField( const char *pszFieldName, int *pData )
 {
 	if ( pStorageSource )
 	{
 		if ( !pStorageSource->HasIntField( pszFieldName ) )
+		{
+			// diagnostic: a whole-number field whose column holds decimals (S2_IMPORT_AUDIT=1, once per name)
+			static const bool bAudit = getenv( "S2_IMPORT_AUDIT" ) != 0;
+			if ( bAudit && pStorageSource->HasFloatField( pszFieldName ) )
+			{
+				static std::set<std::string> seen;
+				if ( seen.insert( pszFieldName ).second )
+					fprintf( stderr, "[import-audit] int field %s is a float column, value %g\n", pszFieldName, pStorageSource->GetFloat( pszFieldName ) );
+			}
 			return false;
+		}
 		int nValue = pStorageSource->GetInt( pszFieldName );
 		if ( nValue == (int)0xfdfdfdfd )
 			return false;
@@ -686,7 +731,7 @@ void NDatabase::ImportRelation( CDBRecord *pSrc, CDBTableBase *pDestTable, std::
 	list< SRelation > &relations = GetRelations();
 	ASSERT( pDestTable );
 	std::vector< CPtr<CDBRecord> > &refs = *pRefs;
-	list<SRelation>::iterator k;
+	typename list<SRelation>::iterator k;
 	CDBTableBase *pLeft = GetTableByRecord( pSrc );
 	CDBTableBase *pRight = pDestTable;
 	refs.clear();
@@ -741,7 +786,7 @@ bool NDatabase::ImportField( const char *pszFieldName, CDBRecord **pRef, CDBTabl
 	ASSERT( pDestTable );
 	*pRef = 0;
 	int nID = 0;
-	// Retail v1.2 0x401940 / typed wrapper 0x7ef6d0: missing/sentinel
+	// Retail v1.2 0x401940 / typed wrapper 0x7ef6d0: missing/placeholder
 	// references must not clear a live record's link during a partial mod import.
 	const bool bImported = ImportField( pszFieldName, &nID );
 	if ( bImported && pDestTable )
@@ -774,21 +819,94 @@ void NDatabase::Serialize( CDataStream &file, CStructureSaver::EMode mode, bool 
 			// release/Steam game.db (v1): records are stored as per-table columnar
 			// CDBTableDataStorage dumps, not as typed objects. Read those, then rebuild the
 			// live typed records by running each record's Import() against the storage.
-			typedef std::unordered_map< int, CObj<CDBTableDataStorage> > CStorageHash;
-			CStorageHash storageTables;
-			f.Add( 1, &storageTables ); // CObj ptrs resolve to the storage objects read in Start()
+			// The storage map is serialized as a key list (chunk 1) and a value list (chunk 2). Read both in
+			// FILE order and import in that order: record Import()s read fields of records in other tables
+			// (CUITexture copies its CTexture's size, weapons read their type records, ...), and a hash map's
+			// iteration order differs between C++ libraries. File order is what the shipping game used.
+			struct SOrderedStorage
+			{
+				vector<int> ids;
+				vector< CObj<CDBTableDataStorage> > tables;
+				int operator&( CStructureSaver &s )
+				{
+					int n = s.CountSubChunks( 1 );
+					ids.resize( n ); tables.resize( n );
+					for ( int i = 0; i < n; ++i ) s.Add( 1, &ids[i], i + 1 );
+					for ( int i = 0; i < n; ++i ) s.Add( 2, &tables[i], i + 1 );
+					return 0;
+				}
+				struct SEntry { int first; CDBTableDataStorage *second; };
+			};
+			SOrderedStorage ordered;
+			f.Add( 1, &ordered ); // CObj ptrs resolve to the storage objects read in Start()
+			vector< SOrderedStorage::SEntry > storageTables;
+			for ( int i = 0; i < (int)ordered.ids.size(); ++i )
+			{
+				SOrderedStorage::SEntry e = { ordered.ids[i], ordered.tables[i] };
+				storageTables.push_back( e );
+			}
+			typedef vector< SOrderedStorage::SEntry > CStorageHash;
+			// macOS port diagnostic: S2_DB_DUMP=<file> writes every storage table (id, rows, columns and
+			// the first rows) as TSV, then S2_DB_DUMP_EXIT=1 ends the process. Used to inspect game.db;
+			// off in normal play.
+			if ( const char *pszDump = getenv( "S2_DB_DUMP" ) )
+			{
+				if ( FILE *fp = fopen( pszDump, "w" ) )
+				{
+					const int nRowsMax = getenv( "S2_DB_DUMP_ROWS" ) ? atoi( getenv( "S2_DB_DUMP_ROWS" ) ) : 3;
+					for ( int t = 0; t < (int)storageTables.size(); ++t )
+					{
+						CDBTableDataStorage *pS = storageTables[t].second;
+						if ( !pS ) continue;
+						fprintf( fp, "TABLE\t%d\t%d\t%d\t%d\t%d\t%s\n", storageTables[t].first, (int)pS->records_int.size(),
+							(int)pS->intFileds.size(), (int)pS->floatFileds.size(), (int)pS->stringFileds.size(),
+							GetTable( storageTables[t].first ) ? "known" : "unknown" );
+						for ( int c = 0; c < (int)pS->fields.size(); ++c )
+							fprintf( fp, "COL\t%d\t%s\t%d\n", storageTables[t].first, pS->fields[c].szName.c_str(), pS->fields[c].eType );
+						for ( int c = 0; c < (int)pS->intFileds.size(); ++c ) fprintf( fp, "INT\t%d\t%s\n", storageTables[t].first, pS->intFileds[c].c_str() );
+						for ( int c = 0; c < (int)pS->floatFileds.size(); ++c ) fprintf( fp, "FLOAT\t%d\t%s\n", storageTables[t].first, pS->floatFileds[c].c_str() );
+						for ( int c = 0; c < (int)pS->stringFileds.size(); ++c ) fprintf( fp, "STR\t%d\t%s\n", storageTables[t].first, pS->stringFileds[c].c_str() );
+						for ( int r = 0; r < (int)pS->records_int.size() && r < nRowsMax; ++r )
+						{
+							fprintf( fp, "ROW\t%d\t%d\t", storageTables[t].first, r );
+							for ( int c = 0; c < (int)pS->records_int[r].size(); ++c ) fprintf( fp, "%d|", pS->records_int[r][c] );
+							fprintf( fp, "\t" );
+							if ( r < (int)pS->records_float.size() ) for ( int c = 0; c < (int)pS->records_float[r].size(); ++c ) fprintf( fp, "%g|", pS->records_float[r][c] );
+							fprintf( fp, "\t" );
+							if ( r < (int)pS->records_wstring.size() ) for ( int c = 0; c < (int)pS->records_wstring[r].size(); ++c )
+							{
+								const std::wstring &w = pS->records_wstring[r][c];
+								const int nStrMax = getenv( "S2_DB_DUMP_STRMAX" ) ? atoi( getenv( "S2_DB_DUMP_STRMAX" ) ) : 60;
+								for ( int k = 0; k < (int)w.size() && k < nStrMax; ++k )
+								{
+									if ( w[k] == '\n' ) fputs( "\\n", fp );
+									else if ( w[k] == '\r' ) continue;
+									else fputc( ( w[k] >= 32 && w[k] < 127 && w[k] != '|' && w[k] != '\t' ) ? (char)w[k] : '?', fp );
+								}
+								fputc( '|', fp );
+							}
+							fprintf( fp, "\n" );
+						}
+					}
+					fclose( fp );
+				}
+				if ( getenv( "S2_DB_DUMP_EXIT" ) )
+					_exit( 0 );
+			}
 			// read the M:N relations (chunk 2) and resolve each side's table pointer from its id,
 			// so ImportRelation() (called from record Import()s in phase 2) finds them.
 			list<SRelation> &relations = GetRelations();
 			f.Add( 2, &relations );
-			for ( list<SRelation>::iterator r = relations.begin(); r != relations.end(); ++r )
+			for ( typename list<SRelation>::iterator r = relations.begin(); r != relations.end(); ++r )
 			{
 				r->pLeft = GetTable( r->nTableLeft );
 				r->pRight = GetTable( r->nTableRight );
+				if ( getenv( "S2_DB_DUMP" ) )
+					printf( "DB-RELATION %s left=%d right=%d rows=%d\n", r->szTable.c_str(), r->nTableLeft, r->nTableRight, (int)r->data.size() );
 			}
 			int nTables = 0;
 			// phase 1: create every record shell first, so cross-table refs resolve in phase 2
-			for ( CStorageHash::iterator it = storageTables.begin(); it != storageTables.end(); ++it )
+			for ( typename CStorageHash::iterator it = storageTables.begin(); it != storageTables.end(); ++it )
 			{
 				CDBTableBase *pTable = GetTable( it->first );
 				CDBTableDataStorage *pStorage = it->second;
@@ -799,7 +917,7 @@ void NDatabase::Serialize( CDataStream &file, CStructureSaver::EMode mode, bool 
 				pStorageSource = 0;
 			}
 			// phase 2: import (fill) every record
-			for ( CStorageHash::iterator it = storageTables.begin(); it != storageTables.end(); ++it )
+			for ( typename CStorageHash::iterator it = storageTables.begin(); it != storageTables.end(); ++it )
 			{
 				CDBTableBase *pTable = GetTable( it->first );
 				CDBTableDataStorage *pStorage = it->second;
@@ -858,7 +976,7 @@ void CDBTableBase::PreCreate( int nTypeID )
 			break;
 		pRes->nID = table.GetInt( "ID" );
 #ifdef _DEBUG
-		CRecordHash::iterator i = records.find( pRes->nID );
+		typename CRecordHash::iterator i = records.find( pRes->nID );
 		if ( i != records.end() )
 			ASSERT(0);  // record with this ID already created
 #endif
@@ -879,11 +997,11 @@ void CDBTableBase::Refresh( int nTypeID )
 		if ( !IsValid( pRes ) )
 			break;
 		pRes->nID = table.GetInt( "ID" );
-		CRecordHash::const_iterator it = copy.find( pRes->nID );
+		typename CRecordHash::const_iterator it = copy.find( pRes->nID );
 		if ( it != copy.end() && IsValid( it->second ) )
 			pRes = it->second;
 #ifdef _DEBUG
-		CRecordHash::iterator i = records.find( pRes->nID );
+		typename CRecordHash::iterator i = records.find( pRes->nID );
 		if ( i != records.end() )
 			ASSERT(0);  // record with this ID already created
 #endif
@@ -898,7 +1016,7 @@ void CDBTableBase::Import()
 		for ( pStorageSource->MoveFirst(); !pStorageSource->IsEof(); pStorageSource->MoveNext() )
 		{
 			int nID = pStorageSource->GetInt( "ID" );
-			CRecordHash::iterator i = records.find( nID );
+			typename CRecordHash::iterator i = records.find( nID );
 			if ( i == records.end() )
 				continue; // should have been created in PreCreate
 			i->second->Import();
@@ -909,7 +1027,7 @@ void CDBTableBase::Import()
 	for ( ; !table.IsEof(); table.MoveNext() )
 	{
 		int nID = table.GetInt( "ID" );
-		CRecordHash::iterator i = records.find( nID );
+		typename CRecordHash::iterator i = records.find( nID );
 		if ( i == records.end() )
 		{
 			ASSERT(0); // this record should be created on PreCreate stage
@@ -921,18 +1039,18 @@ void CDBTableBase::Import()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CDBRecord* CDBTableBase::GetDBRecord( int nID )
 {
-	CRecordHash::iterator i = records.find( nID );
+	typename CRecordHash::iterator i = records.find( nID );
 	if ( i == records.end() ) 
 	{
 #ifdef _MAPEDIT
 		if ( !bIsDatabaseLoading && nID > 0 )
 		{
 			CTablesHash& tables = GetTables();
-			for ( CTablesHash::const_iterator it = tables.begin(); it != tables.end(); ++it )
+			for ( typename CTablesHash::const_iterator it = tables.begin(); it != tables.end(); ++it )
 				if ( &it->second == this )
 				{
 					list<STableDescr> &tableDescrs = GetTableDescrs();
-					for ( list<STableDescr>::iterator i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
+					for ( typename list<STableDescr>::iterator i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
 						if ( it->first == i->nTableID )
 						{
 							COLETable tbl;

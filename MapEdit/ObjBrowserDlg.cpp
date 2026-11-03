@@ -72,7 +72,7 @@ void CObjBrowserDlg::SetObject( int nObjID, int nVarID )
 	nVariantID = nVarID;
 	if ( !::IsWindow( m_hWnd ) )
 		return;
-	for ( vector<COIDlg*>::iterator it = oiCtrls.begin(); it != oiCtrls.end(); ++it )
+	for ( typename vector<COIDlg*>::iterator it = oiCtrls.begin(); it != oiCtrls.end(); ++it )
 		(*it)->ShowWindow( SW_HIDE );
 	SetObjectInternal();
 }
@@ -80,7 +80,7 @@ void CObjBrowserDlg::SetObject( int nObjID, int nVarID )
 void CObjBrowserDlg::SetObjectInternal()
 {
 	unordered_map<int, int> propVariants; // PropID to VariantID
-	for ( CSpinMap::const_iterator i = spins.begin(); i != spins.end(); ++i )
+	for ( typename CSpinMap::const_iterator i = spins.begin(); i != spins.end(); ++i )
 		propVariants[i->second->GetID()] = i->second->GetActiveVariant();
 	//
 	properties.clear();
@@ -91,7 +91,7 @@ void CObjBrowserDlg::SetObjectInternal()
 	SetWindowPos( 0, 0, 0, COLUMN_WIDTH * oiCtrls.size(), COLUMN_HEIGHT, SWP_NOZORDER | SWP_NOMOVE );
 
 	int i = 0;
-	for ( vector<COIDlg*>::iterator it = oiCtrls.begin(); i < properties.size(); ++i, ++it )
+	for ( typename vector<COIDlg*>::iterator it = oiCtrls.begin(); i < properties.size(); ++i, ++it )
 	{
 		COIDlg *pDlg = *it;
 		if ( !::IsWindow( pDlg->m_hWnd ) )
@@ -104,7 +104,7 @@ void CObjBrowserDlg::SetObjectInternal()
 		pDlg->SetPropMap( -1, pProps );
 		CRect r( i * COLUMN_WIDTH + SPIN_WIDTH, 0, (i + 1) * COLUMN_WIDTH + 1, COLUMN_HEIGHT );
 		::SetWindowPos( pDlg->m_hWnd, NULL, r.left, r.top, r.Width(), r.Height(), SWP_NOZORDER | SWP_NOACTIVATE);
-		for ( CPropMap::const_iterator ip = pProps->begin(); ip != pProps->end(); ++ip )
+		for ( typename CPropMap::const_iterator ip = pProps->begin(); ip != pProps->end(); ++ip )
 		{
 			CProp *p = ip->second;
 			int nRel = p->GetRelation();
@@ -121,7 +121,7 @@ void CObjBrowserDlg::SetObjectInternal()
 					spins[p->GetID()] = pSpin;
 					spins[p->GetID()]->Move( i, 1 + pDlg->m_wndOI.GetPropertyLine( p->GetID() ) );
 					pSpin->SetVariants( vars );
-					unordered_map<int, int>::const_iterator iv = propVariants.find( p->GetID() );
+					typename unordered_map<int, int>::const_iterator iv = propVariants.find( p->GetID() );
 					if ( iv != propVariants.end() )
 						pSpin->SetActiveVariant( iv->second );
 				}
@@ -149,7 +149,7 @@ void CObjBrowserDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
 	int nID = pScrollBar->GetDlgCtrlID();
 
-	CSpinMap::const_iterator i = spins.find( nID );
+	typename CSpinMap::const_iterator i = spins.find( nID );
 	if ( i == spins.end() )
 		return;
 	bool bRet = false;

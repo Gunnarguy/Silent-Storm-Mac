@@ -160,7 +160,7 @@ BEGIN_SCRIPT_COMMAND( GroupGetVisible, "u" )
 		for ( int u = 0; u < pGroup->units.GetSize(); ++u )
 		{
 			CPtr<NWorld::CUnitServer> pUS = pGroup->units[ u ];
-			for ( list< CPtr<NWorld::CUnitServer> >::const_iterator 
+			for ( typename list< CPtr<NWorld::CUnitServer> >::const_iterator 
 				i = pUS->GetTBSVisible().begin(); i != pUS->GetTBSVisible().end(); ++i )
 					if ( !pVisible->units.IsContain( *i ) )
 						pVisible->units.Add( i->GetPtr() );
@@ -226,7 +226,7 @@ BEGIN_SCRIPT_COMMAND( PlayerGetUnits, "n" )
 	{
 		vector< CPtr<NWorld::CUnit> > units;
 		pPlayer->GetUnits( &units );
-		for ( vector< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+		for ( typename vector< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 		{
 			CDynamicCast<NWorld::CUnitServer> pUS(i->GetPtr());
 			if (pUS)
@@ -248,7 +248,7 @@ BEGIN_SCRIPT_COMMAND( PlayerGetUnitsEx, "nn" )
 	{
 		vector< CPtr<NWorld::CUnit> > units;
 		pPlayer->GetUnits( &units );
-		for ( vector< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+		for ( typename vector< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 		{
 			CDynamicCast<NWorld::CUnitServer> pUS( i->GetPtr() );
 			if ( pUS )

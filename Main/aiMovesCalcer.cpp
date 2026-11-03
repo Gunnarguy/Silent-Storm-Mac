@@ -8,7 +8,7 @@
 #include "wInterface.h"
 #include "aiDoorCollider.h"
 #include "phCollider.h"
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 namespace NAI
 {
 //
@@ -132,7 +132,7 @@ CMovesCalcer::STile &CMovesCalcer::GetFlipperTile(
 		pHash = &flipper.locksClosed;
 	else
 		pHash = &flipper.locksOpen;
-	CFHash::iterator it = pHash->find( p );
+	typename CFHash::iterator it = pHash->find( p );
 	if ( it != pHash->end() )
 		return it->second;
 	else
@@ -268,8 +268,8 @@ void CMovesCalcer::TestHCMoves( NAI::CCollider *pCollider, CArray2D<STile> *pRes
 //! try to map src points to dest region
 // src/dest squares are exclusive
 void CMovesCalcer::CreateGrid2GridCandidates( IAIMap *pMap, 
-	const CTRect<int> &src, CNodesLayer *pSrc, CArray2D<STile> &srcTiles, CTPoint<int> &srcOrigin,
-	const CTRect<int> &dest, CNodesLayer *pDst, CArray2D<STile> &dstTiles, CTPoint<int> &dstOrigin,
+	const CTRect<int> &src, CNodesLayer *pSrc, CArray2D<STile> &srcTiles, const CTPoint<int> &srcOrigin,
+	const CTRect<int> &dest, CNodesLayer *pDst, CArray2D<STile> &dstTiles, const CTPoint<int> &dstOrigin,
 	vector<SSphere> *pSpheres, vector<CVec3> *pMoves, vector<SPossibleTransition> *pPossibilities,
 	bool bDoRefresh ) 
 {

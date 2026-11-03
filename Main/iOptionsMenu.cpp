@@ -4,11 +4,11 @@
 #include "GAutoDetect.h"
 #include "iMain.h"
 #include "G2DView.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Misc\StrProc.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../MiscDll/Commands.h"
+#include "../Misc/StrProc.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"
 #include "iCommonUI.h"
 #include "iSaveManager.h"
@@ -25,7 +25,7 @@ const int
 // and controls option screens: write a checkbox's state into a config var (1/0) and read it back.
 // Guarded against a missing control (our 32MB game.db may not ship every retail checkbox).
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// WIDESCREEN: combo item id packs both dimensions -- Sentinels @0x4eba9f ((w&0xfff)<<12)|(h&0xfff).
+// WIDESCREEN: combo item id packs both dimensions -- ((w&0xfff)<<12)|(h&0xfff).
 static int EncodeVideoModeID( int nW, int nH, int nBpp = 32 )
 {
 	return ( ( nW & 0xfff ) << 12 ) | ( nH & 0xfff ) | ( nBpp == 16 ? 0x1000000 : 0 );
@@ -548,21 +548,21 @@ bool CVideoOptionsUI::ProcessMessage( const SEvent &sEvent )
 			{
 				list<NGfx::SVideoMode> modes16;
 				NGfx::GetModesList( &modes16, 16 );
-				for ( list<NGfx::SVideoMode>::iterator i = modes16.begin(); i != modes16.end(); ++i )
+				for ( typename list<NGfx::SVideoMode>::iterator i = modes16.begin(); i != modes16.end(); ++i )
 					if ( i->nXSize >= 800 && i->nXSize <= 1024 && i->nXSize * 3 == i->nYSize * 4 )
 						modesList.push_back( *i );
 			}
-			for( list<NGfx::SVideoMode>::iterator iTemp = modesList.begin(); iTemp != modesList.end(); )
+			for( typename list<NGfx::SVideoMode>::iterator iTemp = modesList.begin(); iTemp != modesList.end(); )
 			{
 				if ( iTemp->nXSize < 800 )
 					iTemp = modesList.erase( iTemp );
 				else
 					iTemp++;
 			}
-			for( list<NGfx::SVideoMode>::iterator iTemp = modesList.begin(); iTemp != modesList.end(); iTemp++ )
+			for( typename list<NGfx::SVideoMode>::iterator iTemp = modesList.begin(); iTemp != modesList.end(); iTemp++ )
 			{
 				int nTemplate = 172;
-				list<NGfx::SVideoMode>::iterator iNext = iTemp; iNext++;
+				typename list<NGfx::SVideoMode>::iterator iNext = iTemp; iNext++;
 				if ( iTemp == modesList.begin() )
 					nTemplate = 171;
 				if ( iNext == modesList.end() )
@@ -1067,12 +1067,12 @@ void CProfileOptionsUI::UpdateFromConfig()
 	string szActive = NMainLoop::GetActiveProfile();
 
 	int nIndex = 0;
-	for ( list<string>::iterator iProfile = profilesList.begin(); iProfile != profilesList.end(); iProfile++, nIndex++ )
+	for ( typename list<string>::iterator iProfile = profilesList.begin(); iProfile != profilesList.end(); iProfile++, nIndex++ )
 	{
 		int nTemplate = 172;
 		if ( iProfile == profilesList.begin() )
 			nTemplate = 171;
-		list<string>::iterator iNext = iProfile; iNext++;
+		typename list<string>::iterator iNext = iProfile; iNext++;
 		if ( iNext == profilesList.end() )
 			nTemplate = 173;
 
@@ -1090,7 +1090,7 @@ static CEdit* FindEditChild( CWindow *pWindow )
 {
 	list< CPtr<CWindow> > childrenList;
 	pWindow->GetChildrenList( &childrenList );
-	for ( list< CPtr<CWindow> >::iterator iChild = childrenList.begin(); iChild != childrenList.end(); iChild++ )
+	for ( typename list< CPtr<CWindow> >::iterator iChild = childrenList.begin(); iChild != childrenList.end(); iChild++ )
 	{
 		CEdit *pFound = dynamic_cast<CEdit*>( iChild->GetPtr() );
 		if ( pFound != 0 )

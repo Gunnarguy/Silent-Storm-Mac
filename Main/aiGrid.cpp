@@ -10,7 +10,7 @@
 #include "Bound.h"
 #include "wInterface.h"
 #include "wMine.h"
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 #include "aiLocker.h"
 #include "aiJob.h"
 #include "aiPassCalcJob.h"
@@ -30,20 +30,20 @@ void Xor( CPointsContainer *pRes, const CPointsContainer &first, const CPointsCo
 	CPointsContainer &ret = *pRes;
 	ret.clear();
 	// add all points in first group but not in second
-	for ( CPointsContainer::const_iterator i = first.begin(); i != first.end(); ++i )
+	for ( typename CPointsContainer::const_iterator i = first.begin(); i != first.end(); ++i )
 	{
 		bool bFlag = true;
-		for ( CPointsContainer::const_iterator j = second.begin(); j != second.end(); ++j )
+		for ( typename CPointsContainer::const_iterator j = second.begin(); j != second.end(); ++j )
 			if ( *i == *j )
 				bFlag = false;
 		if ( bFlag )
 			ret.push_back( *i );
 	}
 	// add all points in second group but not in first
-	for ( CPointsContainer::const_iterator i = second.begin(); i != second.end(); ++i )
+	for ( typename CPointsContainer::const_iterator i = second.begin(); i != second.end(); ++i )
 	{
 		bool bFlag = true;
-		for ( CPointsContainer::const_iterator j = first.begin(); j != first.end(); ++j )
+		for ( typename CPointsContainer::const_iterator j = first.begin(); j != first.end(); ++j )
 			if ( *i == *j )
 				bFlag = false;
 		if ( bFlag )
@@ -66,7 +66,7 @@ static void CheckEverythingOK( const CArray2D<CNodesLayer::STile> &tiles, int nL
 			if ( b2 )
 			{
 				const CNodesLayer::STransitionSet &tr = transitions.find( p )->second;
-				for ( list<CNodesLayer::SLink>::const_iterator i = tr.links.begin(); i != tr.links.end(); ++i )
+				for ( typename list<CNodesLayer::SLink>::const_iterator i = tr.links.begin(); i != tr.links.end(); ++i )
 				{
 					const CNodesLayer::SLink &l = *i;	
 					SPathPlace dst( l.dst );
@@ -158,7 +158,7 @@ public:
 // CLayersGroup
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // retail @0x441c70: refreshes are suppressed while frozen OR a recolour job is pending, unless
-// forced; FINAL places (0x200) never refresh -- their 0xff sentinel coords would index a
+// forced; FINAL places (0x200) never refresh -- their 0xff marker coords would index a
 // nonexistent recalc square (degenerate region -> negative-size grids in CPassCalcer).
 bool CLayersGroup::RefreshSpot( const SPathPlace &p, IAIMap *pMap, char cLevel, bool bForce )
 {
@@ -885,9 +885,9 @@ bool CNodesLayer::IsValidDestination( const SPathPlace &p )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CNodesLayer::RemoveAllTransitions( const CTRect<int> &rect )
 {
-	for ( CTransitionsHash::iterator i = transitions.begin(); i != transitions.end(); )
+	for ( typename CTransitionsHash::iterator i = transitions.begin(); i != transitions.end(); )
 	{
-		CTransitionsHash::iterator k = i;
+		typename CTransitionsHash::iterator k = i;
 		i++;
 		const SPathPlace &p = k->first;
 		ASSERT( p.IsIntegral() );
@@ -902,15 +902,15 @@ void CNodesLayer::RemoveAllTransitions( const CTRect<int> &rect )
 			t.nFlags &= ~TF_HAS_INTERGRID;
 			t.nFlags &= ~TF_HAS_SAME;
 			STransitionSet &s = k->second;
-			for ( list<SLink>::iterator m = s.links.begin(); m != s.links.end(); ++m )
+			for ( typename list<SLink>::iterator m = s.links.begin(); m != s.links.end(); ++m )
 			{
 				const SPathPlace &dst = m->dst;
 				ASSERT( dst.GetLayer() != p.GetLayer() );
 				CNodesLayer *pDstLayer = pGroup->pNet->layers[ dst.GetLayer() ];
-				CTransitionsHash::iterator t = pDstLayer->transitions.find( dst );
+				typename CTransitionsHash::iterator t = pDstLayer->transitions.find( dst );
 				if ( t != pDstLayer->transitions.end() )
 				{
-					list<SLink>::iterator m = t->second.GetLink( p );
+					typename list<SLink>::iterator m = t->second.GetLink( p );
 					if ( m != t->second.links.end() )
 						t->second.links.erase( m );
 					else
@@ -1310,7 +1310,7 @@ bool CPathNetwork::HasLowerSame( const SPathPlace &p )
 void CPathNetwork::AddDirectTransitions( const CNodesLayer::CTransitionsHash &newtrans )
 {
 	// filter links and establish them
-	for ( CNodesLayer::CTransitionsHash::const_iterator i = newtrans.begin(); i != newtrans.end(); ++i )
+	for ( typename CNodesLayer::CTransitionsHash::const_iterator i = newtrans.begin(); i != newtrans.end(); ++i )
 	{
 		const SPathPlace &src = i->first;
 		CNodesLayer *pSrc = layers[ src.GetLayer() ];
@@ -1318,7 +1318,7 @@ void CPathNetwork::AddDirectTransitions( const CNodesLayer::CTransitionsHash &ne
 		if ( HasLowerSame( src ) )
 			continue;
 		// for every link establish 2 sided connections
-		for ( list<CNodesLayer::SLink>::iterator k = res.links.begin(); k != res.links.end(); )
+		for ( typename list<CNodesLayer::SLink>::iterator k = res.links.begin(); k != res.links.end(); )
 		{
 			const SPathPlace &dst = k->dst;
 			CNodesLayer *pDstLayer = layers[ dst.GetLayer() ];
@@ -1428,7 +1428,7 @@ void CPathNetwork::GetNetworkFragment(
 					CVec3 thisPoint = pLayer->GetCP( p );
 					vector<SPathPlace> sames;
 					pLayer->GetSamePoints( p, &sames );
-					for ( vector<SPathPlace>::iterator i = sames.begin(); i != sames.end(); ++i)
+					for ( typename vector<SPathPlace>::iterator i = sames.begin(); i != sames.end(); ++i)
 					{
 						pLinks->push_back( SShowLink( thisPoint, thisPoint + CVec3( nSM, 0, 0.5 ), SShowLink::DIRECT ) );
 						nSM += 0.03f;
@@ -1486,24 +1486,24 @@ void CPathNetwork::GetNetworkFragment(
 					pLinks->push_back( SShowLink( pLayer->GetCP(p) + toX - toY + smallZ, pLayer->GetCP(p) + toY - toX + smallZ, SShowLink::LAY_POSE_SHOW ) );
 					
 			}
-			CNodesLayer::CTransitionsHash::iterator t = pLayer->transitions.find( p );
+			typename CNodesLayer::CTransitionsHash::iterator t = pLayer->transitions.find( p );
 			if ( t != pLayer->transitions.end() )
 			{
-				for ( list<CNodesLayer::SLink>::iterator k = t->second.links.begin(); k != t->second.links.end(); ++k )
+				for ( typename list<CNodesLayer::SLink>::iterator k = t->second.links.begin(); k != t->second.links.end(); ++k )
 				{
 					const SPathPlace &res = k->dst;
 					CNodesLayer *pResLayer = layers[res.GetLayer()];
 					pLinks->push_back( SShowLink( pLayer->GetCP( p ), pResLayer->GetCP( res ), SShowLink::DIRECT ) );
 					ASSERT( p.GetLayer() != res.GetLayer() );
 					// test
-					CNodesLayer::CTransitionsHash::iterator test = pResLayer->transitions.find( res );
+					typename CNodesLayer::CTransitionsHash::iterator test = pResLayer->transitions.find( res );
 					ASSERT( test != pResLayer->transitions.end() );
 					if ( test != pResLayer->transitions.end() )
 						ASSERT( test->second.GetLink( p ) != test->second.links.end() );
 				}
 				////
 			}
-			CNodesLayer::CLadderHash::iterator l = pLayer->ladderEntrances.find( p );
+			typename CNodesLayer::CLadderHash::iterator l = pLayer->ladderEntrances.find( p );
 			if ( l != pLayer->ladderEntrances.end() )
 			{
 				CNodesLayer::SLadderTransition &lt = l->second;
@@ -1629,7 +1629,7 @@ void CPathNetwork::PrintConsoleInfo( SPathPlace p )
 	CNodesLayer *pLayer = GetLayer( p.GetLayer() );
 	vector<SPathPlace> sames;
 	pLayer->GetSamePoints( p, &sames );
-	for ( vector<SPathPlace>::iterator i = sames.begin(); i != sames.end(); ++i )
+	for ( typename vector<SPathPlace>::iterator i = sames.begin(); i != sames.end(); ++i )
 	{
 		SPathPlace pp = *i;
 		pC = GetColourer( i->GetLayer() );
@@ -1639,11 +1639,11 @@ void CPathNetwork::PrintConsoleInfo( SPathPlace p )
 	}	
 
 	SPathPlace search( p.GetX(), p.GetY(), p.GetLayer() );
-	CNodesLayer::CTransitionsHash::iterator t = pLayer->transitions.find( search );
+	typename CNodesLayer::CTransitionsHash::iterator t = pLayer->transitions.find( search );
 	if ( t != pLayer->transitions.end() )
 	{
 		CNodesLayer::STransitionSet &trS = t->second;
-		for ( list<CNodesLayer::SLink>::iterator i = trS.links.begin(); i != trS.links.end(); ++i )
+		for ( typename list<CNodesLayer::SLink>::iterator i = trS.links.begin(); i != trS.links.end(); ++i )
 		{
 			SPathPlace pp = i->dst;
 			pC = GetColourer( pp.GetLayer() );
@@ -1657,7 +1657,7 @@ void CPathNetwork::PrintConsoleInfo( SPathPlace p )
 	color = pC->GetPointColor((unsigned char)p.GetX(), (unsigned char)p.GetY() );
 	pNet = &pC->zonesAnyMove;
 	list<SNeighbour> &ns = pNet->nodes[color].neighbours;
-	for (list<SNeighbour>::iterator i = ns.begin(); i != ns.end(); ++i) 
+	for (typename list<SNeighbour>::iterator i = ns.begin(); i != ns.end(); ++i) 
 	{
 		int nL = i->nLayer, nNN = i->wNodeNumber, nD = i->wDistance;
 		sprintf_s( buf, "Global neighbour l=%d, clr=%d, distance=%d\n", nL, nNN, nD );
@@ -1737,11 +1737,11 @@ void CPathNetwork::GetLockAreaInternal( vector<SPathPlace> *pRes, const SPathPla
 	pLayer->GetSamePoints( p, pRes );	
 	// other intergrid locks
 /*	CNodesLayer::CTransitionsHash &trHash = pLayer->transitions;
-	CNodesLayer::CTransitionsHash::iterator i = trHash.find( SPathPlace( p.GetX(), p.GetY(), p.GetLayer() ) );
+	typename CNodesLayer::CTransitionsHash::iterator i = trHash.find( SPathPlace( p.GetX(), p.GetY(), p.GetLayer() ) );
 	if ( i != trHash.end() )
 	{
 		CNodesLayer::STransitionSet &transitions = i->second;
-		for ( list<CNodesLayer::SLink>::iterator i = transitions.links.begin(); i != transitions.links.end(); ++i )
+		for ( typename list<CNodesLayer::SLink>::iterator i = transitions.links.begin(); i != transitions.links.end(); ++i )
 		{
 			pRes->push_back( i->dst );
 		}
@@ -1903,7 +1903,7 @@ void CPathNetwork::Lock( CObjectBase *pUnit, const SPathPlace &p )
 		Unlock( pUnit );
 		return;
 	}
-	CLocksHash::iterator i = lockedPlaces.find( pUnit );
+	typename CLocksHash::iterator i = lockedPlaces.find( pUnit );
 	if ( i != lockedPlaces.end() )
 		DisableLocks( pUnit );
 	vector<SPathPlace> res;
@@ -1942,7 +1942,7 @@ void CPathNetwork::LockMovingObject( CObjectBase *pUnit, const SPathPlace &p1, c
 		Unlock( pUnit );
 		return;
 	}
-	CLocksHash::iterator i = lockedPlaces.find( pUnit );
+	typename CLocksHash::iterator i = lockedPlaces.find( pUnit );
 	if ( i != lockedPlaces.end() )
 		DisableLocks( pUnit );
 	vector<SPathPlace> res;
@@ -1959,7 +1959,7 @@ void CPathNetwork::LockMovingObject( CObjectBase *pUnit, const SPathPlace &p1, c
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CPathNetwork::Unlock( CObjectBase *pUnit )
 {
-	CLocksHash::iterator i = lockedPlaces.find( pUnit );
+	typename CLocksHash::iterator i = lockedPlaces.find( pUnit );
 	if ( i != lockedPlaces.end() )
 	{
 		DisableLocks( pUnit );
@@ -1970,7 +1970,7 @@ void CPathNetwork::Unlock( CObjectBase *pUnit )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CPathNetwork::DisableLocks( CObjectBase *pUnit )
 {
-	CLocksHash::iterator i = lockedPlaces.find( pUnit );
+	typename CLocksHash::iterator i = lockedPlaces.find( pUnit );
 	if ( i != lockedPlaces.end() && i->second.bLocked == true )
 	{
 		vector<SPathPlace> &res = i->second.places;
@@ -1984,7 +1984,7 @@ void CPathNetwork::DisableLocks( CObjectBase *pUnit )
 		// live overlapping PKs during placement/path queries, not just corpses.
 		// Restore only enabled owners: selected-only queries deliberately
 		// disable the rest. Keep serialized lock flags/layout unchanged.
-		for ( CLocksHash::const_iterator k = lockedPlaces.begin(); k != lockedPlaces.end(); ++k )
+		for ( typename CLocksHash::const_iterator k = lockedPlaces.begin(); k != lockedPlaces.end(); ++k )
 			if ( k->second.bLocked && IsLockerUnit( k->first ) )
 				for ( unsigned int n = 0; n < k->second.places.size(); ++n )
 					LockUnlockPoint( k->second.places[n], true );
@@ -1995,7 +1995,7 @@ void CPathNetwork::LockUnlockDynamic( const SPathPlace &p, bool bLock, bool bBig
 {
 	vector<SPathPlace> res;
 	GetLockArea( &res, p, bBigUnit );
-	for ( vector<SPathPlace>::iterator i = res.begin(); i != res.end(); ++i )
+	for ( typename vector<SPathPlace>::iterator i = res.begin(); i != res.end(); ++i )
 	{
 		if ( i->IsIntegral() )
 		{
@@ -2008,14 +2008,14 @@ void CPathNetwork::LockUnlockDynamic( const SPathPlace &p, bool bLock, bool bBig
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CPathNetwork::ClearDynamicLocks( CObjectBase *pUnit )
 {
-	CDynLocksHash::iterator i =	dynLockedPlaces.find( pUnit );
+	typename CDynLocksHash::iterator i =	dynLockedPlaces.find( pUnit );
 	bool bBigUnit = IsBigLocker( pUnit );
 	if ( i != dynLockedPlaces.end() )
 	{
 		SDynLockInfo &info = i->second;
 		if ( !info.bLocked )
 			return;
-		for ( vector<SPathPlace>::iterator j = info.points.begin(); j != info.points.end(); ++j )
+		for ( typename vector<SPathPlace>::iterator j = info.points.begin(); j != info.points.end(); ++j )
 		{
 			LockUnlockDynamic( *j, false, bBigUnit );
 		}
@@ -2025,14 +2025,14 @@ void CPathNetwork::ClearDynamicLocks( CObjectBase *pUnit )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CPathNetwork::RestoreDynamicLocks( CObjectBase *pUnit )
 {
-	CDynLocksHash::iterator i =	dynLockedPlaces.find( pUnit );
+	typename CDynLocksHash::iterator i =	dynLockedPlaces.find( pUnit );
 	bool bBigUnit = IsBigLocker( pUnit );
 	if ( i != dynLockedPlaces.end() )
 	{
 		SDynLockInfo &info = i->second;
 		if ( info.bLocked )
 			return;
-		for ( vector<SPathPlace>::iterator j = info.points.begin(); j != info.points.end(); ++j )
+		for ( typename vector<SPathPlace>::iterator j = info.points.begin(); j != info.points.end(); ++j )
 		{
 			LockUnlockDynamic( *j, true, bBigUnit );
 		}
@@ -2046,7 +2046,7 @@ void CPathNetwork::ChangeDynamicLocks( CObjectBase *pUnit, const vector<SPathPla
 	dynLockedPlaces[ pUnit ].points.clear();
 	dynLockedPlaces[ pUnit ].bLocked = true;
 	bool bBigUnit = IsBigLocker( pUnit );
-	for ( vector<SPathPlace>::const_iterator j = points.begin(); j != points.end(); ++j )
+	for ( typename vector<SPathPlace>::const_iterator j = points.begin(); j != points.end(); ++j )
 	{
 		// Retail v1.1 0x442b16 / v1.2 0x443356 skips flying points before
 		// normalizing the tile address: their layer field encodes altitude.
@@ -2064,14 +2064,14 @@ void CPathNetwork::ChangeDynamicLocks( CObjectBase *pUnit, const vector<SPathPla
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CPathNetwork::LockSelected( const list<CObjectBase*> &selected )
 {
-	for ( CLocksHash::iterator i = lockedPlaces.begin(); i != lockedPlaces.end(); ++i )
+	for ( typename CLocksHash::iterator i = lockedPlaces.begin(); i != lockedPlaces.end(); ++i )
 	{
 		DisableLocks( i->first );
 	}
-	for ( list<CObjectBase*>::const_iterator k = selected.begin(); k != selected.end(); ++k )
+	for ( typename list<CObjectBase*>::const_iterator k = selected.begin(); k != selected.end(); ++k )
 	{
 		CObjectBase *pLocker = *k;
-		CLocksHash::iterator i = lockedPlaces.find( pLocker );
+		typename CLocksHash::iterator i = lockedPlaces.find( pLocker );
 		if ( i != lockedPlaces.end() )
 			Lock( i->first, i->second.places );
 		else // trapped door
@@ -2101,27 +2101,27 @@ void CPathNetwork::LockSelected( const list<CObjectBase*> &selected )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CPathNetwork::UnlockSelected()
 {
-	for ( CLocksHash::iterator i = lockedPlaces.begin(); i != lockedPlaces.end(); )
+	for ( typename CLocksHash::iterator i = lockedPlaces.begin(); i != lockedPlaces.end(); )
 	{
 		// Lock may erase a stale corpse record; advance before that happens.
-		CLocksHash::iterator current = i++;
+		typename CLocksHash::iterator current = i++;
 		Lock( current->first, current->second.places );
 	}
-	for ( vector<SFlipper>::iterator it = flippers.begin(); it != flippers.end(); ++it )
+	for ( typename vector<SFlipper>::iterator it = flippers.begin(); it != flippers.end(); ++it )
 		it->nFixedFlags &= ~F_VISIBLE_TRAP;
-	for ( vector<SPathPlace>::iterator it = mineTempLocks.begin(); it != mineTempLocks.end(); ++it )
+	for ( typename vector<SPathPlace>::iterator it = mineTempLocks.begin(); it != mineTempLocks.end(); ++it )
 		LockUnlockPoint( *it, false );
 	mineTempLocks.clear();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CObjectBase* CPathNetwork::GetWhoLocksThisPlace( const SPathPlace &p ) const
 {
-	for ( CLocksHash::const_iterator i = lockedPlaces.begin(); i != lockedPlaces.end(); ++i )
+	for ( typename CLocksHash::const_iterator i = lockedPlaces.begin(); i != lockedPlaces.end(); ++i )
 	{
 		if ( i->second.bLocked )
 		{
 			const vector<SPathPlace> &places = i->second.places;
-			for ( vector<SPathPlace>::const_iterator ip = places.begin(); ip != places.end(); ++ip )
+			for ( typename vector<SPathPlace>::const_iterator ip = places.begin(); ip != places.end(); ++ip )
 				if ( ip->GetLayer() == p.GetLayer() && ip->GetX() == p.GetX() 
 					&& ip->GetY() == p.GetY() && ip->IsIntegral() == p.IsIntegral() )
 					return i->first;
@@ -2180,7 +2180,7 @@ bool CPathNetwork::IsNotOnDoor( const SPathPlace &p ) const
 		else
 			pHash = &fl.locksClosed;
 		SPathPlace test( p.GetX(), p.GetY(), p.GetLayer() );
-		unordered_map<SPathPlace, CNodesLayer::STile, SPathPlaceHash>::const_iterator it = pHash->find( test );
+		typename unordered_map<SPathPlace, CNodesLayer::STile, SPathPlaceHash>::const_iterator it = pHash->find( test );
 		if ( it != pHash->end() && !IsTilePassable( p, it->second ) )
 			return false;
 	}
@@ -2315,11 +2315,11 @@ bool CPathNetwork::UpdateColouring( const vector<SPathPlace> &lockers )
 	}
 	else
 	{
-		for ( vector<SPathPlace>::const_iterator j = difference.begin(); j != difference.end(); ++j )
+		for ( typename vector<SPathPlace>::const_iterator j = difference.begin(); j != difference.end(); ++j )
 		{
 			vector<SPathPlace> res;
 			GetLockArea( &res, *j, false );
-			for ( vector<SPathPlace>::iterator i = res.begin(); i != res.end(); ++i )
+			for ( typename vector<SPathPlace>::iterator i = res.begin(); i != res.end(); ++i )
 			{
 				CMapColourer *colourer = GetColourer( i->GetLayer() );
 				colourer->AddZoneToRecalc( CTRect<unsigned char>( i->GetX(), i->GetY(), i->GetX()+1, i->GetY()+1 ) );
@@ -2585,7 +2585,7 @@ CPathNetwork::SFlipper *CPathNetwork::GetFlipper( const CObjectBase *_pSrc )
 {
 	CObjectBase* pUnconstSrc = const_cast<CObjectBase*>(_pSrc);
 	CPtr<CObjectBase> pSrc(pUnconstSrc);
-	CFlippersHash::iterator i = flippersHash.find( pSrc );
+	typename CFlippersHash::iterator i = flippersHash.find( pSrc );
 	if ( i != flippersHash.end() )
 		return &flippers[ i->second ];
 	else
@@ -2666,7 +2666,7 @@ bool CPathNetwork::IsBlockedByFlipper( int nFlipper,
 	if ( nFlipper >= 0 && nFlipper < flippers.size() )
 	{
 		SFlipper &flipper = flippers[nFlipper];
-		for ( CFlippersHash::iterator i = flippersHash.begin(); i != flippersHash.end(); ++i )
+		for ( typename CFlippersHash::iterator i = flippersHash.begin(); i != flippersHash.end(); ++i )
 		{
 			if ( i->second == nFlipper )
 			{
@@ -2677,7 +2677,7 @@ bool CPathNetwork::IsBlockedByFlipper( int nFlipper,
 		char nPassableO, nPassableC;
 		SPathPlace test( to.GetX(), to.GetY(), to.GetLayer() );
 		*bIsNowOpen = flipper.bOpen;
-		unordered_map<SPathPlace, CNodesLayer::STile, SPathPlaceHash>::iterator it;
+		typename unordered_map<SPathPlace, CNodesLayer::STile, SPathPlaceHash>::iterator it;
 		it = flipper.locksOpen.find( test );
 		if ( it == flipper.locksOpen.end() )
 			nPassableO = t.nPassable;
@@ -2729,7 +2729,7 @@ void CPathNetwork::Freeze( bool _bFreeze )
 //	char buf[256];
 //	sprintf( buf, "Freeze %d\n", bFreeze );
 //	OutputDebugString( buf );
-	for ( vector< CObj<CNodesLayer> >::iterator it = layers.begin(); it != layers.end(); ++it )
+	for ( typename vector< CObj<CNodesLayer> >::iterator it = layers.begin(); it != layers.end(); ++it )
 		if ( IsValid( *it ) )
 			(*it)->pGroup->bFreeze = bFreeze;
 }

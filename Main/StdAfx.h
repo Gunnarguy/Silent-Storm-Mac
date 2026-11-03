@@ -47,8 +47,8 @@ externA5 "C" __declspec(dllimport) DWORD __stdcall  GetTickCount();
 #include <vector>
 #include <crtdbg.h>
 #include <unordered_map>
-#include "..\Misc\basic2.h"
-#include "..\Misc\tools.h"
+#include "../Misc/basic2.h"
+#include "../Misc/tools.h"
 
 using namespace std;
 #include "Specific.h"

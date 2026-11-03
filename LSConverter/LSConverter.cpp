@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "..\Misc\Geom.h"
-#include "..\FileIO\BasicChunk1.h"
-#include "..\Image\ImageOperation.h"
-#include "..\Image\ImageTGA.h"
+#include "../Misc/Geom.h"
+#include "../FileIO/BasicChunk1.h"
+#include "../Image/ImageOperation.h"
+#include "../Image/ImageTGA.h"
 #include <LifeStudioHeadAPIGDP.h>
 #include <LifeStudioHeadAPI.h>
 #include <LifeStudioHeadAPIInit.h>
@@ -348,7 +348,7 @@ void ConvertGDPFile( const char *pszInput, const char *pszOutput, const char *ps
 				int nNewV = UVs.size();
 				UVs.resize( UVs.size() + doubleVerts.size() );
 				//printf( "Double vertices: %d\n", doubleVerts.size() );
-				for ( unordered_map<int,int>::iterator it = doubleVerts.begin(); it != doubleVerts.end(); ++it, ++nNewV )
+				for ( typename unordered_map<int,int>::iterator it = doubleVerts.begin(); it != doubleVerts.end(); ++it, ++nNewV )
 				{
 					copys.push_back( CTPoint<int>( it->first, nNewV ) );
 					it->second = nNewV;

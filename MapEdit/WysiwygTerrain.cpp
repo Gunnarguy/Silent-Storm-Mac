@@ -4,14 +4,14 @@
 #include "weInterface.h"
 #include "MEUserSettings.h"
 #include "MESerialize.h"
-#include "..\Main\METerrain.h"
-#include "..\Main\MELayers.h"
-#include "..\Misc\BasicShare.h"
-#include "..\Main\Grid.h"
-#include "..\Main\MemObject.h"
-#include "..\Main\gView.h"
-#include "..\Main\transform.h"
-#include "..\Main\BuildingInfo.h"
+#include "../Main/METerrain.h"
+#include "../Main/MELayers.h"
+#include "../Misc/BasicShare.h"
+#include "../Main/Grid.h"
+#include "../Main/MemObject.h"
+#include "../Main/gView.h"
+#include "../Main/transform.h"
+#include "../Main/BuildingInfo.h"
 #include "MEParams.h"
 #include "TerrainUndo.h"
 
@@ -304,7 +304,7 @@ void CWysiwygTerrain::EraseGrass( int nLayerID, const CVec2 &ptTilePos, float fR
 		if ( nLayerID == grass.nID )
 		{
 			PaintGrass( nLayerID, ptTilePos, fRadius, 0 );
-			for ( vector<CVec2>::iterator it = grass.blades.begin(); it != grass.blades.end(); )
+			for ( typename vector<CVec2>::iterator it = grass.blades.begin(); it != grass.blades.end(); )
 			{
 				if ( fabs( ptTilePos - *it ) < FP_INV_GRID_STEP * brSizes[FixBrushIndex( GetUserSettings().GetBrushSize() )] )
 				{

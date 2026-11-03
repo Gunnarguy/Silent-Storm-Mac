@@ -236,7 +236,7 @@ bool CBuildingSchema::Recalc( CBuildingGrid *pGrid )
 	if ( !pGrid )
 		return false;
 	bool bModified = false;
-	for ( vector<CJunction>::iterator pJ = juncs.begin(); pJ != juncs.end(); ++pJ )
+	for ( typename vector<CJunction>::iterator pJ = juncs.begin(); pJ != juncs.end(); ++pJ )
 	{
 		CJunction &jun = *pJ;
 		if ( pJ->GetStability() == CJunction::FREE )
@@ -370,7 +370,7 @@ void CBuildingSchema::ComputeStability()
 void CBuildingSchema::ComputeStabilityR()
 {
 	/*
-	list< CObj<CJunction> >::iterator i, j;
+	typename list< CObj<CJunction> >::iterator i, j;
 
 	for ( i = juncs.begin(); i != juncs.end(); ++i )
 	{
@@ -388,7 +388,7 @@ void CBuildingSchema::ComputeStabilityR()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CBuildingSchema::FindFree()
 {
-	for ( vector<CJunction>::iterator pJ = juncs.begin(); pJ != juncs.end(); ++pJ )
+	for ( typename vector<CJunction>::iterator pJ = juncs.begin(); pJ != juncs.end(); ++pJ )
 	{
 		//ASSERT( pJ->GetStability() != CJunction::UNKNOWN ); // node stability is not calculated yet
 //		if ( !pJ->IsFilled() && !pJ->HasRightAngle() )
@@ -402,7 +402,7 @@ void CBuildingSchema::FindFree()
 			list<CJunction*> domain;
 			CJunction::EStability s = pJ->CheckFree( &domain );
 			s = CJunction::STABLE == s ? CJunction::UNSTABLE_NOTFREE : CJunction::FREE;
-			for ( list<CJunction*>::iterator j = domain.begin(); j != domain.end(); ++j )
+			for ( typename list<CJunction*>::iterator j = domain.begin(); j != domain.end(); ++j )
 			{
 				CJunction *p = (*j);
 				if ( CJunction::UNSTABLE == p->GetStability() || CJunction::UNKNOWN == p->GetStability() )
@@ -421,7 +421,7 @@ void CBuildingSchema::FindFree()
 void CBuildingSchema::ComputeMoments()
 {
 	CJuncList waveList1, waveList2;
-	for ( vector<CJunction>::iterator i = juncs.begin(); i != juncs.end(); ++i )
+	for ( typename vector<CJunction>::iterator i = juncs.begin(); i != juncs.end(); ++i )
 	{
 		//if ( (*i)->GetWeight() < FP_EPSILON )
 		//	continue;
@@ -439,7 +439,7 @@ void CBuildingSchema::ComputeMoments()
 	{
 		bIter = false;
 		/*
-		for ( list< CObj<CJunction> >::iterator i = juncs.begin(); i != juncs.end(); ++i )
+		for ( typename list< CObj<CJunction> >::iterator i = juncs.begin(); i != juncs.end(); ++i )
 		{
 			//if ( (*i)->GetWeight() < FP_EPSILON )
 			//	continue;
@@ -447,7 +447,7 @@ void CBuildingSchema::ComputeMoments()
 		}
 		++nStep;
 		*/
-		for ( CJuncList::iterator i = pMasterList->begin(); i != pMasterList->end(); ++i )
+		for ( typename CJuncList::iterator i = pMasterList->begin(); i != pMasterList->end(); ++i )
 		{
 			//if ( (*i)->GetWeight() < FP_EPSILON )
 			//	continue;
@@ -458,7 +458,7 @@ void CBuildingSchema::ComputeMoments()
 		swap( pNextList, pMasterList );
 	}
 	//
-	for ( vector<CJunction>::iterator i = juncs.begin(); i != juncs.end(); ++i )
+	for ( typename vector<CJunction>::iterator i = juncs.begin(); i != juncs.end(); ++i )
 	{
 		//if ( (*i)->GetWeight() < FP_EPSILON )
 		//	continue;
@@ -471,7 +471,7 @@ void CBuildingSchema::ComputeMoments()
 	static int nTotalDiscrepancy = 0;
 	++nComputeCount;
 	float fRealWeight = 0, fComputedWeight = 0;
-	for ( vector<CJunction>::iterator i = juncs.begin(); i != juncs.end(); ++i )
+	for ( typename vector<CJunction>::iterator i = juncs.begin(); i != juncs.end(); ++i )
 	{
 		if ( CJunction::UNSTABLE_NOTFREE == i->GetStability() )
 			fRealWeight += i->GetWeight();
@@ -500,7 +500,7 @@ void CBuildingSchema::ComputeMoments()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CBuildingSchema::Reset()
 {
-	for ( vector<CJunction>::iterator i = juncs.begin(); i != juncs.end(); ++i )
+	for ( typename vector<CJunction>::iterator i = juncs.begin(); i != juncs.end(); ++i )
 	{
 		if ( i->IsDestroyed() )
 		{
@@ -513,7 +513,7 @@ void CBuildingSchema::Reset()
 		}
 	}
 	//
-	for ( vector<CRod>::iterator i = rods.begin(); i != rods.end(); ++i )
+	for ( typename vector<CRod>::iterator i = rods.begin(); i != rods.end(); ++i )
 	{
 		if ( i->IsDestroyed() )
 		{

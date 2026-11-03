@@ -6,8 +6,8 @@
 #include "Gfx.h"
 #include "GfxShaders.h"
 #include "GfxShadersDescr.h"
-#include "..\MiscDll\Commands.h"      // REGISTER_VAR_EX (gfx_maxlag / gfx_register_resolution)
-#include "..\FileIO\BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
+#include "../MiscDll/Commands.h"      // REGISTER_VAR_EX (gfx_maxlag / gfx_register_resolution)
+#include "../FileIO/BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
 
 namespace NGfx
 {
@@ -186,7 +186,7 @@ SGeomFormatInfo geometryFormatInfo[7] =
 static void ApplyRenderState( D3DRENDERSTATETYPE state, DWORD dwVal )
 {
 	SRenderStateKey key( state );
-	CRenderStatesHash::iterator i = renderStates.find( key );
+	typename CRenderStatesHash::iterator i = renderStates.find( key );
 	if ( i != renderStates.end() )
 	{
 		if ( i->second != dwVal )
@@ -202,7 +202,7 @@ static void ApplyRenderState( D3DRENDERSTATETYPE state, DWORD dwVal )
 static void ApplyRenderState( int nStage, D3DTEXTURESTAGESTATETYPE state, DWORD dwVal )
 {
 	SRenderStateKey key( nStage, state );
-	CRenderStatesHash::iterator i = renderStates.find( key );
+	typename CRenderStatesHash::iterator i = renderStates.find( key );
 	if ( i != renderStates.end() )
 	{
 		if ( i->second != dwVal )
@@ -218,7 +218,7 @@ static void ApplyRenderState( int nStage, D3DTEXTURESTAGESTATETYPE state, DWORD 
 static void ApplySamplerState( int nStage, D3DSAMPLERSTATETYPE state, DWORD dwVal )
 {
 	SRenderStateKey key( nStage, state );
-	CRenderStatesHash::iterator i = samplerStates.find( key );
+	typename CRenderStatesHash::iterator i = samplerStates.find( key );
 	if ( i != samplerStates.end() )
 	{
 		if ( i->second != dwVal )
@@ -686,6 +686,16 @@ static void SetRT( IDirect3DSurface9 *pTB, IDirect3DSurface9 *pZB )
 	}
 	//hr = pDevice->BeginScene(); ASSERT( hr == D3D_OK );
 }
+#if defined(__APPLE__)
+// macOS port: bind register 0 and the register depth buffer now (CRenderContext binds lazily at the next draw), so
+// the platform's world effects (S2WorldEffects) see the finished 3D scene as the current target
+void BindRegisterForPostFX()
+{
+	NWin32Helper::com_ptr<IDirect3DSurface9> pTB;
+	GetSurface( pRegisters[0], 0, &pTB );
+	SetRT( pTB, pRegisterDepth );
+}
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CRenderContext
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -813,11 +823,11 @@ void CRenderContext::SetRegister( int _nRegister )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static void SetRT( IDirect3DSurface9 *pTB, int nSize )
 {
-	CDepthHash::iterator i = sharedZBuffers.find( nSize );
+	typename CDepthHash::iterator i = sharedZBuffers.find( nSize );
 	if ( i == sharedZBuffers.end() )
 	{
 		int nMax = 1000000;
-		for ( CDepthHash::iterator k = sharedZBuffers.begin(); k != sharedZBuffers.end(); ++k )
+		for ( typename CDepthHash::iterator k = sharedZBuffers.begin(); k != sharedZBuffers.end(); ++k )
 		{
 			if ( k->first > nSize && k->first < nMax )
 			{
@@ -1178,7 +1188,7 @@ bool IsNVidiaNP2Bug()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static bool AddZBuffer( D3DFORMAT format, int nSize )
 {
-	CDepthHash::iterator i = sharedZBuffers.find( nSize );
+	typename CDepthHash::iterator i = sharedZBuffers.find( nSize );
 	if ( i == sharedZBuffers.end() )
 	{
 		HRESULT hr;
@@ -1227,12 +1237,12 @@ bool InitZBuffer( D3DFORMAT format )
 		for ( int k = 0; k < nScreenRegisters; ++k )
 			pRegisters[k] = MakeRenderTarget( nXSize, nYSize, SPixel8888::ID );
 	}
-	for (unordered_map<int,int>::iterator i = rtInfo.targets.begin(); i != rtInfo.targets.end(); ++i )
+	for (typename unordered_map<int,int>::iterator i = rtInfo.targets.begin(); i != rtInfo.targets.end(); ++i )
 	{
 		if ( !AddZBuffer( format, i->first ) )
 			return false;
 	}
-	for (unordered_map<int,int>::iterator i = rtInfo.cubeTargets.begin(); i != rtInfo.cubeTargets.end(); ++i )
+	for (typename unordered_map<int,int>::iterator i = rtInfo.cubeTargets.begin(); i != rtInfo.cubeTargets.end(); ++i )
 	{
 		if ( !AddZBuffer( format, i->first ) )
 			return false;

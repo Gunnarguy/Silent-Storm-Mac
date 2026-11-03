@@ -2,8 +2,8 @@
 #include "Placement.h"
 #include "PlacementDefs.h"
 #include "Floor.h"
-#include "..\Misc\BasicShare.h"
-#include "..\Main\MELayers.h"
+#include "../Misc/BasicShare.h"
+#include "../Main/MELayers.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
@@ -117,7 +117,7 @@ bool CFloorPlan::DeleteFragment( NBuilding::CBuildInfo *pInfo, const NBuilding::
 {
 	if ( FT_ROOM == ftype )
 		return true;
-	vector<NBuilding::SBuildFragment>::iterator i = find_if( pInfo->solidFragments.begin(), pInfo->solidFragments.end(), CFrCompare(fr) );
+	typename vector<NBuilding::SBuildFragment>::iterator i = find_if( pInfo->solidFragments.begin(), pInfo->solidFragments.end(), CFrCompare(fr) );
 	if ( i != pInfo->solidFragments.end() )
 		pInfo->solidFragments.erase( i );
 	else

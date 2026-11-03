@@ -30,9 +30,16 @@ protected:
 public:
 	virtual void Read( unsigned int nPos, void *pDest, unsigned int nSize ) = 0;
 	virtual void Write( unsigned int nPos, const void *pSrc, unsigned int nSize ) = 0;
+	// macOS port tool support: every file ID in the package with its size
+	void ListFiles( vector< pair<FILE_ID, unsigned int> > *pRes ) const
+	{
+		pRes->clear();
+		for ( typename CFileInfoHash::const_iterator it = files.begin(); it != files.end(); ++it )
+			pRes->push_back( make_pair( it->first, it->second.nLength ) );
+	}
 	SFileInfo* GetFileInfo( FILE_ID nFileID )
 	{
-		CFileInfoHash::iterator it = files.find( nFileID );
+		typename CFileInfoHash::iterator it = files.find( nFileID );
 		if ( it == files.end() )
 			return 0;
 		return &it->second;
@@ -144,7 +151,7 @@ bool CFilesPackage::RescanDir( CDataStream *pErr, const char *pszDir,
 				SFileInfo *pInfo = GetFileInfo( nFileID );
 				if ( pInfo )
 				{
-					CFileTimeHash::iterator k = pDates->find( nFileID );
+					typename CFileTimeHash::iterator k = pDates->find( nFileID );
 					if ( k != pDates->end() && k->second == ff.ftLastWriteTime )
 						bAdd = false;
 				}
@@ -204,15 +211,15 @@ bool CFilesPackage::RescanDir( CDataStream *pErr, const char *pszDir,
 		FindClose( hf );
 	}
 	// remove non existing files
-	for ( CFileInfoHash::iterator i = files.begin(); i != files.end(); )
+	for ( typename CFileInfoHash::iterator i = files.begin(); i != files.end(); )
 	{
 		if ( foundFiles.find( i->first ) == foundFiles.end() )
 		{
 			bChanged = true;
-			CFileTimeHash::iterator k = pDates->find( i->first );
+			typename CFileTimeHash::iterator k = pDates->find( i->first );
 			if ( k != pDates->end() )
 				pDates->erase( k );
-			CFileInfoHash::iterator idel = i++;
+			typename CFileInfoHash::iterator idel = i++;
 			files.erase( idel );
 		}
 		else
@@ -353,6 +360,13 @@ IFilesPackage* OpenCachedFilesPackage( const char *pszFileName )
 	if ( !pRes->Open( pszFileName ) )
 		return 0;
 	return pRes.Extract();
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void ListPackageFiles( IFilesPackage *pPack, vector< pair<FILE_ID, unsigned int> > *pRes )
+{
+	pRes->clear();
+	if ( pPack )
+		pPack->ListFiles( pRes );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool DoesFileExist( IFilesPackage *pPack, FILE_ID nFileID )

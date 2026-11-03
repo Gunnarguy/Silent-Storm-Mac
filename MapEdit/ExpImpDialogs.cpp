@@ -5,7 +5,7 @@
 #include "Export.h"
 #include "ExportAcks.h"
 #include "ExpImpDialogs.h"
-#include "..\Misc\StrProc.h"
+#include "../Misc/StrProc.h"
 #include "DialogSequnce.h"
 #include <atldbsch.h>
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,8 +69,8 @@ bool GetPers( int *pnPers, int *pnSide, bool *pbHero, const string &szPersCode )
 		ASSERT(0);
 		return false;
 	}
-	CPropMap::const_iterator i = pProps->find( "PersID" );
-	CPropMap::const_iterator iHero = pProps->find( "Hero" );
+	typename CPropMap::const_iterator i = pProps->find( "PersID" );
+	typename CPropMap::const_iterator iHero = pProps->find( "Hero" );
 	if ( i == pProps->end() || iHero == pProps->end() )
 	{
 		ASSERT(0);
@@ -83,7 +83,7 @@ bool GetPers( int *pnPers, int *pnSide, bool *pbHero, const string &szPersCode )
 	pProps = rpgtree.pItemsTree->GetPropList( *pnPers );
 	if ( !pProps )
 		return false;
-	CPropMap::const_iterator iSide = pProps->find( "SideID" );
+	typename CPropMap::const_iterator iSide = pProps->find( "SideID" );
 	if ( iSide == pProps->end() )
 	{
 		ASSERT(0);
@@ -118,13 +118,13 @@ bool GetDefHeroPers( int nSide, vector<int> *pPers )
 		MessageBox( 0, "Hero side is unknown", "Error", MB_OK | MB_ICONWARNING );
 		return false;
 	}
-	CPropMap::const_iterator im1 = pSP->find( "Nationality1Male" );
-	CPropMap::const_iterator im2 = pSP->find( "Nationality2Male" );
-	CPropMap::const_iterator im3 = pSP->find( "Nationality3Male" );
-	CPropMap::const_iterator if1 = pSP->find( "Nationality1Female" );
-	CPropMap::const_iterator if2 = pSP->find( "Nationality2Female" );
-	CPropMap::const_iterator if3 = pSP->find( "Nationality3Female" );
-	CPropMap::const_iterator e = pSP->end();
+	typename CPropMap::const_iterator im1 = pSP->find( "Nationality1Male" );
+	typename CPropMap::const_iterator im2 = pSP->find( "Nationality2Male" );
+	typename CPropMap::const_iterator im3 = pSP->find( "Nationality3Male" );
+	typename CPropMap::const_iterator if1 = pSP->find( "Nationality1Female" );
+	typename CPropMap::const_iterator if2 = pSP->find( "Nationality2Female" );
+	typename CPropMap::const_iterator if3 = pSP->find( "Nationality3Female" );
+	typename CPropMap::const_iterator e = pSP->end();
 
 	if ( e == im1 || e == im2 || e == im3 || e == if1 || e == if2 || e == if3 )
 	{
@@ -139,18 +139,18 @@ bool GetDefHeroPers( int nSide, vector<int> *pPers )
 	pers.push_back( SPers( if2->second->GetValue() ) );
 	pers.push_back( SPers( if3->second->GetValue() ) );
 	sideTree.pItemsTree->ReleasePropList( pSP );
-	for ( vector<SPers>::iterator i = pers.begin(); i != pers.end(); ++i )
+	for ( typename vector<SPers>::iterator i = pers.begin(); i != pers.end(); ++i )
 	{
 		const CPropMap *pPP = persTree.pItemsTree->GetPropList( i->nPersID );
 		if ( !pPP )
 			continue;
-		CPropMap::const_iterator iv = pPP->find( "Voice" );
+		typename CPropMap::const_iterator iv = pPP->find( "Voice" );
 		if ( iv != pPP->end() )
 			i->nVoice = iv->second->GetValue();
 		persTree.pItemsTree->ReleasePropList( pPP );
 	}
 	sort( pers.begin(), pers.end(), VoiceCompare );
-	for ( vector<SPers>::iterator i = pers.begin(); i != pers.end(); ++i )
+	for ( typename vector<SPers>::iterator i = pers.begin(); i != pers.end(); ++i )
 		pPers->push_back( i->nPersID );
 	//
 	return true;
@@ -162,7 +162,7 @@ string CreateAckName( int nPers )
 	const CPropMap *pProps = persTree.pItemsTree->GetPropList( nPers );
 	if ( !pProps )
 		return "";
-	CPropMap::const_iterator iMaxAck = pProps->find( "MaxAck" );
+	typename CPropMap::const_iterator iMaxAck = pProps->find( "MaxAck" );
 	if ( iMaxAck == pProps->end() )
 		return "";
 	int nAck = iMaxAck->second->GetValue();
@@ -360,7 +360,7 @@ void ExportDialogs( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport )
 		const CPropMap *pProps = pItems->GetPropList( nItemIDs[i] );
 		if ( !pProps )
 			continue;
-		CPropMap::const_iterator it = pProps->find( "SrcName" );
+		typename CPropMap::const_iterator it = pProps->find( "SrcName" );
 		if ( it != pProps->end() )
 		{
 			string szSrc = GetExportSrcDir() + (string)it->second->GetValue();
@@ -373,7 +373,7 @@ void ExportDialogs( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport )
 				NStr::SplitString( vszPath.back(), vszStr, '.' );
 				if ( vszStr.size() == 2 )
 				{
-					CPropMap::const_iterator icode = pProps->find( "Code" );
+					typename CPropMap::const_iterator icode = pProps->find( "Code" );
 					if ( icode != pProps->end() )
 						icode->second->SetValue( vszStr.front() );
 				}

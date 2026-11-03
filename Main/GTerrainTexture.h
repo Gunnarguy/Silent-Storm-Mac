@@ -7,8 +7,8 @@
 #include "DG.h"
 #include "Transform.h"
 #include "TerrainInfo.h"
-#include "..\Misc\RandomGen.h"
-#include "..\Misc\HPTimer.h"
+#include "../Misc/RandomGen.h"
+#include "../Misc/HPTimer.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGfx
 {
@@ -41,6 +41,9 @@ private:
 	CDGPtr<CVersioningBase> pUpdateRegion;
 	int nDetail;
 	ZEND int operator&( CStructureSaver &f ) { f.Add(2,&bBumpTexture); f.Add(3,&sSeed); f.Add(4,&nrRegion); f.Add(6,&pInfo); f.Add(7,&pGrass); f.Add(8,&fWorldToScreen); f.Add(9,&pUpdateRegion); f.Add(10,&nDetail); return 0; }
+#if defined(__APPLE__)
+	unsigned textureGeneration = 0;
+#endif
 
 	struct SSpotTextures
 	{

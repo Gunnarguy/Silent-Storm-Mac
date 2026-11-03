@@ -4,21 +4,21 @@
 #include "Grid.h"
 #include "Transform.h"
 #include "BuildingGrid.h"
-#include "..\Misc\BasicShare.h"
+#include "../Misc/BasicShare.h"
 #include "BuildingInfo.h"
 #include "BuildingClip.h"
 #include "MapBuildTerrain.h"
 #include "MakeBuilding.h"
-#include "..\DBFormat\DataGeometry.h"
-#include "..\DBFormat\DataScenario.h"
-#include "..\MiscDll\LogStream.h"
+#include "../DBFormat/DataGeometry.h"
+#include "../DBFormat/DataScenario.h"
+#include "../MiscDll/LogStream.h"
 #include "aiWaypoint.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataLight.h"
-#include "..\DBFormat\DataObject.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataAI.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataLight.h"
+#include "../DBFormat/DataObject.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataAI.h"
 #include "aiGrid.h"
 
 const float WALL_HEIGHT = 2.5f;  // floor height
@@ -54,7 +54,7 @@ void ConvertFlags( vector<int> *pFlags, const vector<string> &strParams, bool bC
 			attrmap[it.Get()->szName] = it.Get()->GetRecordID();
 		for ( int i = 0; i < params.size(); ++i )
 		{
-			unordered_map<string, int>::const_iterator it = attrmap.find( params[i] );
+			typename unordered_map<string, int>::const_iterator it = attrmap.find( params[i] );
 			if ( it != attrmap.end() )
 				pFlags->push_back( it->second );
 		}
@@ -467,7 +467,7 @@ void CMapBuilder::AddSimpleElements( SMapInfo *pDst, SMapBuilding *pB, NDb::CTem
 														// cell for positioning (only the shelf sequence below does) -- kept
 														// for rand-stream fidelity
 								int nShelfSeq = rand.Get( 9 );
-								for ( vector<NDb::SLootItem>::const_iterator li = pChestReal->items.begin(); li != pChestReal->items.end(); ++li )
+								for ( typename vector<NDb::SLootItem>::const_iterator li = pChestReal->items.begin(); li != pChestReal->items.end(); ++li )
 								{
 									if ( !IsValid( li->pItem ) )
 										continue;
@@ -652,7 +652,7 @@ void CMapBuilder::AddSimpleElements( SMapInfo *pDst, SMapBuilding *pB, NDb::CTem
 						{
 							if ( !IsValid( mu.pBackpack ) )
 								mu.pBackpack = new NDb::CRPGChestReal;
-							for ( vector<NDb::SLootItem>::iterator li = pHand->items.begin(); li != pHand->items.end(); )
+							for ( typename vector<NDb::SLootItem>::iterator li = pHand->items.begin(); li != pHand->items.end(); )
 							{
 								if ( !IsValid( li->pItem ) || !IsValid( li->pItem->pSuccessor ) )
 								{
@@ -723,9 +723,9 @@ void CMapBuilder::WriteLightRooms( SMapInfo *pInfo, NBuilding::CBuildingGrid *pG
 template<class T>
 inline void SetStuffOnLayer( T *pDst, T *pSrc, int nMaxFloor )
 {
-	for ( T::iterator i = pSrc->begin(); i != pSrc->end(); )
+	for ( typename T::iterator i = pSrc->begin(); i != pSrc->end(); )
 	{
-		T::iterator k = i++;
+		typename T::iterator k = i++;
 		int nFloor = k->pos.nFloor;
 		ASSERT( nFloor >= nMaxFloor || nMaxFloor == 1000 );
 		if ( nFloor <= nMaxFloor )
@@ -736,9 +736,9 @@ inline void SetStuffOnLayer( T *pDst, T *pSrc, int nMaxFloor )
 template<class T>
 inline void SetObjectsOnLayer( T *pDst, T *pSrc, int nMaxFloor )
 {
-	for ( T::iterator i = pSrc->begin(); i != pSrc->end(); )
+	for ( typename T::iterator i = pSrc->begin(); i != pSrc->end(); )
 	{
-		T::iterator k = i++;
+		typename T::iterator k = i++;
 		if ( !IsValid( k->pObject ) )
 			continue;
 		int nFloor = k->pos.nFloor;
@@ -751,10 +751,10 @@ inline void SetObjectsOnLayer( T *pDst, T *pSrc, int nMaxFloor )
 template<class T>
 inline void SetWaypointsOnLayer( T *pDst, T *pSrc, int nMaxFloor )
 {
-	for ( T::iterator i = pSrc->begin(); i != pSrc->end(); )
+	for ( typename T::iterator i = pSrc->begin(); i != pSrc->end(); )
 	{
-		T::iterator j = i++;
-		T::reference k = *j;
+		typename T::iterator j = i++;
+		typename T::reference k = *j;
 		int nFloor = k->pos.nFloor;
 		ASSERT( nFloor >= nMaxFloor );
 		if ( nFloor <= nMaxFloor )
@@ -767,13 +767,13 @@ static void SetOnLayer( SMapInfo *pInfo, SMapInfo *pFree, int nMaxFloor )
 	for ( int k = 0; k < pFree->deploySpots.size(); ++k )
 		pInfo->deploySpots.push_back( pFree->deploySpots[k] );
 	pFree->deploySpots.clear();
-	for ( list<SMapRPGElement>::const_iterator i = pFree->rpgitems.begin(); i != pFree->rpgitems.end(); ++i )
+	for ( typename list<SMapRPGElement>::const_iterator i = pFree->rpgitems.begin(); i != pFree->rpgitems.end(); ++i )
 		pInfo->rpgitems.push_back( *i );
-	for ( vector<SClueSlot>::const_iterator i = pFree->slots.begin(); i != pFree->slots.end(); ++i )
+	for ( typename vector<SClueSlot>::const_iterator i = pFree->slots.begin(); i != pFree->slots.end(); ++i )
 		pInfo->slots.push_back( *i );
 	pInfo->hintSlots.insert( pInfo->hintSlots.end(), pFree->hintSlots.begin(), pFree->hintSlots.end() );
 	pFree->hintSlots.clear();
-	for (unordered_map<int, SUnitGroup>::const_iterator i = pFree->groups.begin(); i != pFree->groups.end(); ++i )
+	for (typename unordered_map<int, SUnitGroup>::const_iterator i = pFree->groups.begin(); i != pFree->groups.end(); ++i )
 	{
 		SUnitGroup &g = pInfo->groups[i->first];
 		g.units.insert( g.units.end(), i->second.units.begin(), i->second.units.end() );
@@ -798,7 +798,7 @@ static void Transfer( SMapInfo *pDst, SMapInfo *pSrc )
 	pDst->scripts.insert( pDst->scripts.end(), pSrc->scripts.begin(), pSrc->scripts.end() );
 	pDst->slots.insert( pDst->slots.end(), pSrc->slots.begin(), pSrc->slots.end() );
 	pDst->hintSlots.insert( pDst->hintSlots.end(), pSrc->hintSlots.begin(), pSrc->hintSlots.end() );
-	for (unordered_map<int, SUnitGroup>::const_iterator i = pSrc->groups.begin(); i != pSrc->groups.end(); ++i )
+	for (typename unordered_map<int, SUnitGroup>::const_iterator i = pSrc->groups.begin(); i != pSrc->groups.end(); ++i )
 	{
 		SUnitGroup &g = pDst->groups[i->first];
 		g.units.insert( g.units.end(), i->second.units.begin(), i->second.units.end() );
@@ -1102,7 +1102,7 @@ void CMapBuilder::BuildHolesList()
 	
 	list<SMapHole> &holesList = info.holesList;
 	const STerrainInfo &sInfo = info.terrain;
-	for( vector<STerrainHole>::const_iterator iTempHole = sInfo.holes.begin(); iTempHole != sInfo.holes.end(); iTempHole++ )
+	for( typename vector<STerrainHole>::const_iterator iTempHole = sInfo.holes.begin(); iTempHole != sInfo.holes.end(); iTempHole++ )
 	{
 		bool bHandled = false;
 		list<SMapHole> newHolesList;
@@ -1117,7 +1117,7 @@ void CMapBuilder::BuildHolesList()
 		else
 			sourcePolygonsList.push_back( iTempHole->vPolygon );
 		DumpPolyList( sourcePolygonsList );
-		for ( list<SMapHole>::iterator iTempGroupHole = holesList.begin(); iTempGroupHole != holesList.end(); iTempGroupHole++ )
+		for ( typename list<SMapHole>::iterator iTempGroupHole = holesList.begin(); iTempGroupHole != holesList.end(); iTempGroupHole++ )
 		{
 			TPolygonsList intPolygonsList, subPolygonsList, outClippedPolygonsList;
 			ClipPolygon( iTempGroupHole->polygonsList, sourcePolygonsList, &intPolygonsList, &subPolygonsList );
@@ -1157,13 +1157,13 @@ struct SEdge
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CMapBuilder::GenerateWalls()
 {
-	for ( list<SMapHole>::const_iterator iHole = info.holesList.begin(); iHole != info.holesList.end(); iHole++ )
+	for ( typename list<SMapHole>::const_iterator iHole = info.holesList.begin(); iHole != info.holesList.end(); iHole++ )
 	{
 		int nBaseHeight = iHole->nHeight;
 		list<SEdge> edgesList;
 		const SMapHole &sHole = *iHole;
 
-		for ( TPolygonsList::const_iterator iPolygon = sHole.polygonsList.begin(); iPolygon != sHole.polygonsList.end(); iPolygon++ )
+		for ( typename TPolygonsList::const_iterator iPolygon = sHole.polygonsList.begin(); iPolygon != sHole.polygonsList.end(); iPolygon++ )
 		{
 			const vector<CVec2> &pointsSet = *iPolygon;
 			for ( int nTemp = 0; nTemp < pointsSet.size(); nTemp++ )
@@ -1175,13 +1175,13 @@ void CMapBuilder::GenerateWalls()
 			}
 		}
 
-		list<SMapHole>::const_iterator iNext = iHole;
+		typename list<SMapHole>::const_iterator iNext = iHole;
 		iNext++;
 
-		for ( list<SMapHole>::const_iterator iHole = info.holesList.begin(); iHole != iNext; iHole++ )
+		for ( typename list<SMapHole>::const_iterator iHole = info.holesList.begin(); iHole != iNext; iHole++ )
 		{
 			const SMapHole &sHole = *iHole;
-			for ( TPolygonsList::const_iterator iPolygon = sHole.polygonsList.begin(); iPolygon != sHole.polygonsList.end(); iPolygon++ )
+			for ( typename TPolygonsList::const_iterator iPolygon = sHole.polygonsList.begin(); iPolygon != sHole.polygonsList.end(); iPolygon++ )
 			{
 				const vector<CVec2> &pointsSet = *iPolygon;
 				for ( int nTemp = 0; nTemp < pointsSet.size(); nTemp++ )
@@ -1189,7 +1189,7 @@ void CMapBuilder::GenerateWalls()
 					const CVec2 &vBeg = pointsSet[nTemp];
 					const CVec2 &vEnd = pointsSet[( nTemp + 1 ) % pointsSet.size()];
 
-					for ( list<SEdge>::iterator iEdge = edgesList.begin(); iEdge != edgesList.end(); )
+					for ( typename list<SEdge>::iterator iEdge = edgesList.begin(); iEdge != edgesList.end(); )
 					{
 						SEdge &sEdge = *iEdge;
 						if ( IsEqual( sEdge.vBeg, vEnd ) && IsEqual( sEdge.vEnd, vBeg ) )
@@ -1200,10 +1200,10 @@ void CMapBuilder::GenerateWalls()
 				}
 			}
 		}
-		for ( list<SMapHole>::const_iterator iHole = iNext; iHole != info.holesList.end(); iHole++ )
+		for ( typename list<SMapHole>::const_iterator iHole = iNext; iHole != info.holesList.end(); iHole++ )
 		{
 			const SMapHole &sHole = *iHole;
-			for ( TPolygonsList::const_iterator iPolygon = sHole.polygonsList.begin(); iPolygon != sHole.polygonsList.end(); iPolygon++ )
+			for ( typename TPolygonsList::const_iterator iPolygon = sHole.polygonsList.begin(); iPolygon != sHole.polygonsList.end(); iPolygon++ )
 			{
 				const vector<CVec2> &pointsSet = *iPolygon;
 				for ( int nTemp = 0; nTemp < pointsSet.size(); nTemp++ )
@@ -1211,7 +1211,7 @@ void CMapBuilder::GenerateWalls()
 					const CVec2 &vBeg = pointsSet[nTemp];
 					const CVec2 &vEnd = pointsSet[( nTemp + 1 ) % pointsSet.size()];
 
-					for ( list<SEdge>::iterator iEdge = edgesList.begin(); iEdge != edgesList.end(); )
+					for ( typename list<SEdge>::iterator iEdge = edgesList.begin(); iEdge != edgesList.end(); )
 					{
 						SEdge &sEdge = *iEdge;
 						if ( IsEqual( sEdge.vBeg, vEnd ) && IsEqual( sEdge.vEnd, vBeg ) )
@@ -1232,7 +1232,7 @@ void CMapBuilder::GenerateWalls()
 			}
 		}
 
-		for ( list<SEdge>::iterator iEdge = edgesList.begin(); iEdge != edgesList.end(); iEdge++ )
+		for ( typename list<SEdge>::iterator iEdge = edgesList.begin(); iEdge != edgesList.end(); iEdge++ )
 		{
 			SEdge &sEdge = *iEdge;
 
@@ -1249,14 +1249,14 @@ void CMapBuilder::GenerateWalls()
 template<class T>
 inline void FixHeights( STerrainInfo &terrain, T *pSet )
 {
-	for ( T::iterator i = pSet->begin(); i != pSet->end(); ++i )
+	for ( typename T::iterator i = pSet->begin(); i != pSet->end(); ++i )
 		i->pos.ptPos.z += GetMeterHeightCheck( terrain, i->ptAlignTo.x, i->ptAlignTo.y );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class T>
 inline void FixHeightsPtr( STerrainInfo &terrain, T *pSet )
 {
-	for ( T::iterator i = pSet->begin(); i != pSet->end(); ++i )
+	for ( typename T::iterator i = pSet->begin(); i != pSet->end(); ++i )
 			(*i)->pos.ptPos.z += GetMeterHeightCheck( terrain, (*i)->ptAlignTo.x, (*i)->ptAlignTo.y );	
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1352,9 +1352,9 @@ void CMapBuilder::ResolveRoutes( SMapInfo *pInfo )
 {
 	// iterate over all added units and check their routes; skip flags already set,
 	// if new matching flags appeared on the map, insert them into the route in the right order
-	for ( list<SMapUnit>::iterator i = pInfo->units.begin(); i != pInfo->units.end(); ++i )
+	for ( typename list<SMapUnit>::iterator i = pInfo->units.begin(); i != pInfo->units.end(); ++i )
 		ResolveRoute( shareUnits.Get( i->nUnitID ), &i->route );
-	for (unordered_map<int, SUnitGroup>::iterator i = pInfo->groups.begin(); i != pInfo->groups.end(); ++i )
+	for (typename unordered_map<int, SUnitGroup>::iterator i = pInfo->groups.begin(); i != pInfo->groups.end(); ++i )
 		ResolveRoute( shareUnitGroups.Get( i->first ), &i->second.route );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1400,7 +1400,7 @@ bool CMapBuilder::BuildMap( int nPlacementID )
 		FixHeightsPtr( info.terrain, &info.waypoints );
 	}
 	
-	vector<SMapBuilding>::iterator it;
+	typename vector<SMapBuilding>::iterator it;
 	for ( it = info.buildings.begin(); it != info.buildings.end(); ++it )
 	{
 		SMapBuilding &b = *it;
@@ -1422,7 +1422,7 @@ bool CMapBuilder::BuildMap( int nPlacementID )
 		if ( ex.nObjStageDelta > 0 && ex.fObjRadius > FP_EPSILON )
 		{
 			const float fRadius2 = sqr( ex.fObjRadius * FP_INV_GRID_STEP );
-			for ( list<SMapElement>::iterator i = info.items.begin(); i != info.items.end(); ++i )
+			for ( typename list<SMapElement>::iterator i = info.items.begin(); i != info.items.end(); ++i )
 			{
 				SMapElement &m = *i;
 				if ( fabs2( m.pos.ptPos - ex.pos.ptPos ) < fRadius2 )

@@ -5,13 +5,13 @@
 #include "GSceneUtils.h"
 #include "iMain.h"
 #include "G2DView.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataDifficulty.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataDifficulty.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "wInterface.h"
 #include "Sound.h"
 #include "RPGUnit.h"
@@ -26,7 +26,7 @@
 #include "iAdvFaceGen.h"
 #include "iRenderWorld.h"
 #include "iGlobalMap.h"
-#include "..\DBFormat\DataCamera.h"
+#include "../DBFormat/DataCamera.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -303,6 +303,8 @@ private:
 	////
 	CObj<NUI::CFaceGenUI> pMenuUI;
 public:
+	void TestPlay();   // macOS port test hook (console "facegen_play")
+	void TestCustomHead();   // macOS port test hook (console "facegen_custom")
 	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CRenderBaseInterface*)this); f.Add(2,&pMerc); f.Add(3,&pSide); f.Add(4,&pNationality); f.Add(5,&pDifficulty); f.Add(6,&pMenuUI); return 0; }
 
 public:
@@ -319,12 +321,15 @@ CFaceGenMenuInterface::CFaceGenMenuInterface():
 {
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+static CPtr<CFaceGenMenuInterface> s_pActiveFaceGen;   // macOS port test hook target (weak)
 void CFaceGenMenuInterface::Initialize( NDb::CSide *_pSide, NDb::CNationality *_pNationality, NDb::CDBDifficulty *_pDifficulty, NRPG::CUnit *_pMerc )
 {
 	pMerc = _pMerc;
 	pSide = _pSide;
 	pNationality = _pNationality;
 	pDifficulty = _pDifficulty;
+	s_pActiveFaceGen = this;
+	fprintf( stderr, "[test-hook] facegen ready\n" );   // marker for drive.py waits
 
 	// Render a 3D backdrop world from the nationality's face-gen template (release @0x1d3760:
 	// CRenderBaseInterface::Initialize(pNationality->nFaceGenTemplate), now readable from the retail db).
@@ -357,6 +362,32 @@ void CFaceGenMenuInterface::Step()
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+void CFaceGenMenuInterface::TestPlay()
+{
+	NRPG::CGlobalPlayer *pPlayer = NRPG::CreateGlobalPlayer( pSide );
+	pPlayer->mercs.push_back( pMerc );   // the threaded merc goes into the player (was a recreate)
+
+	vector<CObj<NRPG::CGlobalPlayer> > playersSet;
+	playersSet.push_back( pPlayer );
+
+	NMainLoop::Command( new NGame::CICBeginGame( pSide->nGlobalMapID, playersSet, pDifficulty ) );
+}
+void CFaceGenMenuInterface::TestCustomHead()
+{
+	NMainLoop::Command( new NGame::CICAdvFaceGen( pSide, pNationality, pDifficulty, pMerc ) );
+}
+static void FaceGenPlayCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	if ( IsValid( s_pActiveFaceGen ) ) s_pActiveFaceGen->TestPlay();
+}
+static void FaceGenCustomCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	if ( getenv( "S2_HEADLESS" ) && IsValid( s_pActiveFaceGen ) ) s_pActiveFaceGen->TestCustomHead();
+}
+START_REGISTER(iFaceGenTest)
+	REGISTER_CMD( "facegen_play", FaceGenPlayCmd )
+	REGISTER_CMD( "facegen_custom", FaceGenCustomCmd )
+FINISH_REGISTER
 bool CFaceGenMenuInterface::ProcessEvent( const NInput::SEvent &sEvent )
 {
 	NInput::SetSection( "menu" );
@@ -371,13 +402,7 @@ bool CFaceGenMenuInterface::ProcessEvent( const NInput::SEvent &sEvent )
 	}
 	else if ( bindPlay.ProcessEvent( sEvent ) )
 	{
-		NRPG::CGlobalPlayer *pPlayer = NRPG::CreateGlobalPlayer( pSide );
-		pPlayer->mercs.push_back( pMerc );   // the threaded merc goes into the player (was a recreate)
-
-		vector<CObj<NRPG::CGlobalPlayer> > playersSet;
-		playersSet.push_back( pPlayer );
-
-		NMainLoop::Command( new NGame::CICBeginGame( pSide->nGlobalMapID, playersSet, pDifficulty ) );
+		TestPlay();
 		return true;
 	}
 	else if ( bindCustomHead.ProcessEvent( sEvent ) )

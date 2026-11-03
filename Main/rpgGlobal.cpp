@@ -4,14 +4,14 @@
 #include "RPGGlobal.h"
 #include "RPGStore.h"	// NRPG::CStore -- per-player vendor stock (retail side-seeded ctor @0x29a7c0 creates it)
 #include "RPGMerc.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataRPG.h"
 #include "scScenarioTracker.h"
 #include "scFlowChartItems.h"
 #include "RPGDiplomacy.h"
-#include "..\DBFormat\DataDifficulty.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\DBFormat\DataAck.h"
+#include "../DBFormat/DataDifficulty.h"
+#include "../MiscDll/LogStream.h"
+#include "../DBFormat/DataAck.h"
 //
 namespace NRPG
 {
@@ -32,7 +32,7 @@ int CGlobalPlayer::GetPlayerSkill( NDb::ESkillType skill, float fGroupCoeff, NRP
 	int nMax = 0, nCount = 0;
 	*ppUnit = 0;
 	//
-	for ( vector< CObj<CUnit> >::iterator i = mercs.begin(); i != mercs.end(); ++i )
+	for ( typename vector< CObj<CUnit> >::iterator i = mercs.begin(); i != mercs.end(); ++i )
 	{
 		if ( !(*i)->IsDead() )
 		{
@@ -56,7 +56,7 @@ bool CGlobalPlayer::IsUnitRescued( CUnit *pUnit )
 	if ( !IsValid( pUnit ) )
 		return false;
 	//
-	unordered_map< CPtr<NRPG::CUnit>, SUnitDeployData, SPtrHash >::iterator i;
+	typename unordered_map< CPtr<NRPG::CUnit>, SUnitDeployData, SPtrHash >::iterator i;
 	for ( i = deployData.unitsDeployData.begin(); i != deployData.unitsDeployData.end(); ++i )
 		if ( i->second.pCorpse == pUnit )
 			return true;
@@ -77,7 +77,7 @@ void CGlobalPlayer::Heal( EHeal eHeal, bool bNeedCarryOutCorpse, float fHealCoef
 	firstAid.nMaxVP = ( int )( ( int )( nSkill * fHealCoeff ) * 1.7857142686843872f );
 	firstAid.fdVP = ( float )firstAid.nMaxVP;
 	//
-	for ( vector< CObj<CUnit> >::iterator i = mercs.begin(); i != mercs.end(); ++i )
+	for ( typename vector< CObj<CUnit> >::iterator i = mercs.begin(); i != mercs.end(); ++i )
 	{
 		CUnit *pUnit = (*i);
 		if ( !pUnit->IsDead() && ( !pUnit->IsUnconscious() || ( !bNeedCarryOutCorpse || IsUnitRescued( pUnit ) ) ) )
@@ -98,7 +98,7 @@ float CGlobalPlayer::GetAverageLevel()
 {
 	int nCount = 0;
 	float fLevel = 0;
-	for ( vector< CObj<CUnit> >::iterator i = mercs.begin(); i != mercs.end(); ++i )
+	for ( typename vector< CObj<CUnit> >::iterator i = mercs.begin(); i != mercs.end(); ++i )
 	{
 		if ( !(*i)->IsDead() )
 		{
@@ -117,13 +117,13 @@ void CGlobalPlayer::GetAliveUnits( vector< CPtr<NRPG::CUnit> > *pUnits )
 		return;
 	//
 	pUnits->clear();
-	for ( vector<CObj<CUnit> >::iterator i = mercs.begin();	i != mercs.end(); ++i )
+	for ( typename vector<CObj<CUnit> >::iterator i = mercs.begin();	i != mercs.end(); ++i )
 	{
 		if ( !(*i)->IsDead() )
 			pUnits->push_back( (*i).GetPtr() );
 	}
 	//
-	unordered_map< CPtr<NRPG::CUnit>, SUnitDeployData, SPtrHash >::iterator i;
+	typename unordered_map< CPtr<NRPG::CUnit>, SUnitDeployData, SPtrHash >::iterator i;
 	for ( i = deployData.unitsDeployData.begin(); i != deployData.unitsDeployData.end(); ++i )
 		if ( IsValid( i->second.pCorpse ) && !i->second.pCorpse->IsDead() && 
 			find( pUnits->begin(), pUnits->end(), i->second.pCorpse.GetPtr() ) == pUnits->end() )
@@ -324,14 +324,14 @@ void CGlobalGame::HealOnLeaveZone()
 	if ( bWasCampOrBase )
 		eHeal = CGlobalPlayer::HEAL_NONE;
 
-	for( vector< CObj<CGlobalPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
+	for( typename vector< CObj<CGlobalPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
 		(*i)->Heal( eHeal, pDifficulty->bNeedCarryOutUnconscious,
 			pDifficulty->fHealOnLeaveZoneCoeff, pDifficulty->fGroupMedicalCoeff );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalGame::HealOnRest()
 {
-	for( vector< CObj<CGlobalPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
+	for( typename vector< CObj<CGlobalPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
 		(*i)->Heal( CGlobalPlayer::HEAL_HEAL, false,
 			pDifficulty->fHealOnRestCoeff, pDifficulty->fGroupMedicalCoeff );
 }
@@ -345,7 +345,7 @@ void CGlobalGame::UpdateScenarioOnLeaveZone()
 		pPlayer->GetAliveUnits( &units );
 		pScenarioTracker->ProcessScenario( units );
 		//
-		for ( vector<CObj<CUnit> >::iterator i = pPlayer->mercs.begin(); i != pPlayer->mercs.end(); ++i )
+		for ( typename vector<CObj<CUnit> >::iterator i = pPlayer->mercs.begin(); i != pPlayer->mercs.end(); ++i )
 			pPlayer->deployData.unitsDeployData[ (*i).GetPtr() ].pCorpse = 0;
 	}
 }
@@ -353,7 +353,7 @@ void CGlobalGame::UpdateScenarioOnLeaveZone()
 // Release @0x2936a0: every roster merc receives the fixed clue-discovery medal event.
 void CGlobalPlayer::AddMedalPointsForClue( CGlobalGame *pGame )
 {
-	for ( vector< CObj<CUnit> >::iterator i = mercs.begin(); i != mercs.end(); ++i )
+	for ( typename vector< CObj<CUnit> >::iterator i = mercs.begin(); i != mercs.end(); ++i )
 		(*i)->AddMedalPoints( pGame, MPC_CLUE_GAINED, 0.0f );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -362,8 +362,8 @@ void CGlobalGame::UpdateMedalsOnLeaveZone()
 {
 	if ( bWasCampOrBase )
 		return;
-	for ( vector< CObj<CGlobalPlayer> >::iterator p = players.begin(); p != players.end(); ++p )
-		for ( vector< CObj<CUnit> >::iterator u = (*p)->mercs.begin(); u != (*p)->mercs.end(); ++u )
+	for ( typename vector< CObj<CGlobalPlayer> >::iterator p = players.begin(); p != players.end(); ++p )
+		for ( typename vector< CObj<CUnit> >::iterator u = (*p)->mercs.begin(); u != (*p)->mercs.end(); ++u )
 			(*u)->GainMedalsAfterMissionEnd();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -379,18 +379,18 @@ bool CGlobalGame::IsActiveZoneRussian() const
 // release @0x299a60: award fXP to every unit of every player (the per-merc loop the retail open-codes).
 void CGlobalGame::AddXPToAllUnits( float fXP )
 {
-	for ( vector< CObj<CGlobalPlayer> >::iterator p = players.begin(); p != players.end(); ++p )
-		for ( vector< CObj<CUnit> >::iterator u = (*p)->mercs.begin(); u != (*p)->mercs.end(); ++u )
+	for ( typename vector< CObj<CGlobalPlayer> >::iterator p = players.begin(); p != players.end(); ++p )
+		for ( typename vector< CObj<CUnit> >::iterator u = (*p)->mercs.begin(); u != (*p)->mercs.end(); ++u )
 			if ( IsValid( *u ) )
 				(*u)->AddXP( fXP );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 NRPG::CUnit *CGlobalGame::GetHero() const
 {
-	vector< CObj<CGlobalPlayer> >::const_iterator p;
+	typename vector< CObj<CGlobalPlayer> >::const_iterator p;
 	for( p = players.begin(); p != players.end(); ++p )
 	{
-		vector< CObj<CUnit> >::const_iterator u;
+		typename vector< CObj<CUnit> >::const_iterator u;
 		for (	u = (*p)->mercs.begin(); u != (*p)->mercs.end(); ++u )
 		{
 			if ( (*u)->IsHero() )

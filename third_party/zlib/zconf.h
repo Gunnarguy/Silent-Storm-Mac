@@ -189,11 +189,13 @@
 //#endif
 
 //#if defined (__BEOS__)
+#if defined(_WIN32)  /* the engine links zlib as a DLL on Windows; elsewhere it is a static library */
 #  if defined (ZLIB_DLL)
 #    define ZEXTERN extern __declspec(dllexport)
 #  else
 #    define ZEXTERN extern __declspec(dllimport)
 #  endif
+#endif
 //#endif
 
 #ifndef ZEXPORT
@@ -210,7 +212,7 @@
 #   define FAR
 #endif
 
-#if !defined(MACOS) && !defined(TARGET_OS_MAC)
+#if !defined(__MACTYPES__)  /* was: classic Mac OS check; modern macOS defines TARGET_OS_MAC and still needs Byte */
 typedef unsigned char  Byte;  /* 8 bits */
 #endif
 typedef unsigned int   uInt;  /* 16 bits or more */

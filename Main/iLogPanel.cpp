@@ -2,10 +2,10 @@
 #include "GSceneUtils.h"
 #include "GView.h"
 #include "G2DView.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/LogStream.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"
 #include "iLogPanel.h"
 #include "UIWrap.h"
@@ -31,14 +31,14 @@ void CLogPanelNotify::OnAddConsoleLine( const SConsoleLine &line )
 CLogPanel::CLogPanel( const SWindowInfo &sInfo, EStreamType _eType ):
 	CWindow( sInfo )
 {
-	// fixed ring of 10 default slots (slot 0 is the permanent sentinel head).
+	// fixed ring of 10 default slots (slot 0 is the permanent head).
 	for ( int i = 0; i < 10; ++i )
 		linesSet.push_back( STextLine() );
 
 	// the stream sink: filters console lines by stream type and feeds this panel (weak back-ref).
 	pNotify = new CLogPanelNotify( _eType, this );
 
-	// slot 0 is the sentinel/head -- forced used, never scanned.
+	// slot 0 is the permanent head -- forced used, never scanned.
 	linesSet[0].bUsed = true;
 
 	// mint an empty auto-sizing render line for every storage slot.
@@ -46,13 +46,13 @@ CLogPanel::CLogPanel( const SWindowInfo &sInfo, EStreamType _eType ):
 		linesSet[i].pText = new CTextDraw( SPoint( 0, 0 ), SPoint( -1, -1 ), L"" );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// @0x1f2710 -- link slot nIndex immediately after the sentinel (newest), mark it used, reset its age
+// @0x1f2710 -- link slot nIndex immediately after the head (newest), mark it used, reset its age
 // timer, and push the text into its CTextDraw.
 void CLogPanel::AddToHead( int nIndex, const wstring &wsText )
 {
-	const int nOldHead = linesSet[0].nNext;		// old newest (sentinel.nNext)
+	const int nOldHead = linesSet[0].nNext;		// old newest (head.nNext)
 
-	linesSet[nIndex].nPrev = 0;					// sentinel
+	linesSet[nIndex].nPrev = 0;					// head
 	linesSet[nIndex].nNext = nOldHead;
 	linesSet[nOldHead].nPrev = nIndex;
 	linesSet[0].nNext = nIndex;
@@ -80,7 +80,7 @@ void CLogPanel::AddLine( const wstring &wsText )
 		}
 	}
 
-	// pass 2: every slot is used -> evict the tail (oldest = sentinel.nPrev) and reuse its index.
+	// pass 2: every slot is used -> evict the tail (oldest = head.nPrev) and reuse its index.
 	const int nTail = linesSet[0].nPrev;
 	linesSet[linesSet[nTail].nPrev].nNext = linesSet[nTail].nNext;
 	linesSet[linesSet[nTail].nNext].nPrev = linesSet[nTail].nPrev;

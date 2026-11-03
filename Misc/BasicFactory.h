@@ -29,7 +29,7 @@ private:
 	static VFT GetObjectType( T *pObject ) { return &typeid(*pObject); }
 	int VFT2TypeID( VFT t )
 	{
-		CTypeIndexHash::const_iterator i = typeIndex.find( t );
+		typename CTypeIndexHash::const_iterator i = typeIndex.find( t );
 		if ( i != typeIndex.end() )
 			return i->second;
 		for ( i = typeIndex.begin(); i != typeIndex.end(); ++i )
@@ -67,8 +67,8 @@ void CClassFactory<T>::RegisterTypeBase( int nTypeID, newFunc func, VFT vft )
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // macro for registering CFundament derivatives
-#define REGISTER_CLASS( factory, N, name ) factory.RegisterType( N, name##::New##name, (name*)0 );
-#define REGISTER_TEMPL_CLASS( factory, N, name, className ) factory.RegisterType( N, name##::New##className, (name*)0 );
-#define REGISTER_CLASS_NM( factory, N, name, nmspace ) factory.RegisterType( N, nmspace::name##::New##name, (nmspace::name*)0 );
+#define REGISTER_CLASS( factory, N, name ) factory.RegisterType( N, name::New##name, (name*)0 );
+#define REGISTER_TEMPL_CLASS( factory, N, name, className ) factory.RegisterType( N, name::New##className, (name*)0 );
+#define REGISTER_CLASS_NM( factory, N, name, nmspace ) factory.RegisterType( N, nmspace::name::New##name, (nmspace::name*)0 );
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #endif // __BASICFACTORY_H_

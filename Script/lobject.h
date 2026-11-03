@@ -273,7 +273,7 @@ struct Hash
 	Hash() : mark(this), htag(LUA_TTABLE) {}
 	const TObject* GetObj( const TObject *key ) const
 	{
-		CObjHash::const_iterator it = h.find( *key );
+		typename CObjHash::const_iterator it = h.find( *key );
 		if ( it == h.end() )
 			return &luaO_nilobject;
 		return &it->second;
@@ -293,7 +293,7 @@ struct Hash
 	Number GetMaxIntKey() const
 	{
     Number max = 0;
-		for ( CObjHash::const_iterator i = h.begin(); i != h.end(); ++i )
+		for ( typename CObjHash::const_iterator i = h.begin(); i != h.end(); ++i )
 		{
       if ( i->first.GetType() == LUA_TNUMBER &&
 					 i->second.GetType() != LUA_TNIL &&
@@ -317,7 +317,7 @@ struct Hash
 	}
 	void NextNode( const TObject *r, Node *pRes ) const
 	{
-		CObjHash::const_iterator res;
+		typename CObjHash::const_iterator res;
 		if ( r->GetType() == LUA_TNIL )
 		{
 			res = h.begin();

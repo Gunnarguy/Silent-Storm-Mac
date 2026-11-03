@@ -16,7 +16,7 @@ struct SBoundCalcer
 	template<class TSet,class TGetPoint>
 		void LookSet( const TSet &a, TGetPoint GetPoint )
 	{
-		for ( TSet::const_iterator i = a.begin(); i != a.end(); ++i )
+		for ( typename TSet::const_iterator i = a.begin(); i != a.end(); ++i )
 		{
 			const CVec3 &p = GetPoint(*i);
 			ptMin.x = Min( ptMin.x, p.x );
@@ -89,8 +89,14 @@ inline void CalcBound( TRes *pRes, const TSet &a, TGetPoint GetPoint )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // should not be mixed with fpu & mmx code from StartMMXBound to StoreMMXBoundResult
 #pragma warning( disable : 4799 )
+#if !defined(_M_IX86)
+// stand-ins for the mm4..mm7 accumulators the MMX version keeps live between these calls
+inline CVec3 &S2BoundMin() { static thread_local CVec3 v; return v; }
+inline CVec3 &S2BoundMax() { static thread_local CVec3 v; return v; }
+#endif
 inline void StartMMXBound( CVec3 *pMin, CVec3 *pMax )
 {
+#if defined(_M_IX86)
 	__asm
 	{
 		mov esi, pMin
@@ -100,9 +106,13 @@ inline void StartMMXBound( CVec3 *pMin, CVec3 *pMax )
 		movq mm6, [esi]
 		movd mm7, [esi+8]
 	}
+#else
+	S2BoundMin() = *pMin; S2BoundMax() = *pMax;
+#endif
 }
 inline void AddMMXBoundPoint( const CVec3 *p )
 {
+#if defined(_M_IX86)
 	// Coordinates are floats, not signed integers: integer ordering reverses
 	// negative values and can shrink the bound until a visible mesh is culled.
 	// Keep the MMX accumulator contract used by particles, but compare in SSE
@@ -127,9 +137,16 @@ inline void AddMMXBoundPoint( const CVec3 *p )
 		movdq2q mm5, xmm1
 		movdq2q mm7, xmm2
 	}
+#else
+	CVec3 &mn = S2BoundMin(), &mx = S2BoundMax();
+	// minps/maxps keep the first operand when it is smaller/larger, otherwise take the point
+	mn.x = mn.x < p->x ? mn.x : p->x; mn.y = mn.y < p->y ? mn.y : p->y; mn.z = mn.z < p->z ? mn.z : p->z;
+	mx.x = mx.x > p->x ? mx.x : p->x; mx.y = mx.y > p->y ? mx.y : p->y; mx.z = mx.z > p->z ? mx.z : p->z;
+#endif
 }
 inline void StoreMMXBoundResult( CVec3 *pMin, CVec3 *pMax )
 {
+#if defined(_M_IX86)
 	__asm
 	{
 		mov esi, pMin
@@ -140,6 +157,9 @@ inline void StoreMMXBoundResult( CVec3 *pMin, CVec3 *pMax )
 		movd [esi+8], mm7
 		emms
 	}
+#else
+	*pMin = S2BoundMin(); *pMax = S2BoundMax();
+#endif
 }
 #pragma warning( default : 4799 )
 ////////////////////////////////////////////////////////////////////////////////////////////////////

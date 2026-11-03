@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 //
-#include "..\DBFormat\DataMap.h"
+#include "../DBFormat/DataMap.h"
 //
 #include "RPGUnitMission.h"
 #include "RPGDiplomacy.h"
@@ -85,7 +85,7 @@ void CGlobalDiplomacy::SetDiplomacyState( int nPlayer1,
 	}
 	diplomacy[nPlayer1].SetDiplomacyState( nPlayer2, state );
 	//
-	for ( vector< CPtr<NRPG::IUnitMission> >::const_iterator
+	for ( typename vector< CPtr<NRPG::IUnitMission> >::const_iterator
 		i = player1Units.begin(); i != player1Units.end(); ++i )
 	{
 		NRPG::IUnitMission *pUnit = *i;

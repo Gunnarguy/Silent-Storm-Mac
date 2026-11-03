@@ -14,7 +14,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NAI
 {
-	enum EPose;
+	enum EPose : int;
 }
 namespace NLSHead
 {
@@ -102,6 +102,7 @@ public:
 	bool Upgrade( float fAddToProgress, float fCap ); // retail @0x2bbc30: XP-based, clamped to the cap
 	int  GetXPPart() const { return nXPValue; } // value gained from XP only
 	void SetXPPart( int nNewXPPart ) { nValue += nNewXPPart - nXPValue; nXPValue = nNewXPPart; Update(); }
+	void TrainOnePoint() { fProgress = 0; SetXPPart( nXPValue + 1 ); }
 
 	float GetProgress() const { return fProgress; }
 	int GetMaxValue() const { return nMaxValue; }  // already modifier-adjusted in the retail model
@@ -163,6 +164,7 @@ public:
 	void AddXP( float fXPToAdd );                         // retail @0x2bbde0
 	bool UseSkill( int eSkill, float fLearningFactor );
 	void UpdateSkills();                                  // retail @0x2bbcc0
+	float GetSkillCapByXP( int eSkill ) const;            // the fCap of UseSkill below
 	int GetSkillBaseStatValue( const int eSkill );         // retail @0x2ba7b0
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -245,6 +247,7 @@ public:
 	CObj<NDb::CModel> pModel;                    // release: owning CObj (was CPtr)
 	CObj<IInventory> pInventory;
 	CPtr<CMeleeWeaponItem> pDefaultWeapon;
+	mutable CObj<CMeleeWeaponItem> pDefaultWeaponHold;   // not saved: nothing else owns the fists, see GetMeleeWeaponItem
 	CPtr<CWeaponItem> pCannonItem; // CRAP
 private:
 	int nDeathVP;

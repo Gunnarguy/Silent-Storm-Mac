@@ -125,7 +125,7 @@ void CAIFindGoodPlacesJob::PreparePlaces()
 		dest, pUS, false, NAI::PF_DEFAULT, false, true, true );
 	if ( IsValid( pPath ) )
 	{
-		for ( vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
+		for ( typename vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
 		{
 			NAI::SPathPlace p = *i;
 			calcer.AddPoint( p );
@@ -155,7 +155,7 @@ void CAIFindGoodPlacesJob::PreparePlaces()
 CAIChoosePlaceForActionsJob::CAIChoosePlaceForActionsJob( const vector< CPtr<CAIAction> > &_actions, CAIJob *pParentJob ):
 	actions( _actions ), nCurPlace( 0 ), nCurAction( 0 )
 {
-	for ( vector< CPtr<CAIAction> >::const_iterator i = actions.begin(); i != actions.end(); ++i )
+	for ( typename vector< CPtr<CAIAction> >::const_iterator i = actions.begin(); i != actions.end(); ++i )
 		actionToChosen[ *i ] = false;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////

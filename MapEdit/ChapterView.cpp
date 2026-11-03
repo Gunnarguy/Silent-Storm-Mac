@@ -4,11 +4,11 @@
 #include "stdafx.h"
 #include "mapedit.h"
 #include "ChapterView.h"
-#include "..\Main\ChapterInfo.h"
-#include "..\Main\iMain.h"
-#include "..\Main\Gfx.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
+#include "../Main/ChapterInfo.h"
+#include "../Main/iMain.h"
+#include "../Main/Gfx.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
 #include "Layers.h"
 #include "SectorCtrl.h"
 #include "Export.h"
@@ -16,7 +16,7 @@
 #include "dbDefs.h"
 #include "ChapterSectorDlg.h"
 #include "ItemsMgr.h"
-#include "..\Image\ImageTGA.h"
+#include "../Image/ImageTGA.h"
 #include "GameView.h"
 #include "NewSectorDlg.h"
 #include "ItemsMgr.h"
@@ -132,7 +132,7 @@ void CChapterView::SetChapter( int nID )
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nID );
 	if ( !pProps )
 		return;
-	CPropMap::const_iterator i = pProps->find( "Background" );
+	typename CPropMap::const_iterator i = pProps->find( "Background" );
 	if ( i != pProps->end() )
 		nBackgroundID = i->second->GetValue();
 	pTree->pItemsTree->ReleasePropList( pProps );
@@ -151,14 +151,14 @@ void CChapterView::SetBackground()
 	const CPropMap *pUIProps = pUITexTree->pItemsTree->GetPropList( nBackgroundID );
 	if ( !pUIProps )
 		return;
-	CPropMap::const_iterator itex = pUIProps->find( "R_1024x768" );
+	typename CPropMap::const_iterator itex = pUIProps->find( "R_1024x768" );
 	if ( itex == pUIProps->end() )
 		return;
 	const CPropMap *pTexProps = pTexTree->pItemsTree->GetPropList( itex->second->GetValue() );
 	if ( !pTexProps )
 		return;
 	//
-	CPropMap::const_iterator isrc = pTexProps->find( "SrcName" );
+	typename CPropMap::const_iterator isrc = pTexProps->find( "SrcName" );
 	if ( isrc == pTexProps->end() )
 		return;
 	string szBmp = GetExportSrcDir() + "Textures\\" + (string)isrc->second->GetValue();

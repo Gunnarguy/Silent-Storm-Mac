@@ -1,20 +1,26 @@
 #include "StdAfx.h"
+// the dev build's "Work in progress" stamp has no retail counterpart; release-style builds draw nothing
+#if defined(_WIN32)
+#define S2_WIP_OVERLAY_TEXT L"<font size=18pt face=Courier><right>Work in progress"
+#else
+#define S2_WIP_OVERLAY_TEXT L""
+#endif
 #include "G2DView.h"
 #include "Transform.h"
 #include "GSceneUtils.h"
 #include "RectLayout.h"
 #include "GView.h"
 #include "G2DView.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"
 #include "Sound.h"   // NSound::CreateSoundScene (retail CInterface own-scene fallback @0x31dbd0)
 #include "UIWrap.h"
 #include "UIBaseCtrls.h"
 #include "UICommCtrls.h"
 #include "Console.h"
-#include "..\MiscDll\Commands.h"   // REGISTER_CMD ("wirbelwind" console unlock)
+#include "../MiscDll/Commands.h"   // REGISTER_CMD ("wirbelwind" console unlock)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -173,7 +179,7 @@ void CLoader::Load( CWindow* _pParent, NDb::CUIContainer *pTemplate )
 	CPtr<CWindow> pDefaultWindow;
 	for ( int nTemp = 0; nTemp < windowsSet.size(); nTemp++ )
 	{
-		for( list<CPtr<CWindow> >::iterator iTemp = childrenList.begin(); iTemp != childrenList.end(); iTemp++ )
+		for( typename list<CPtr<CWindow> >::iterator iTemp = childrenList.begin(); iTemp != childrenList.end(); iTemp++ )
 		{
 			if ( windowsSet[nTemp].second.sInfo.szID.empty() )
 				continue;
@@ -273,6 +279,14 @@ void CLoader::Load( CWindow* _pParent, NDb::CUIContainer *pTemplate )
 		pDefaultWindow->ShowWindow( SWTYPE_SHOW );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+bool CLoader::HasControl( const string &szID ) const
+{
+	for ( int nTemp = 0; nTemp < windowsSet.size(); nTemp++ )
+		if ( windowsSet[nTemp].second.sInfo.szID == szID )
+			return true;
+	return false;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 const SWindowInfo& CLoader::GetControl( const string &szID )
 {
 	for ( int nTemp = 0; nTemp < windowsSet.size(); nTemp++ )
@@ -333,7 +347,7 @@ CInterface::CInterface():
 	sDoubleClickTime = GetDoubleClickTime();
 	// dev-only "Work in progress" overlay (no retail counterpart; retail tag-19 hole). Drawn
 	// unconditionally each frame -- a loaded CInterface crashed on the NULL CTextDraw.
-	pNonPublicDemo = new CTextDraw( SPoint( 0, 32 ), SPoint( 1024, 768 ), L"<font size=18pt face=Courier><right>Work in progress" );
+	pNonPublicDemo = new CTextDraw( SPoint( 0, 32 ), SPoint( 1024, 768 ), S2_WIP_OVERLAY_TEXT );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CInterface::CInterface( ICursor* _pCursor, NSound::ISoundScene *_pSound, NSound::ISoundScene *_pInheritSound ):
@@ -371,7 +385,7 @@ CInterface::CInterface( ICursor* _pCursor, NSound::ISoundScene *_pSound, NSound:
 	sDefaultCursor = SCursorInfo( NDb::GetUICursor( N_DEFAULT_CURSOR ) );
 
 	pFPSText = new CTextDraw( SPoint( 0, 32 ), SPoint( 1024, 768 ), L"Counting..." );
-	pNonPublicDemo = new CTextDraw( SPoint( 0, 32 ), SPoint( 1024, 768 ), L"<font size=18pt face=Courier><right>Work in progress" );
+	pNonPublicDemo = new CTextDraw( SPoint( 0, 32 ), SPoint( 1024, 768 ), S2_WIP_OVERLAY_TEXT );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 const SPoint& CInterface::GetCursorPos() const

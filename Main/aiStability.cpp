@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "aiStability.h"
 #include "aiMap.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../DBFormat/DataFormat.h"
 #include "wTSFlags.h"
 #include "wInterface.h"
 #include "wOSBase.h"
@@ -336,7 +336,7 @@ class CStabilityTrackers: public IStabilityTrackers
 	}
 public:
 	// retail CStabilityTrackers::CStabilityTrackers(IWorld*) @0xa6f70 / CreateStabilityTrackers
-	// @0xa5980: empty grid + the inverted sentinel box the first EnlargeMap collapses onto.
+	// @0xa5980: empty grid + the inverted marker box the first EnlargeMap collapses onto.
 	CStabilityTrackers(): bConstructed(false)
 	{
 		ptMin = CVec3( 1e10f, 1e10f, 1e10f );

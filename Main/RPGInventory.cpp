@@ -2,10 +2,10 @@
 #include "InterfaceConst.h"
 #include "RPGItemSet.h"
 #include "RPGUnit.h"
-#include "..\Misc\2DArray.h"
-#include "..\Misc\StrProc.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../Misc/2DArray.h"
+#include "../Misc/StrProc.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataRPG.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NRPG
 {
@@ -64,7 +64,7 @@ CInventory::CInventory( CUnit *_pOwner ):
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CInventory::Take( IInventoryItem *pItem )
 {
-	for ( vector<SBackPackItem>::iterator iTemp = items.begin(); iTemp != items.end(); iTemp++ )
+	for ( typename vector<SBackPackItem>::iterator iTemp = items.begin(); iTemp != items.end(); iTemp++ )
 	{
 		if ( iTemp->pItem == pItem )
 		{

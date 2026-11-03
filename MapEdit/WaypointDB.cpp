@@ -2,11 +2,11 @@
 #include "MapEdit.h"
 #include "dbDefs.h"
 #include "WaypointDB.h"
-#include "..\Main\aiWaypoint.h"
+#include "../Main/aiWaypoint.h"
 #include "MESerialize.h"
-#include "..\Main\Grid.h"
+#include "../Main/Grid.h"
 #include "MEUserSettings.h"
-#include "..\Misc\BasicShare.h"
+#include "../Misc/BasicShare.h"
 #include "ItemsMgr.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 extern CBasicShare<int, NAI::CWaypointLoader> shareWaypoints;
@@ -23,8 +23,8 @@ int AddWaypoint2DB( int nWaypointNameID, int nVarID )
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nID );
 	if ( pProps )
 	{
-		CPropMap::const_iterator i = pProps->find( "VariantID" );
-		CPropMap::const_iterator in = pProps->find( "NameID" );
+		typename CPropMap::const_iterator i = pProps->find( "VariantID" );
+		typename CPropMap::const_iterator in = pProps->find( "NameID" );
 		if ( i != pProps->end() )
 			i->second->SetValue( nVarID );
 		if ( in != pProps->end() )

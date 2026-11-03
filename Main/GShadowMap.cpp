@@ -138,7 +138,7 @@ static void Split( SPolyhedron *pRes, const SPlane &p )
 		{
 			CVec4 v = onPlane.vertices.back();
 			bool bFound = false;
-			for ( list<SEdge>::iterator i = edges.begin(); i != edges.end(); ++i )
+			for ( typename list<SEdge>::iterator i = edges.begin(); i != edges.end(); ++i )
 			{
 				if ( v == i->vStart )
 				{

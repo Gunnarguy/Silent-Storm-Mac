@@ -11,18 +11,19 @@
 #include "RPGItemInfo.h"
 #include "RPGGlobal.h"
 //
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataScenario.h"
-#include "..\DBFormat\DataConst.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataScenario.h"
+#include "../DBFormat/DataConst.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataMap.h"
 //
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 //
 #include "scFlowChart.h"
 #include "scFlowChartItems.h"
 #include "scScenarioTracker.h"
 #include "scCommands.h"
+#include "A5Script.h"
 //
 namespace NScenario
 {
@@ -59,10 +60,10 @@ SRandomSeed CScenarioTracker::GetRandomSeedForTemplate( int nTemplateID ) const
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 NDb::CString *CScenarioTracker::GetClueDescriptionFromObjective( CScenarioClue *pClue ) const
 {
-	for ( vector< CPtr<CScenarioObjective> >::const_iterator i = pClue->GetObjectives().begin();
+	for ( typename vector< CPtr<CScenarioObjective> >::const_iterator i = pClue->GetObjectives().begin();
 		i != pClue->GetObjectives().end(); ++i )
 	{
-		list< CPtr<CScenarioObjective> >::const_iterator f = find( finishedObjectives.begin(),
+		typename list< CPtr<CScenarioObjective> >::const_iterator f = find( finishedObjectives.begin(),
 			finishedObjectives.end(), (*i).GetPtr() );
 		if ( f != finishedObjectives.end() )
 			return (*f)->GetDBObjective()->pDescription;
@@ -185,7 +186,7 @@ void CScenarioTracker::CheatOpenZone( CScenarioZone *pZone )
 	//
 	pZone->SetPassed( true );
 	//
-	for ( vector< CPtr<CScenarioClue> >::const_iterator i = pZone->GetClues().begin(); 
+	for ( typename vector< CPtr<CScenarioClue> >::const_iterator i = pZone->GetClues().begin(); 
 		i != pZone->GetClues().end(); ++i )
 	{
 		if ( IsClueFound( *i ) )
@@ -224,13 +225,13 @@ void CScenarioTracker::OnObjectiveComplete( CScenarioObjective *pObjective )
 	{
 		finishedObjectives.push_back( pObjective );
 		// block zones
-		for ( vector< CPtr<CScenarioZone> >::const_iterator i = pObjective->GetZonesToBlock().begin();
+		for ( typename vector< CPtr<CScenarioZone> >::const_iterator i = pObjective->GetZonesToBlock().begin();
 			i != pObjective->GetZonesToBlock().end(); ++i )
 		{
 			BlockZone( *i );
 		}
 		// add zones
-		for ( vector< CPtr<CScenarioZone> >::const_iterator i = pObjective->GetZones().begin();
+		for ( typename vector< CPtr<CScenarioZone> >::const_iterator i = pObjective->GetZones().begin();
 			i != pObjective->GetZones().end(); ++i )
 		{
 			if ( !IsZoneAvailable( *i ) && !IsZoneBlocked( *i ) )
@@ -241,12 +242,12 @@ void CScenarioTracker::OnObjectiveComplete( CScenarioObjective *pObjective )
 			}
 		}
 		// open compound clues
-		for ( vector< CPtr<CScenarioClue> >::const_iterator i = pObjective->GetClues().begin();
+		for ( typename vector< CPtr<CScenarioClue> >::const_iterator i = pObjective->GetClues().begin();
 			i != pObjective->GetClues().end(); ++i )
 		{
 			// count incoming links
 			int nCluesFound = 0;
-			vector< CPtr<CScenarioObjective> >::const_iterator p;
+			typename vector< CPtr<CScenarioObjective> >::const_iterator p;
 			for ( p = (*i)->GetParentObjectives().begin(); p != (*i)->GetParentObjectives().end(); ++p )
 			{
 				if ( IsClueFound( (*p)->GetParentClue() ) )
@@ -257,7 +258,7 @@ void CScenarioTracker::OnObjectiveComplete( CScenarioObjective *pObjective )
 			{
 				csSystem << "Compound clue " << (*i)->GetDBClue()->sSmallDescription.c_str() << " was given" << endl;
 				JustFoundClue( *i );
-				vector< CPtr<CScenarioObjective> >::const_iterator c;
+				typename vector< CPtr<CScenarioObjective> >::const_iterator c;
 				for ( c = (*i)->GetObjectives().begin(); c != (*i)->GetObjectives().end(); ++c )
 					OnObjectiveComplete( *c );
 			}
@@ -280,7 +281,7 @@ void CScenarioTracker::PostCreateScenario()
 	{
 		availableZones.push_back( pBase );
 		//
-		vector< CPtr<CScenarioClue> >::const_iterator i;
+		typename vector< CPtr<CScenarioClue> >::const_iterator i;
 		for ( i = pBase->GetClues().begin(); i != pBase->GetClues().end(); ++i )
 		{
 			if ( (*i)->IsPlaced() && !(*i)->GetObjectives().empty() )
@@ -314,7 +315,7 @@ void CScenarioTracker::CreateScenario( string szScenarioName )
 void CScenarioTracker::GetAvailableZones( list<CPtr<CScenarioZone> > *pZones ) const
 {
 	pZones->clear();
-	for ( list< CPtr<CScenarioZone> >::const_iterator i = availableZones.begin();	i != availableZones.end(); ++i )
+	for ( typename list< CPtr<CScenarioZone> >::const_iterator i = availableZones.begin();	i != availableZones.end(); ++i )
 	{
 		if ( !IsZoneBlocked( *i ) )
 			pZones->push_back( *i );
@@ -329,7 +330,7 @@ void CScenarioTracker::GetAvailableClues( list<CPtr<CScenarioClue> > *pClues ) c
 	pClues->clear();
 	vector< CPtr<CScenarioClue> > clues;
 	pScenarioFlowChart->GetClues( &clues );
-	for ( vector< CPtr<CScenarioClue> >::const_iterator i = clues.begin(); i != clues.end(); ++i )
+	for ( typename vector< CPtr<CScenarioClue> >::const_iterator i = clues.begin(); i != clues.end(); ++i )
 		if ( (*i)->IsPlaced() && !(*i)->IsDestroyed() && IsClueFound( *i ) )
 			pClues->push_back( (*i).GetPtr() );
 }
@@ -345,7 +346,7 @@ bool CScenarioTracker::IsClueFound( CScenarioClue *pClue ) const
 	if ( !IsValid( pClue ) )
 		return false;
 	//
-	for ( vector< CPtr<CScenarioObjective> >::const_iterator i = pClue->GetObjectives().begin();
+	for ( typename vector< CPtr<CScenarioObjective> >::const_iterator i = pClue->GetObjectives().begin();
 		i != pClue->GetObjectives().end(); ++i )
 			if ( IsObjectiveFinished( *i ) )
 				return true;
@@ -355,7 +356,7 @@ bool CScenarioTracker::IsClueFound( CScenarioClue *pClue ) const
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CScenarioTracker::IsZoneContainsSomeClue( CScenarioZone *pZone ) const
 {
-	vector< CPtr<CScenarioClue> >::const_iterator i;
+	typename vector< CPtr<CScenarioClue> >::const_iterator i;
 	for ( i = pZone->GetClues().begin(); i != pZone->GetClues().end(); ++i )
 		if ( (*i)->IsPlaced() && !(*i)->IsDestroyed() && !IsClueFound( *i ) )
 			return true;
@@ -372,7 +373,7 @@ CScenarioZone *CScenarioTracker::GetRecommendedZone( NRPG::CGlobalPlayer *pPlaye
 	float fMinDistance = 0xFFFF;
 	CPtr<CScenarioZone> pZone = 0;
 	float fAvrLevel = pPlayer->GetAverageLevel();
-	list< CPtr<CScenarioZone> >::const_iterator i;
+	typename list< CPtr<CScenarioZone> >::const_iterator i;
 	for ( i = availableZones.begin(); i != availableZones.end(); ++i )
 	{
 		// Retail v1.2 0x7012a8..0x7012af skips passed missions before checking
@@ -445,7 +446,7 @@ void CScenarioTracker::GetPlacedClues( NScenario::CScenarioZone *pZone,
 		return;
 	//
 	clues->clear();
-	for ( vector< CPtr<CScenarioClue> >::const_iterator i = pZone->GetClues().begin();
+	for ( typename vector< CPtr<CScenarioClue> >::const_iterator i = pZone->GetClues().begin();
 		i != pZone->GetClues().end(); ++i )
 			if ( (*i)->IsPlaced() && !(*i)->IsDestroyed() && (*i)->GetTemplateID() == nTemplateID )
 				clues->push_back( *i );
@@ -537,7 +538,7 @@ static bool IsVisiblePersHasItem( int nID, NWorld::CPlayer *pPlayer )
 {
 	list< CPtr<NWorld::CUnit> > units;
 	pPlayer->GetVisible( &units );
-	for ( list< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 		if ( IsValid( *i ) && ( InInventory( (*i)->GetRPG()->GetRPGUnit(), nID ) || InInventory( GetCorpse( *i ), nID ) ) )
 			return true;
 	return false;
@@ -546,7 +547,7 @@ static bool IsPersVisible( int nID, NWorld::CPlayer *pPlayer, NRPG::CUnit **pRes
 {
 	list< CPtr<NWorld::CUnit> > units;
 	pPlayer->GetVisible( &units );
-	for ( list< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( !IsValid( *i ) )
 			continue;
@@ -566,7 +567,7 @@ static bool IsItemVisible( int nID, NWorld::CPlayer *pPlayer )
 {
 	list< CPtr<CObjectBase> > objects;
 	pPlayer->GetVisibleObjects( &objects );
-	for ( list< CPtr<CObjectBase> >::iterator i = objects.begin(); i != objects.end(); ++i )
+	for ( typename list< CPtr<CObjectBase> >::iterator i = objects.begin(); i != objects.end(); ++i )
 	{
 		NWorld::IItem *pItem = CDynamicCast<NWorld::IItem>( i->GetPtr() );
 		if ( IsValid( pItem ) && IsValid( pItem->GetInvItem() ) && pItem->GetInvItem()->GetDBItem()->GetRecordID() == nID )
@@ -686,7 +687,7 @@ void CScenarioTracker::OnUnitDestroyed( NWorld::CUnit *pUnit )
 		return;
 	list< CPtr<CScenarioClue> > clues;
 	GetCluesFromPers( pUnit->GetRPG()->GetRPGUnit(), GetCorpse( pUnit ), &clues, false );
-	for ( list< CPtr<CScenarioClue> >::iterator i = clues.begin(); i != clues.end(); ++i )
+	for ( typename list< CPtr<CScenarioClue> >::iterator i = clues.begin(); i != clues.end(); ++i )
 		CompleteTasks( *i, NDb::TT_DESTROY_ITEM_CARRIER );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -707,7 +708,7 @@ void CScenarioTracker::OnMakeUnconscious( NWorld::CUnit *pUnit )
 void CScenarioTracker::ProcessCluesList( const list< CPtr<CScenarioClue> > &clues,
 	NDb::EScenarioObjectiveType type )
 {
-	for ( list< CPtr<CScenarioClue> >::const_iterator i = clues.begin(); i != clues.end(); ++i )
+	for ( typename list< CPtr<CScenarioClue> >::const_iterator i = clues.begin(); i != clues.end(); ++i )
 	{
 		CPtr<CScenarioObjective> pObjective = (*i)->GetObjectiveByType( type );
 		if ( IsValid( pObjective ) )
@@ -765,11 +766,11 @@ void CScenarioTracker::ProcessScenario( const vector< CPtr<NRPG::CUnit> > &units
 	if ( !bScenarioAvailable )
 		return;
 	//
-	for ( vector< CPtr<NRPG::CUnit> >::const_iterator i = units.begin();
+	for ( typename vector< CPtr<NRPG::CUnit> >::const_iterator i = units.begin();
 		i != units.end(); ++i )
 			OnScenarioClueTaken( (*i)->GetRPGPersID(), true );
 	//
-	for ( vector< CPtr<NRPG::CUnit> >::const_iterator i = units.begin();
+	for ( typename vector< CPtr<NRPG::CUnit> >::const_iterator i = units.begin();
 		i != units.end(); ++i )
 	{
 		CPtr<NRPG::IInventory> pInventory = (*i)->pInventory;
@@ -784,7 +785,7 @@ void CScenarioTracker::ProcessScenario( const vector< CPtr<NRPG::CUnit> > &units
 		// backpack
 		const vector<NRPG::SBackPackItem> &items = pInventory->GetItems();
 		vector<NRPG::SBackPackItem> itemsToRemove;
-		for ( vector<NRPG::SBackPackItem>::const_iterator b = items.begin(); b != items.end(); ++b )
+		for ( typename vector<NRPG::SBackPackItem>::const_iterator b = items.begin(); b != items.end(); ++b )
 		{
 			ASSERT( IsValid( (*b).pItem ) );
 			ASSERT( IsValid( (*b).pItem->GetDBItem() ) );
@@ -795,7 +796,7 @@ void CScenarioTracker::ProcessScenario( const vector< CPtr<NRPG::CUnit> > &units
 			}
 		}
 		//
-		for ( vector<NRPG::SBackPackItem>::iterator b = itemsToRemove.begin(); b != itemsToRemove.end(); ++b )
+		for ( typename vector<NRPG::SBackPackItem>::iterator b = itemsToRemove.begin(); b != itemsToRemove.end(); ++b )
 		{
 			pInventory->Take( (*b).pItem );
 		}
@@ -843,7 +844,7 @@ void CScenarioTracker::GetCluesFromPers( NRPG::CUnit *pPers, NRPG::CUnit *pCorps
 	// backpack
 	const vector<NRPG::SBackPackItem> &items = pInventory->GetItems();
 	vector<NRPG::SBackPackItem> itemsToRemove;
-	for ( vector<NRPG::SBackPackItem>::const_iterator b = items.begin(); b != items.end(); ++b )
+	for ( typename vector<NRPG::SBackPackItem>::const_iterator b = items.begin(); b != items.end(); ++b )
 	{
 		if ( IsValid( (*b).pItem ) && IsValid( (*b).pItem->GetDBItem() ) )
 		{
@@ -856,7 +857,7 @@ void CScenarioTracker::GetCluesFromPers( NRPG::CUnit *pPers, NRPG::CUnit *pCorps
 			}
 		}
 	}
-	for ( vector<NRPG::SBackPackItem>::iterator b = itemsToRemove.begin(); b != itemsToRemove.end(); ++b )
+	for ( typename vector<NRPG::SBackPackItem>::iterator b = itemsToRemove.begin(); b != itemsToRemove.end(); ++b )
 		pInventory->Take( (*b).pItem );
 	// clues on the carried corpse count too (never taken off it here)
 	if ( IsValid( pCorpsePers ) )
@@ -868,7 +869,7 @@ void CScenarioTracker::GetCluesInHand( const vector< CPtr<NWorld::CUnit> > &unit
 	list< CPtr<CScenarioClue> > *pClues ) const
 {
 	pClues->clear();
-	for ( vector< CPtr<NWorld::CUnit> >::const_iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CPtr<NWorld::CUnit> >::const_iterator i = units.begin(); i != units.end(); ++i )
 	{
 		CPtr<NRPG::CUnit> pPers = (*i)->GetRPG()->GetRPGUnit();
 		NRPG::CUnit *pCorpsePers = 0;
@@ -890,7 +891,7 @@ bool CScenarioTracker::CanLeaveZone( const vector< CPtr<NWorld::CUnit> > &units,
 	GetCluesInHand( units, &cluesInHand );
 	// the zone's placed clues not yet found and not in hand -- leaving would strand them
 	list< CPtr<CScenarioClue> > cluesToFind;
-	for ( vector< CPtr<CScenarioClue> >::const_iterator i = pZone->GetClues().begin(); i != pZone->GetClues().end(); ++i )
+	for ( typename vector< CPtr<CScenarioClue> >::const_iterator i = pZone->GetClues().begin(); i != pZone->GetClues().end(); ++i )
 	{
 		bool bFound = IsClueFound( *i );
 		bool bInHand = find( cluesInHand.begin(), cluesInHand.end(), *i ) != cluesInHand.end();
@@ -905,16 +906,16 @@ bool CScenarioTracker::CanLeaveZone( const vector< CPtr<NWorld::CUnit> > &units,
 		return bPrevCanLeaveZone;
 	}
 	// can leave = BASE->FFIGHT still reachable with this zone's unfound clues hidden
-	for ( list< CPtr<CScenarioClue> >::iterator i = cluesToFind.begin(); i != cluesToFind.end(); ++i )
+	for ( typename list< CPtr<CScenarioClue> >::iterator i = cluesToFind.begin(); i != cluesToFind.end(); ++i )
 		(*i)->SetPlaced( false );
 	CObj<CScenarioFlowChartState> pPath = pScenarioFlowChart->GetPathFinder()->FindPath(
 		GetZoneByName( "BASE" ), GetZoneByName( "FFIGHT" ), true );
 	bool bCanLeave = IsValid( pPath );
-	for ( list< CPtr<CScenarioClue> >::iterator i = cluesToFind.begin(); i != cluesToFind.end(); ++i )
+	for ( typename list< CPtr<CScenarioClue> >::iterator i = cluesToFind.begin(); i != cluesToFind.end(); ++i )
 		(*i)->SetPlaced( true );
 	// game over = unreachable even hiding only the DESTROYED unfound clues
 	vector< CPtr<CScenarioClue> > destroyedToHide;
-	for ( list< CPtr<CScenarioClue> >::iterator i = cluesToFind.begin(); i != cluesToFind.end(); ++i )
+	for ( typename list< CPtr<CScenarioClue> >::iterator i = cluesToFind.begin(); i != cluesToFind.end(); ++i )
 	{
 		if ( !IsValid( *i ) || !(*i)->IsPlaced() || IsClueFound( *i ) )
 			continue;
@@ -926,7 +927,7 @@ bool CScenarioTracker::CanLeaveZone( const vector< CPtr<NWorld::CUnit> > &units,
 	}
 	pPath = pScenarioFlowChart->GetPathFinder()->FindPath( GetZoneByName( "BASE" ), GetZoneByName( "FFIGHT" ), true );
 	bool bGameOver = !IsValid( pPath );
-	for ( vector< CPtr<CScenarioClue> >::iterator i = destroyedToHide.begin(); i != destroyedToHide.end(); ++i )
+	for ( typename vector< CPtr<CScenarioClue> >::iterator i = destroyedToHide.begin(); i != destroyedToHide.end(); ++i )
 		(*i)->SetPlaced( true );
 	//
 	bPrevGameOver = bGameOver;
@@ -951,7 +952,7 @@ int CScenarioTracker::GetMaxDifficulty() const
 	int nMaxDif = 0;
 	list< CPtr<CScenarioZone> > zones;
 	GetAvailableZones( &zones );
-	for ( list< CPtr<CScenarioZone> >::const_iterator i = zones.begin(); i != zones.end(); ++i )
+	for ( typename list< CPtr<CScenarioZone> >::const_iterator i = zones.begin(); i != zones.end(); ++i )
 		nMaxDif = Max( nMaxDif, (*i)->GetDifficulty() );
 	return nMaxDif;
 }

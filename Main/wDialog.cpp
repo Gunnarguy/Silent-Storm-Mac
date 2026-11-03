@@ -1,7 +1,7 @@
 #include "stdafx.h"
 //
-#include "..\DBFormat\DataAck.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataAck.h"
+#include "../DBFormat/DataRPG.h"
 #include "rpgUnit.h"
 #include "rpgGlobal.h"
 #include "rpgGame.h"
@@ -38,7 +38,7 @@ static void GetDialogSequence( int nDialogID, vector< CDBPtr<NDb::CDBAckInfo> > 
 	}
 	//
 	sort( tmpRes.begin(), tmpRes.end(), CompateDialogSeqs );
-	for ( vector< CDBPtr<NDb::CDBDialogSeq> >::iterator r = tmpRes.begin(); r != tmpRes.end(); ++ r )
+	for ( typename vector< CDBPtr<NDb::CDBDialogSeq> >::iterator r = tmpRes.begin(); r != tmpRes.end(); ++ r )
 	{
 		// retail GetDialogSequence @0x34d400: skip rows whose pAckInfo is null/destroyed. The retail
 		// game.db has DialogSeq rows with dangling AckInfo refs (e.g. dialog 132 GBaseG1a, the German
@@ -57,7 +57,7 @@ static NWorld::CUnit* GetUnitForDialog( int nPersID, CWorld *pWorld, vector< CPt
 	//
 	if ( !IsValid( pUnit ) )
 	{
-		for ( vector< CPtr<NWorld::CUnit> >::const_iterator i = pFakeUnits->begin(); i != pFakeUnits->end(); ++i )
+		for ( typename vector< CPtr<NWorld::CUnit> >::const_iterator i = pFakeUnits->begin(); i != pFakeUnits->end(); ++i )
 		{
 			if ( (*i)->GetRPG()->GetRPGPers()->GetRecordID() == nPersID )
 			{
@@ -99,7 +99,7 @@ static void MakeDialogData(  CWorld *pWorld, int nDialogID,
 	vector< CDBPtr<NDb::CDBAckInfo> > sequence;
 	GetDialogSequence( nDialogID, &sequence );
 	//
-	vector< CDBPtr<NDb::CDBAckInfo> >::const_iterator i;
+	typename vector< CDBPtr<NDb::CDBAckInfo> >::const_iterator i;
 	for ( i = sequence.begin(); i != sequence.end(); ++i )
 	{
 		int nPersID = (*i)->nRPGPersID;
@@ -163,7 +163,7 @@ void PlayDialogAsAcks( CWorld *pWorld, int nDialogID )
 	vector< CPtr<NWorld::CAckEvent> > phrases;
 	vector< CObj<NWorld::CUnit> > units;
 	MakeDialogData( pWorld, nDialogID, &phrases, &units );
-	phrases.resize( min( NDb::N_ACKINFO_MAX_COUNT, phrases.size() ) );
+	phrases.resize( s2min( NDb::N_ACKINFO_MAX_COUNT, phrases.size() ) );
 	// Retail v1.2 0x74e017..0x74e02a: scripted dialogue takes precedence
 	// over ordinary acknowledgements, including the kill bark it can follow.
 	for ( int i = 0; i < phrases.size(); ++i )

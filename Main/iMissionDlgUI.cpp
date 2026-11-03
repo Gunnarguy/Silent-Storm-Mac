@@ -6,6 +6,7 @@
 #include "RPGUnit.h"        // NRPG::CUnit complete type (GetRPGUnit()->GetVoice() for the in-game ack voice)
 #include "wInterface.h"
 #include "wUICommands.h"
+#include "../MiscDll/Commands.h"
 #include "Sound.h"
 #include "Interface.h"
 #include "UIML.h"
@@ -14,14 +15,14 @@
 #include "iMissionUI.h"
 #include "iMissionDlgUI.h"
 #include "iMissionExec.h"
-#include "..\Misc\StrProc.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataAck.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataLight.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataCamera.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataAck.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataLight.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataCamera.h"
+#include "../DBFormat/DataInterface.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -77,6 +78,9 @@ void CAnimUnitView::SetCoeff( float fCoeff )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CMissionDlgUI
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// macOS test hooks: "dialog_next" / "dialog_cancel" drive the open dialog from _s2cmd.txt (the input hook's key
+// presses do not reach this desktop reliably in hidden runs)
+static CPtr<CMissionDlgUI> s_pActiveMissionDlg;
 CMissionDlgUI::CMissionDlgUI():
 	bindCancel( "cancel" ), bindNext( "next" ), bindPrev( "back" )
 {
@@ -97,6 +101,7 @@ void CMissionDlgUI::ShowDesktop()
 	nStage = 0;
 
 	csSystem << "WARNING: Dialog start!" << endl;
+	s_pActiveMissionDlg = this;
 
 	ShowWindow( SWTYPE_SHOW );
 	pMission->PushDesktop( this );
@@ -420,7 +425,7 @@ void CMissionDlgUI::UpdatePhrases( NGScene::I2DGameView *pView )
 				pML->Render( &rects, CTPoint<float>( 0, 0 ), CTRect<float>( 0, 0, 0, 0 ) );
 
 				int nCutChar = 0;
-				for ( list<CTRect<float> >::const_iterator iRect = rects.begin(); iRect != rects.end(); iRect++ )
+				for ( typename list<CTRect<float> >::const_iterator iRect = rects.begin(); iRect != rects.end(); iRect++ )
 				{
 					// Independently scaled line/cap edges can differ by a few float ULPs.
 					if ( iRect->y2 > fDialogHeight + 0.001f )
@@ -492,3 +497,17 @@ void CMissionDlgUI::EndDialog()
 using namespace NUI;
 REGISTER_SAVELOAD_CLASS( 0xB1211180, CMissionDlgUI )
 REGISTER_SAVELOAD_CLASS( 0xB14b2180, CAnimUnitView )
+////////////////////////////////////////////////////////////////////////////////////////////////////
+static void DialogNextCmd( const string &, const vector<wstring> &, void * )
+{
+	if ( IsValid( NUI::s_pActiveMissionDlg ) ) NUI::s_pActiveMissionDlg->TestNext();
+	else csSystem << "dialog_next: no dialog open" << endl;
+}
+static void DialogCancelCmd( const string &, const vector<wstring> &, void * )
+{
+	if ( IsValid( NUI::s_pActiveMissionDlg ) ) NUI::s_pActiveMissionDlg->TestCancel();
+}
+START_REGISTER(iMissionDlgUI)
+	REGISTER_CMD( "dialog_next", DialogNextCmd )
+	REGISTER_CMD( "dialog_cancel", DialogCancelCmd )
+FINISH_REGISTER

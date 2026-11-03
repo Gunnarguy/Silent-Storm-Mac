@@ -17,17 +17,17 @@
 #include "aiMap.h"
 #include "aiCollider.h"
 #include "phCollider.h"	// PhysCollideInfo (impact path; the free NAI::CollideInfo was removed)
-#include "..\misc\RandomGen.h"
-#include "..\MiscDll\LogStream.h"
+#include "../misc/RandomGen.h"
+#include "../MiscDll/LogStream.h"
 #include "wObject.h"
 #include "wUnitStates.h"
 #include "wAckBase.h"
 #include "RPGToHit.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataSound.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataAI.h"
-#include "..\DBFormat\DataMap.h"	// NDb::EDiplomacyState / DS_ENEMY (CExecHeal::CanDoIt diplomacy gate)
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataSound.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataAI.h"
+#include "../DBFormat/DataMap.h"	// NDb::EDiplomacyState / DS_ENEMY (CExecHeal::CanDoIt diplomacy gate)
 #include "RPGCritical.h"
 #include "wUnitAttack.h"
 #include "wUnitAttackExec.h"
@@ -38,7 +38,7 @@
 #include "wUnitQueue.h"
 #include "wDialog.h"
 #include "scriptCallLUA.h"
-#include "..\Misc\EventsBase.h"
+#include "../Misc/EventsBase.h"
 #include "eventUnit.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NWorld
@@ -1851,7 +1851,7 @@ void CExecMelee::PerformAttack( const vector<NRPG::CAttackPortion> &attack, cons
 	CWorld *pWorld = pUS->GetWorld();
 
 	// Retail v1.2 0x7a5366..0x7a538b forwards the world, AI map and target filter.
-	for ( vector<NRPG::CAttackPortion>::const_iterator i = attack.begin(); i != attack.end(); ++i )
+	for ( typename vector<NRPG::CAttackPortion>::const_iterator i = attack.begin(); i != attack.end(); ++i )
 	{
 		NRPG::PerformMeleeAttackPortion( pWorld, pWorld->GetAIMap(), *i, ray, ignores, pFilter );
 	}
@@ -1895,7 +1895,7 @@ void CExecMeleeTile::OnLabel()
 	bAttackCanceled = true;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// CExecMeleeObject -- v1.2 0x7a56f0/0x7a9b70, Sentinels 0x7e7ac0/0x7eb980.
+// CExecMeleeObject -- v1.2 0x7a56f0/0x7a9b70.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CExecMeleeObject::CExecMeleeObject( CUnitServer *_pUS, CObjectBase *_pTarget, int _nExtraAttackAP ):
 	CExecMelee( _pUS, _nExtraAttackAP ), pTarget( _pTarget )

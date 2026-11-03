@@ -10,7 +10,7 @@
 //#include "aiScaleConverter.h"
 //#include "aiTacticalCommander.h"
 //
-//#include "..\misc\RandomGen.h"
+//#include "../misc/RandomGen.h"
 //
 ////#include "wMain.h"
 //#include "wUnitServer.h"

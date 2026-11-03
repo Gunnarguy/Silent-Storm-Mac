@@ -1,21 +1,21 @@
 #include "StdAfx.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/LogStream.h"
+#include "../DBFormat/DataRPG.h"
 #include "rpgGlobal.h"
 #include "scScenarioTracker.h"
 #include "wMain.h"
 #include "wUICommands.h"
 #include "wInterface.h"
-#include "..\Script\lua.h"
-#include "..\Script\lstate.h"
+#include "../Script/lua.h"
+#include "../Script/lstate.h"
 #include "A5Script.h"
 #include "scriptUI.h"		// NScript::RegisterScriptUITagMethods (window.x gettable/settable tag methods)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NScript
 {
 externA5 Script::SRegFunction pRegList[];
-Script::SRegFunction pLuaPtrTagFuncList[] = { (0,0) };
+Script::SRegFunction pLuaPtrTagFuncList[] = { {0,0} };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static void SharedInit( Script *scr )
 {
@@ -47,7 +47,7 @@ static void CommandShowScriptError( const string &szID, const vector<wstring> &p
 	//
 	csSystem << endl << "Script last error:" << endl;
 	csSystem << CC_RED << "Script error: " << CC_GREY << luaLastError.szError << endl;
-	vector< SLUAError::SLUAStackTrace >::iterator i;
+	typename vector< SLUAError::SLUAStackTrace >::iterator i;
 	for ( i = luaLastError.stack.begin(); i != luaLastError.stack.end(); ++i )
 	{
 		csSystem << CC_RED << "\t" << (*i).nDepth;
@@ -72,7 +72,7 @@ CScript::CScript():
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CScript::IsUIActionIDPresent( int nID ) const
 {
-	for ( list<int>::const_iterator i = interfaceActionIDs.begin(); i != interfaceActionIDs.end(); ++i )
+	for ( typename list<int>::const_iterator i = interfaceActionIDs.begin(); i != interfaceActionIDs.end(); ++i )
 		if ( *i == nID )
 			return true;
 	return false;
@@ -244,7 +244,7 @@ static void PrintScriptState( const string &szID, const vector<wstring> &szParam
 	else
 		csSystem << pScr->GetObjectAsText( strParam.c_str() );
 }
-#include "..\Misc\RandomGen.h"
+#include "../Misc/RandomGen.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static void TestRnd( const string &szID, const vector<wstring> &szParams, void *pContext )
 {

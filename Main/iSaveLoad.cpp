@@ -4,11 +4,11 @@
 #include "ScreenShot.h"
 #include "iMain.h"
 #include "G2DView.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"
 #include "iCommonUI.h"
 #include "iSaveLoad.h"
@@ -554,7 +554,7 @@ void CBaseView::GenerateList()
 	pSaveManager->GetSlotsList( &slotsList );
 
 	vector<SSaveLoadItemInfo> slots;
-	for ( list<string>::const_iterator i = slotsList.begin(); i != slotsList.end(); ++i )
+	for ( typename list<string>::const_iterator i = slotsList.begin(); i != slotsList.end(); ++i )
 	{
 		SSaveLoadItemInfo slot;
 		slot.szName = *i;

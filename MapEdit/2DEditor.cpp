@@ -199,7 +199,7 @@ void C2DEditor::SetCurrentColor( COLORREF cr )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 COLORREF C2DEditor::GetColor4Tile( int nTileID )
 {
-	unordered_map<int, COLORREF>::const_iterator it = terrTileID2Color.find( nTileID );
+	typename unordered_map<int, COLORREF>::const_iterator it = terrTileID2Color.find( nTileID );
 	if ( it != terrTileID2Color.end() )
 		return it->second;
 	const SResTree *pRes = theApp.GetResTree( IDC_TERRAINTILES_TREE );
@@ -208,7 +208,7 @@ COLORREF C2DEditor::GetColor4Tile( int nTileID )
 	const CPropMap *pProps = pRes->pItemsTree->GetPropList( nTileID );
 	if ( !pProps )
 		return DEF_TERR_COLOR;
-	CPropMap::const_iterator cit = pProps->find( "UserColor" );
+	typename CPropMap::const_iterator cit = pProps->find( "UserColor" );
 	if ( cit == pProps->end() )
 		return DEF_TERR_COLOR;
 	int cr = cit->second->GetValue();
@@ -222,7 +222,7 @@ COLORREF C2DEditor::GetColor4Tile( int nTileID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int C2DEditor::GetTile4Color( COLORREF cr ) const
 {
-	unordered_map<COLORREF, int>::const_iterator it = color2TerrTileID.find( cr );
+	typename unordered_map<COLORREF, int>::const_iterator it = color2TerrTileID.find( cr );
 	if ( it != color2TerrTileID.end() )
 		return it->second;
 	return 0;

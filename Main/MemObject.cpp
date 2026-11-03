@@ -40,7 +40,7 @@ WORD CMemObjectBuilder::GetPointIndex( const CVec3 &point, const CVec3 &normal )
 	SMemBuilderVertex v;
 	v.point = point;
 	v.normal = normal;
-	CPointsHash::iterator i = points.find( v );
+	typename CPointsHash::iterator i = points.find( v );
 	if ( i == points.end() )
 	{
 		int nIndex = p->resPoints.size();
@@ -189,12 +189,12 @@ void CMemObject::CreatePolygone( const vector<CVec2> &points, float fZ )
 	while( poly.size() > 2 )	
 	{
 		bool bRemoved = false;
-		list<SMOTessPoint>::iterator iPrev, iPrev2;
+		typename list<SMOTessPoint>::iterator iPrev, iPrev2;
 		iPrev = poly.end();
 		iPrev--;
 		iPrev2 = iPrev;
 		iPrev2--;
-		for ( list<SMOTessPoint>::iterator i = poly.begin(); i != poly.end(); iPrev2 = iPrev, iPrev = i, ++i )
+		for ( typename list<SMOTessPoint>::iterator i = poly.begin(); i != poly.end(); iPrev2 = iPrev, iPrev = i, ++i )
 		{
 			const SMOTessPoint &prev = *iPrev2;
 			const SMOTessPoint &temp = *iPrev;
@@ -235,12 +235,12 @@ void CMemObject::CreatePolygone( const vector<CVec2> &points, float fZ )
 		}
 		if ( bRemoved )
 		{
-			list<SMOTessPoint>::iterator iPrev, iPrev2;
+			typename list<SMOTessPoint>::iterator iPrev, iPrev2;
 			iPrev = poly.end();
 			iPrev--;
 			iPrev2 = iPrev;
 			iPrev2--;
-			for ( list<SMOTessPoint>::iterator i = poly.begin(); i != poly.end(); iPrev2 = iPrev, iPrev = i, ++i )
+			for ( typename list<SMOTessPoint>::iterator i = poly.begin(); i != poly.end(); iPrev2 = iPrev, iPrev = i, ++i )
 			{
 				SMOTessPoint &temp = *iPrev;
 				const SMOTessPoint &prev = *iPrev2;

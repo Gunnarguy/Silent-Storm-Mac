@@ -19,7 +19,7 @@ void lua_StartSerialize( lua_State *pL )
 static void lua_GetID( CLuaFuncID *pID, lua_CFunction func )
 {
 	CLuaFunctionKey nFunc = reinterpret_cast<CLuaFunctionKey>( func );
-	CLuaFuncToIDMap::iterator i = luaFuncToIDMap.find( nFunc );
+	typename CLuaFuncToIDMap::iterator i = luaFuncToIDMap.find( nFunc );
 	ASSERT( i != luaFuncToIDMap.end() );  // unregistered lua C function!
 	*pID = i->second;
 }
@@ -27,14 +27,14 @@ static void lua_GetID( CLuaFuncID *pID, lua_CFunction func )
 static void lua_GetID( CLuaFuncID *pID, lua_Hook func )
 {
 	CLuaFunctionKey nFunc = reinterpret_cast<CLuaFunctionKey>( func );
-	CLuaFuncToIDMap::iterator i = luaFuncToIDMap.find( nFunc );
+	typename CLuaFuncToIDMap::iterator i = luaFuncToIDMap.find( nFunc );
 	ASSERT( i != luaFuncToIDMap.end() );  // unregistered lua C function!
 	*pID = i->second;
 }
 //////////////////////////////////////////////////////////////////////////
 static lua_CFunction lua_GetFunc( const CLuaFuncID& id )
 { 
-	CLuaIDToFuncMap::iterator i = luaIDToFuncMap.find( id );
+	typename CLuaIDToFuncMap::iterator i = luaIDToFuncMap.find( id );
 	ASSERT( i != luaIDToFuncMap.end() );  // unregistered lua C function!
 	CLuaFunctionKey nFunc = i->second;
 	return reinterpret_cast<lua_CFunction>(nFunc);
@@ -42,7 +42,7 @@ static lua_CFunction lua_GetFunc( const CLuaFuncID& id )
 //////////////////////////////////////////////////////////////////////////
 static lua_Hook lua_GetHook( const CLuaFuncID& id )
 {
-	CLuaIDToFuncMap::iterator i = luaIDToFuncMap.find( id );
+	typename CLuaIDToFuncMap::iterator i = luaIDToFuncMap.find( id );
 	ASSERT( i != luaIDToFuncMap.end() );  // unregistered lua C function!
 	CLuaFunctionKey nFunc = i->second;
 	return reinterpret_cast<lua_Hook>(nFunc);

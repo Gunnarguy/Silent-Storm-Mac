@@ -26,6 +26,7 @@ public:
 IFilesPackage* OpenFilesPackage( const char *pszFileName );
 IFilesPackage* OpenCachedFilesPackage( const char *pszFileName );
 bool DoesFileExist( IFilesPackage *pPack, FILE_ID nFileID );
+void ListPackageFiles( IFilesPackage *pPack, vector< pair<FILE_ID, unsigned int> > *pRes );   // macOS port tools
 bool UpdateFilesPackage( const char *pszFileName, const char *pszDir );
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #endif

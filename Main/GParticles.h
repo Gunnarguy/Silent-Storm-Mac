@@ -12,7 +12,7 @@
 // void* overload, which is declaration-only -- an unresolved CastToObjectBaseImpl at link time.
 #include "GParticleInfo.h"
 
-#include "..\Misc\2DArray.h"
+#include "../Misc/2DArray.h"
 namespace NDb
 {
 	class CGrass;
@@ -130,11 +130,11 @@ protected:
 	virtual void Recalc();
 public:
 	ZDATA
-	CDGPtr< CFuncBase<unsigned long> > pTime;
+	CDGPtr< CFuncBase<DWORD> > pTime;
 	CDGPtr< CFuncBase<CVec3> > pCamera;
 	CObj<IParticleFilter> pFilter;
 	vector<CObj<CPtrFuncBase<NGfx::CTexture> > > textureIDs;
-	unsigned long tStart;
+	DWORD tStart;
 	// retail @0x146e50: 2=pTime, 3=pCamera, 4=pFilter, 5=textureIDs (DoVector), 6=tStart
 	ZEND int operator&( CStructureSaver &f ) { f.Add(2,&pTime); f.Add(3,&pCamera); f.Add(4,&pFilter); f.Add(5,&textureIDs); f.Add(6,&tStart); return 0; }
 

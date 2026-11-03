@@ -16,8 +16,8 @@
 #include "GRenderCore.h"
 #include "GRenderLight.h"
 #include "GCombiner.h"
-#include "..\Misc\HPTimer.h"
-#include "..\Misc\2DArray.h"
+#include "../Misc/HPTimer.h"
+#include "../Misc/2DArray.h"
 #include "GfxUtils.h"
 #include "GRenderFactor.h"
 #include "GParticleInfo.h"
@@ -26,10 +26,10 @@
 #include "GShadowMap.h" // CRAP
 #include "GDecal.h"
 #include "GDecalGeometry.h"
-#include "..\Misc\RandomGen.h"
+#include "../Misc/RandomGen.h"
 
-#include "..\MiscDll\Commands.h" // for lm command
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/Commands.h" // for lm command
+#include "../MiscDll/LogStream.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 const float F_SELECTION_STEP = 0.03f;
 const int N_SKIP_IGNORED_TEST = -1;
@@ -94,7 +94,7 @@ bool CDynamicLightCache::CheckStatic()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 const SDynamicAmbientInfo& CDynamicLightCache::Calc( const SSphere &bv, CGScene *pScene )
 {
-	CHash::iterator i = data.find( bv.ptCenter );
+	typename CHash::iterator i = data.find( bv.ptCenter );
 	if ( i == data.end() )
 	{
 		SDynamicAmbientInfo *pRes = &data[ bv.ptCenter ];
@@ -722,7 +722,7 @@ static bool DoesIntersect( const SSphere &s, const SRayInfo &r )
 static bool TestParts( const list<CPtr<CCombinedPart> > &elements, const SGroupSelect &mask, const SRayInfo &r, float *pfT, CVec3 *pNormal, CVec3 *pColor, CObjectBase **ppObject )
 {
 	bool bRes = false;
-	for ( list<CPtr<CCombinedPart> >::const_iterator i = elements.begin(); i != elements.end(); ++i )
+	for ( typename list<CPtr<CCombinedPart> >::const_iterator i = elements.begin(); i != elements.end(); ++i )
 	{
 		CCombinedPart *pCPart = *i;
 		IVBCombiner *pVB = pCPart->GetVBCombiner();
@@ -824,7 +824,7 @@ static void PlaceToOctree( CNonePart *pPart, CVolumeNode *pRoot, const CVec3 &vP
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGScene::WalkNotLoadedObjects()
 {
-	for ( list< CPtr<CNonePart> >::iterator i = toBeLoaded.begin(); i != toBeLoaded.end(); )
+	for ( typename list< CPtr<CNonePart> >::iterator i = toBeLoaded.begin(); i != toBeLoaded.end(); )
 	{
 		CNonePart *pPart = *i;
 		if ( IsValid(pPart) )
@@ -1128,7 +1128,7 @@ static void CalcCastShadow( CPartFlags *pRes, CCombinedPart *p )
 static void AddParts( CTransformStack *pTS, list<SRenderPartSet> *pRes, 
 	const vector<CObj<CCombinedPart> > &elems, const SGroupSelect &mask )
 {
-	for ( vector<CObj<CCombinedPart> >::const_iterator i = elems.begin(); i != elems.end(); ++i )
+	for ( typename vector<CObj<CCombinedPart> >::const_iterator i = elems.begin(); i != elems.end(); ++i )
 	{
 		CCombinedPart *pElement = *i;
 		if ( !IsValid( pElement ) )
@@ -1443,7 +1443,7 @@ void CGScene::AddNode( CTransformStack *pTS, SSceneFragmentGroupInfo *pFragments
 		pFragmentsInfo->AddMaterialHolder( pTS, pNode->staticParts, req, nIgnoreMark );
 	if ( ( req & RN_OCCLUDERS ) == 0 )
 	{
-		for ( list<CPtr<CParticles> >::iterator i = pNode->particles.begin(); i != pNode->particles.end(); ++i )
+		for ( typename list<CPtr<CParticles> >::iterator i = pNode->particles.begin(); i != pNode->particles.end(); ++i )
 		{
 			CParticles *pPart =*i;
 			if ( !IsValid( pPart ) )
@@ -1507,7 +1507,7 @@ void CGScene::MakeRenderList( CTransformStack *pTS, SSceneFragmentGroupInfo *pTa
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class T> void PrecacheMaterialsForSet( const T &s )
 {
-	for ( T::const_iterator i = s.begin(); i != s.end(); ++i )
+	for ( typename T::const_iterator i = s.begin(); i != s.end(); ++i )
 	{
 		if ( IsValid( *i ) )
 			(*i)->GetMaterial()->Precache();
@@ -1518,7 +1518,7 @@ void CGScene::PrecacheMaterials( CVolumeNode *pNode )
 {
 	if ( !IsValid(pNode) )
 		return;
-	for ( list<CPtr<CCombinedPart> >::iterator i = pNode->staticParts.elements.begin(); i != pNode->staticParts.elements.end(); ++i )
+	for ( typename list<CPtr<CCombinedPart> >::iterator i = pNode->staticParts.elements.begin(); i != pNode->staticParts.elements.end(); ++i )
 	{
 		CCombinedPart *p = *i;
 		for ( int i = 0; i < p->GetMaterialsNumber(); ++i )
@@ -1565,7 +1565,7 @@ void CGScene::UpdateIgnoreMark( IRender *pRender, CTransformStack *pTS, const SG
 			++nCurrentIgnoreMark;
 			CIgnorePartsHash res;
 			MakeInvisibleElementsList( pRender, pTS, mask, GetScreenRect(), &res, &pHZBuffer );
-			for ( CIgnorePartsHash::iterator i = res.begin(); i != res.end(); ++i )
+			for ( typename CIgnorePartsHash::iterator i = res.begin(); i != res.end(); ++i )
 			{
 				CDynamicCast<CCombinedPart> pC( i->first );
 				pC->SetIgnored( nCurrentIgnoreMark, i->second );
@@ -1592,7 +1592,7 @@ void CGScene::UpdateIgnoreMark( IRender *pRender, CTransformStack *pTS, const SG
 			pHZBuffer = 0;
 			CIgnorePartsHash res;
 			MakeInvisibleElementsListFast( pRender, pTS, mask, GetScreenRect(), &res, &pHZBuffer );
-			for ( CIgnorePartsHash::iterator i = res.begin(); i != res.end(); ++i )
+			for ( typename CIgnorePartsHash::iterator i = res.begin(); i != res.end(); ++i )
 			{
 				CDynamicCast<CCombinedPart> pC( i->first );
 				pC->SetIgnored( nCurrentIgnoreMark, i->second );
@@ -1650,7 +1650,7 @@ void CGScene::CalcNewLightState()
 {
 	SGlobalIlluminationInfo lsGlobal;
 	lsGlobal.globalBounds = SSphere( CVec3( 10, 10, 10 ), 30 ); // CRAP, currently is not used
-	for ( list< CPtr<ILight> >::iterator i = lights.begin(); i != lights.end(); ++i )
+	for ( typename list< CPtr<ILight> >::iterator i = lights.begin(); i != lights.end(); ++i )
 	{
 		if ( !IsValid( *i) )
 			continue;
@@ -1715,7 +1715,7 @@ void CGScene::DrawSelection( CTransformStack *pTS, NGfx::CRenderContext *pRC, co
 			sGlow.vColor = CVec4(0,0,0,0);
 			rc.SetEffect( &sGlow );
 		}
-		for ( list< CPtr<CSelection> >::iterator i = selections.begin(); i != selections.end(); ++i )
+		for ( typename list< CPtr<CSelection> >::iterator i = selections.begin(); i != selections.end(); ++i )
 			(*i)->Render( pTS, pRC, mask, false );
 		rc.Flush();
 	}
@@ -1730,10 +1730,10 @@ void CGScene::DrawSelection( CTransformStack *pTS, NGfx::CRenderContext *pRC, co
 		rc.SetStencil( NGfx::STENCIL_TESTNE_WRITE, N_SELECTION_STENCIL );
 	typedef unordered_map<CVec4, list< CPtr<CSelection> >, SVec4Hash> CColorHash;
 	CColorHash hashSel;
-	for ( list< CPtr<CSelection> >::iterator i = selections.begin(); i != selections.end(); ++i )
+	for ( typename list< CPtr<CSelection> >::iterator i = selections.begin(); i != selections.end(); ++i )
 		hashSel[ (*i)->GetColor() ].push_back( *i );
 
-	for ( CColorHash::iterator i = hashSel.begin(); i != hashSel.end(); ++i )
+	for ( typename CColorHash::iterator i = hashSel.begin(); i != hashSel.end(); ++i )
 	{
 		if ( NGfx::IsTnLDevice() )
 		{
@@ -1746,7 +1746,7 @@ void CGScene::DrawSelection( CTransformStack *pTS, NGfx::CRenderContext *pRC, co
 			sGlow.vColor = i->first;
 			rc.SetEffect( &sGlow );
 		}
-		for ( list< CPtr<CSelection> >::iterator k = i->second.begin(); k != i->second.end(); ++k )
+		for ( typename list< CPtr<CSelection> >::iterator k = i->second.begin(); k != i->second.end(); ++k )
 			(*k)->Render( pTS, pRC, mask, true );
 		rc.Flush();
 	}
@@ -1759,9 +1759,9 @@ void CGScene::DrawPostProcess( CTransformStack *pTS, NGfx::CRenderContext *pRC, 
 	UpdateSet( &postprocessors, this );
 	typedef unordered_map<CPtr<IPostProcess>, vector<IPostProcess::SObject>, SPtrHash> CPostHash;
 	CPostHash postHash;
-	for ( list< CPtr<CPostProcessBinder> >::iterator i = postprocessors.begin(); i != postprocessors.end(); ++i )
+	for ( typename list< CPtr<CPostProcessBinder> >::iterator i = postprocessors.begin(); i != postprocessors.end(); ++i )
 		(*i)->Store( &postHash[ (*i)->GetPostProcessor() ], pTS, mask );
-	for ( CPostHash::iterator i = postHash.begin(); i != postHash.end(); ++i )
+	for ( typename CPostHash::iterator i = postHash.begin(); i != postHash.end(); ++i )
 	{
 		if ( i->second.empty() )
 			continue;
@@ -1776,7 +1776,7 @@ void CGScene::DrawLines( NGfx::CRenderContext *pRC )
 	pRC->SetStencil( NGfx::STENCIL_NONE );
 	typedef unordered_map<CVec3, list<CPolyline*>, SVec3Hash> CColorHash;
 	CColorHash hashSel;
-	for ( list< CPtr<CPolyline> >::iterator i = lines.begin(); i != lines.end(); )
+	for ( typename list< CPtr<CPolyline> >::iterator i = lines.begin(); i != lines.end(); )
 	{
 		if ( IsValid(*i) )
 		{
@@ -1787,13 +1787,13 @@ void CGScene::DrawLines( NGfx::CRenderContext *pRC )
 			i = lines.erase( i );
 	}
 
-	for ( CColorHash::iterator k = hashSel.begin(); k != hashSel.end(); ++k )
+	for ( typename CColorHash::iterator k = hashSel.begin(); k != hashSel.end(); ++k )
 	{
 		NGfx::SEffConstLight d;
 		d.color = k->first;
 		pRC->SetEffect( &d );
 		const list<CPolyline*> &l = k->second;
-		for ( list<CPolyline*>::const_iterator i = l.begin(); i != l.end(); ++i )
+		for ( typename list<CPolyline*>::const_iterator i = l.begin(); i != l.end(); ++i )
 			(*i)->Render( pRC );
 		pRC->Flush();
 	}
@@ -1917,7 +1917,7 @@ void CGScene::GetPartsList( const SDecalMappingInfo &_info, const CObjectBaseSet
 		GeneratePartList( &rw, _info.vCenter, _info.fRadius, &res, IRender::DT_ALL, gs );
 	}
 
-	for ( list<SRenderPartSet>::const_iterator i = res.begin(); i != res.end(); ++i )
+	for ( typename list<SRenderPartSet>::const_iterator i = res.begin(); i != res.end(); ++i )
 	{
 		const SRenderPartSet &r = *i;
 		for ( int k = 0; k < r.pParts->size(); ++k )
@@ -1928,7 +1928,7 @@ void CGScene::GetPartsList( const SDecalMappingInfo &_info, const CObjectBaseSet
 			if ( !pPart )
 				continue;
 			const SFullGroupInfo &fg = pPart->GetFullGroupInfo();
-			CObjectBaseSet::const_iterator i = targets.find( fg.pUser );
+			typename CObjectBaseSet::const_iterator i = targets.find( fg.pUser );
 			if ( i == targets.end() )
 				continue;
 			if ( pPart->GetFullGroupInfo().nUserID == -1 )
@@ -1967,7 +1967,7 @@ void CGScene::RefreshParticleLMTarget()
 template<class T>
 inline bool IsAllLoaded( const T &stuff )
 {
-	for ( T::const_iterator i = stuff.begin(); i != stuff.end(); ++i )
+	for ( typename T::const_iterator i = stuff.begin(); i != stuff.end(); ++i )
 	{
 		if ( IsValid(*i) && !(*i)->HasLoadedObjectInfo() )
 			return false;
@@ -2100,7 +2100,7 @@ void CGScene::Draw( CTransformStack *pTS, CTransformStack *pClipTS, NGfx::CRende
 		if ( !bUseFakeParticleLM )
 			useParticleTarget = particleLM;
 		useParticleTarget.vKernelSize = pTransp->GetKernelLightInfo().vLightSize;
-		for ( list< CPtr<ILight> >::iterator k = lights.begin(); k != lights.end(); ++k )
+		for ( typename list< CPtr<ILight> >::iterator k = lights.begin(); k != lights.end(); ++k )
 		{
 			ILight *pLight = *k;
 			pLight->Render( pTS, pClipTS, pRC, renderPath, &renderWrapper, geom, useParticleTarget );

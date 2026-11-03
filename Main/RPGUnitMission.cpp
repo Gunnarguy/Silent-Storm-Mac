@@ -7,12 +7,12 @@
 #include "RPGGame.h"        // NRPG::IGame::GetMaxCriticalSeverity (combat critical clamp)
 #include "Grid.h"
 #include "A5Script.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataAI.h"
-#include "..\Misc\RandomGen.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\LogStream.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataAI.h"
+#include "../Misc/RandomGen.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/LogStream.h"
 #include "aiPosition.h"
 #include "RPGCritical.h"
 #include "RPGToHit.h"
@@ -22,8 +22,8 @@
 #include "RPGDiplomacy.h"
 #include "rpgCheatConstants.h"
 #include "rpgPerkConstants.h"
-#include "..\DBFormat\DataRpgConstants.h"
-#include "..\DBFormat\DataMisc.h"   // NDb::CRPGAP (GetActionAP RPGAP-table costs) + CRPGPicklock (AC_PICK_LOCK nAPToUse)
+#include "../DBFormat/DataRpgConstants.h"
+#include "../DBFormat/DataMisc.h"   // NDb::CRPGAP (GetActionAP RPGAP-table costs) + CRPGPicklock (AC_PICK_LOCK nAPToUse)
 
 #include "RPGUnitMission.h"
 #include "RPGAttackSession.h"
@@ -343,7 +343,7 @@ void RangeCriticals( vector<SCriticalType> *pCriticals )
 	sort( pCriticals->begin(), pCriticals->end(), DBCriticalCmp );
 	//
 	int pos = 0;
-	for ( vector<SCriticalType>::iterator i = pCriticals->begin(); i != pCriticals->end(); ++i )
+	for ( typename vector<SCriticalType>::iterator i = pCriticals->begin(); i != pCriticals->end(); ++i )
 	{
 		i->nStartPos = pos;
 		pos += i->pCritical->nRange;
@@ -636,7 +636,7 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action ) const
 {
 	// ORIGINAL RETAIL BUG FIXED: paid costs have a 1-AP floor AFTER skill and
 	// perk reductions, so UI/AI planning and execution agree. Explicitly free
-	// preparation/turning, no-op actions and missing-item sentinels stay zero.
+	// preparation/turning, no-op actions and missing-item markers stay zero.
 	// actions whose cost does not depend on the pose
 	switch ( action )
 	{
@@ -865,7 +865,7 @@ EToHitType CUnitMission::GetToHitWeaponType() const
 	if ( pMeleeWeapon )
 	{
 		NDb::CRPGMeleeWeapon *pDBMWeapon = pMeleeWeapon->GetDBMeleeWeapon();
-		if ( pDBMWeapon->bThrowing )
+		if ( pDBMWeapon && pDBMWeapon->bThrowing )
 			return TH_THROWING;
 		return TH_MELEE;
 	}
@@ -1339,7 +1339,7 @@ float GetCubesArea( const CVec3 &ptPos, vector<CVec3> *pCubes )
 	if ( pCubes->size() < 2 )
 		return 0;
 	CVec3 ptCeneter( VNULL3 );
-	for ( vector<CVec3>::iterator i = pCubes->begin(); i != pCubes->end(); ++i )
+	for ( typename vector<CVec3>::iterator i = pCubes->begin(); i != pCubes->end(); ++i )
 		ptCeneter += *i;
 	ptCeneter /= pCubes->size();
 	//
@@ -1347,7 +1347,7 @@ float GetCubesArea( const CVec3 &ptPos, vector<CVec3> *pCubes )
 	Normalize( &nrm );
 	SPlane plane( nrm, 0 );
 	plane.RecalcDist( ptCeneter );
-	for ( vector<CVec3>::iterator i = pCubes->begin(); i != pCubes->end(); ++i )
+	for ( typename vector<CVec3>::iterator i = pCubes->begin(); i != pCubes->end(); ++i )
 		*i = Projection( *i, plane );
 	//
 	float fSum = 0;
@@ -1517,7 +1517,7 @@ float CUnitMission::GetWeaponSkill( CObjectBase *pItem, int nExtraAP, int nBulle
 	}
 	else if ( CDynamicCast<IMeleeWeaponItem> pMelee = pItem )
 	{
-		bool bThrowing = pMelee->GetDBMeleeWeapon()->bThrowing;
+		bool bThrowing = pMelee->GetDBMeleeWeapon() && pMelee->GetDBMeleeWeapon()->bThrowing;
 		fSkill = GetRPGUnit()->Skills( bThrowing ? NDb::ST_THROWING : NDb::ST_MELEE );
 		if ( HasPerk( bThrowing ? 89 : 70, &fBonus ) )
 			fSkill += fBonus;
@@ -1574,7 +1574,7 @@ int GetTileToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDista
 			// ground/walls/objects a guaranteed miss and showed a constant 0% on the cursor.
 			// NOTE <= not ==: retail GetHitCover (@0x2b4390) returns exactly 0.0 for a fully
 			// blocked ray set, but the dev GetHitCover encodes that case as the -1 BLOCKED
-			// sentinel (consumed by CToHitCalcer::GetToHit's retail-faithful `fHitCover <= 0
+			// marker (consumed by CToHitCalcer::GetToHit's retail-faithful `fHitCover <= 0
 			// -> 0%` gate, @0x2b85e0), which must read as a miss here too -- otherwise melee
 			// through a wall would show 100%.
 			return nHitCover <= 0 ? 0 : 100;
@@ -1848,7 +1848,7 @@ void CUnitMission::Kill()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CUnitMission::RemoveCritical( NDb::ECritical eCritical )
 {
-	for ( vector<CObj<CCritical> >::iterator i = criticals.begin(); i != criticals.end(); )
+	for ( typename vector<CObj<CCritical> >::iterator i = criticals.begin(); i != criticals.end(); )
 	{
 		if ( (*i)->GetCritical().eCritical == eCritical )
 		{
@@ -1870,7 +1870,7 @@ void CUnitMission::ApplyCritical( CCritical *p )
 	if ( p->GetCriticalType() == NDb::C_BLEEDING )
 		nBleedingStopAmount = 0;
 
-	for ( vector<CObj<CCritical> >::iterator i = criticals.begin(); i != criticals.end(); ++i )
+	for ( typename vector<CObj<CCritical> >::iterator i = criticals.begin(); i != criticals.end(); ++i )
 	{
 		if ( !(*i)->CanBeMerged() )
 			continue;
@@ -1915,7 +1915,7 @@ void CUnitMission::SuspendCriticals( int nTurns )
 		return;
 	SCriticalsHolder &h = *suspendedCriticals.insert( suspendedCriticals.end(), SCriticalsHolder());
 	h.nTimeLeft = nTurns;
-	for ( vector<CObj<CCritical> >::iterator i = criticals.begin(); i != criticals.end();  )
+	for ( typename vector<CObj<CCritical> >::iterator i = criticals.begin(); i != criticals.end();  )
 	{
 		CCritical *p = *i;
 		if ( p->CanBeSuspended() )
@@ -1931,7 +1931,7 @@ void CUnitMission::SuspendCriticals( int nTurns )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static void SegmentCriticals( vector<CObj<CCritical> > *pRes )
 {
-	for ( vector<CObj<CCritical> >::iterator i = pRes->begin(); i != pRes->end();  )
+	for ( typename vector<CObj<CCritical> >::iterator i = pRes->begin(); i != pRes->end();  )
 	{
 		if ( !(*i)->NextTurn() )
 			i = pRes->erase( i );
@@ -1946,7 +1946,7 @@ static void SegmentCriticals( vector<CObj<CCritical> > *pRes )
 void CUnitMission::ProcessCriticalsOnNewTurnFor()
 {
 	SegmentCriticals( &criticals );
-	for ( list<SCriticalsHolder>::iterator i = suspendedCriticals.begin(); i != suspendedCriticals.end(); )
+	for ( typename list<SCriticalsHolder>::iterator i = suspendedCriticals.begin(); i != suspendedCriticals.end(); )
 	{
 		if ( --i->nTimeLeft > 0 )
 		{
@@ -1960,7 +1960,7 @@ void CUnitMission::ProcessCriticalsOnNewTurnFor()
 			i = suspendedCriticals.erase( i );
 		}
 	}
-	for ( list<SModifierHolder>::iterator m = postponedModifiers.begin(); m != postponedModifiers.end(); )
+	for ( typename list<SModifierHolder>::iterator m = postponedModifiers.begin(); m != postponedModifiers.end(); )
 	{
 		if ( --m->nTimeLeft > 0 )
 			++m;
@@ -1987,7 +1987,7 @@ static NDb::CRPGCritical* GetCritical( int nProbability,
 	const vector<SCriticalType> &criticals, const vector<ECriticalState> &criticalsStates )
 {
 	vector<SCriticalType> enabledCriticals;
-	for ( vector<SCriticalType>::const_iterator i = criticals.begin(); i != criticals.end(); ++i )
+	for ( typename vector<SCriticalType>::const_iterator i = criticals.begin(); i != criticals.end(); ++i )
 		if ( criticalsStates[ (*i).pCritical->type ] == CS_ENABLED )
 			enabledCriticals.push_back( *i );
 	//
@@ -2107,7 +2107,7 @@ float CUnitMission::HealVP( const SFirstAid &fa )
 float CUnitMission::HealCriticals( int nDC, bool bStopBleeding )
 {
 	float fHealed = 0;
-	for ( vector<CObj<CCritical> >::iterator i = criticals.begin(); i != criticals.end(); )
+	for ( typename vector<CObj<CCritical> >::iterator i = criticals.begin(); i != criticals.end(); )
 	{
 		const SCritical &c = (*i)->GetCritical();
 		if ( ( c.nDC <= nDC && (*i)->CanBeSuspended() ) ||
@@ -2144,7 +2144,7 @@ SHealCriticalInfo CUnitMission::TryHealCritical( int nDC, bool bStopBleeding ) c
 float CUnitMission::HealCritical( const SHealCriticalInfo &info )
 {
 	float fHealed = 0;
-	for ( vector<CObj<CCritical> >::iterator i = criticals.begin(); i != criticals.end(); )
+	for ( typename vector<CObj<CCritical> >::iterator i = criticals.begin(); i != criticals.end(); )
 	{
 		const SCritical &c = (*i)->GetCritical();
 		if ( c.eCritical == info.eCritical && c.eCl == info.eCl &&
@@ -2290,7 +2290,7 @@ NDb::CComplexHead* CUnitMission::GetRPGPersHead() const
 bool CUnitMission::HasCurableCriticals() const
 {
 	// Retail v1.2 0x6bf710: a curable critical, not merely any active status.
-	for ( vector<CObj<CCritical> >::const_iterator i = criticals.begin(); i != criticals.end(); ++i )
+	for ( typename vector<CObj<CCritical> >::const_iterator i = criticals.begin(); i != criticals.end(); ++i )
 		if ( (*i)->CanBeSuspended() )
 			return true;
 	return false;
@@ -2298,7 +2298,7 @@ bool CUnitMission::HasCurableCriticals() const
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CUnitMission::HasCritical( NDb::ECritical eCritical, CCritical** ppCritical ) const
 {
-	for ( vector<CObj<CCritical> >::const_iterator i = criticals.begin(); i != criticals.end(); ++i )
+	for ( typename vector<CObj<CCritical> >::const_iterator i = criticals.begin(); i != criticals.end(); ++i )
 		if ( (*i)->GetCriticalType() == eCritical )
 		{
 			if ( ppCritical != 0 )
@@ -2326,7 +2326,7 @@ void CUnitMission::DisableCritical( NDb::ECritical eC, ECriticalState eState  )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUnitMission::GetCriticalsList( list<CPtr<ICriticalInfo> > *pListCriticals ) const
 {
-	for ( vector<CObj<CCritical> >::const_iterator i = criticals.begin(); i != criticals.end(); ++i )
+	for ( typename vector<CObj<CCritical> >::const_iterator i = criticals.begin(); i != criticals.end(); ++i )
 		pListCriticals->push_back( i->GetPtr() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////

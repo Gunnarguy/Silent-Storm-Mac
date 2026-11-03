@@ -12,14 +12,14 @@
 #include "wUnitCommands.h"   // SItem -- retail CUnitServer embeds sHandItem (@+0x200, tag 33)
 #include "RPGItemInfo.h"     // NRPG::IInventoryItem -- pHandItemHolder (@+0x224, tag 34)
 #include "Locks.h"           // CLockable -- retail CUnitServer base @+0x17c (tag 31)
-#include "..\Misc\EventsBase.h"
+#include "../Misc/EventsBase.h"
 #include "eventPlayer.h"
 namespace NDb
 {
 	class CAISound;
 	struct SAISound;
-	enum ECritical;
-	enum EDiplomacyState;
+	enum ECritical : int;
+	enum EDiplomacyState : int;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NWorld
@@ -189,7 +189,7 @@ public:
 	// tDeathTime tag 35 -- the earlier "non-serialized parity surface" note was decomp-disproven,
 	// W3 serialization convergence 2026-07-13). Retail seeds nClueCount=1 from the ctor's trailing
 	// bool (@0x3c3cc0); ProcessAttack records tDeathTime on the first incapacitating hit.
-	unsigned long tDeathTime = 0;	// retail +0x228 (tag 35): tick the unit became a corpse
+	DWORD tDeathTime = 0;	// retail +0x228 (tag 35): tick the unit became a corpse
 	int nClueCount = 0;				// retail +0x1e4 (tag 24): number of quest clues carried
 	// retail CUnitServer::SetHandItem @0x387b30 (wPlayer.obj): copy the SItem into sHandItem, then
 	// pin the item alive via pHandItemHolder = sHandItem.pItem (a plain CObj swap). LIVE: called by
@@ -197,7 +197,7 @@ public:
 	// CExecLoadWeapon::LoadClip (@0x3949a0) to clear a consumed in-hand clip.
 	void SetHandItem( const SItem &item ) { sHandItem = item; pHandItemHolder = sHandItem.pItem.GetPtr(); }
 	const SItem& GetHandItem() const { return sHandItem; }
-	unsigned long GetDeathTime() const { return tDeathTime; }
+	DWORD GetDeathTime() const { return tDeathTime; }
 	bool IsClueUnit() const { return nClueCount > 0; }	// retail CUnitServer::IsClueUnit @0x3c6900 (setg: > 0)
 	// retail CUnitServer::CanBlowUp @0x3c0420 (unit vtbl+0x28): a unit may be gibbed unless it is
 	// a quest-clue corpse (CUnit vtbl+0x14 IsClueUnit), wears a live PK shell (vtbl+0x34

@@ -10,10 +10,10 @@
 #include "UIWrap.h"
 #include "UIML.h"
 #include "DiscretePos.h"
-#include "..\Misc\StrProc.h"
-#include "..\DBFormat\DataLight.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../DBFormat/DataLight.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -275,6 +275,8 @@ void CImageDraw::Draw( CWindow *pWindow, const STime &sTime, NGScene::I2DGameVie
 		const float fTileSizeX = fabsf( sTexRect.Width() ) * vTileScale.x;
 		const float fTileSizeY = fabsf( sTexRect.Height() ) * vTileScale.y;
 		CRectLayout sLayout;
+		if ( pUITexture->nWidth <= 0 || pUITexture->nHeight <= 0 )
+			return;   // a zero tile size would never leave the tiling loop
 		for ( int nTempY = 0; nTempY < sWindow.Height(); nTempY += pUITexture->nHeight )
 			for ( int nTempX = 0; nTempX < sWindow.Width(); nTempX += pUITexture->nWidth )
 				sLayout.AddRect( nTempX * vTileScale.x, nTempY * vTileScale.y, fTileSizeX, fTileSizeY, sTexRect, sDrawColor );

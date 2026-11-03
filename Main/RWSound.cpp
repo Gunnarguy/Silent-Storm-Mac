@@ -4,7 +4,7 @@
 #include "Sync.h"
 #include "RWSound.h"
 #include "Sound.h"
-#include "..\DBFormat\DataSound.h"
+#include "../DBFormat/DataSound.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NRender
 {
@@ -72,7 +72,7 @@ void CRenderSound::AddEffect( STime tStart, NDb::CSoundEffect *pEffect, CFuncBas
 		CPtr< CFuncBase<CVec3> > pHold( pPosition );
 	else
 	{
-		// v1.2 0x6d5f12 and Sentinels 0x821f52: effects take an elapsed offset too,
+		// v1.2 0x6d5f12: effects take an elapsed offset too,
 		// not an absolute begin time. CSoundInstance applies its per-instance start delay.
 		const int nDelay = Max( 0, (int)( timer.GetTime()->GetValue() - tStart ) - 50 );
 		Register( pScene->AddEffect( pEffect, (STime)nDelay, timer.GetTime(), pPosition, flags ) );
@@ -92,11 +92,11 @@ void CRenderSound::Add2DSound( STime tStart, NDb::CSound *pSound )
 void CRenderSound::Update( bool bAdvanceTime, CTransformStack *pTS, STime currentTime )
 {
 	// ORIGINAL RETAIL BUG FIXED: v1.2 0x6d5d40 advances only once, losing all but
-	// 150ms of a skipped turn. Sentinels 0x821d40..0x821d89 consumes the elapsed
-	// GAME-clock delta in <=150ms steps before Sync, so old revealed/restored events
+	// 150ms of a skipped turn. Here the elapsed GAME-clock delta is consumed
+	// in <=150ms steps before Sync, so old revealed/restored events
 	// seek past their end rather than replay. CMissionBase supplies GetGameTime().
 	// Reset/first-update still establishes a baseline; pause still freezes playback.
-	// Bound the increment before adding, avoiding overflow in Sentinels' t + 150.
+	// Bound the increment before adding, avoiding overflow in t + 150.
 	STime t = timer.GetPrevTime();
 	if ( t == 0 )
 		t = currentTime;

@@ -1,8 +1,8 @@
 #include "StdAfx.h"
 //
-#include "..\DBFormat\DataScenario.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../DBFormat/DataScenario.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataFormat.h"
 //
 #include "MapBuild.h"
 //
@@ -31,7 +31,7 @@ static void RemoveVectorItem( vector< CPtr<T> > *pVector, T *pItem )
 	ASSERT( IsValid( pItem ) );
 	if ( !IsValid( pItem ) || pVector == 0 )
 		return;
-	vector< CPtr<T> >::iterator i = find( pVector->begin(), pVector->end(), pItem );
+	typename vector< CPtr<T> >::iterator i = find( pVector->begin(), pVector->end(), pItem );
 	if ( i != pVector->end() )
 		pVector->erase( i );
 }
@@ -45,7 +45,7 @@ CScenarioZone::CScenarioZone( NDb::CDBScenarioZone *_pDBZone, int _nInnerID ):
 {
 	ASSERT( IsValid( pDBZone ) );
 	//
-	for (	vector<int>::iterator i = pDBZone->templatesIDs.begin(); 
+	for (	typename vector<int>::iterator i = pDBZone->templatesIDs.begin(); 
 		i != pDBZone->templatesIDs.end(); ++i )
 	{
 		if ( (*i) == 0 )
@@ -67,7 +67,7 @@ int CScenarioZone::GetDefaultTemplateID()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int CScenarioZone::GetTemplateIDByVariantID( int nVariantID )
 {
-	for ( unordered_map< int, STemplate >::iterator i = templates.begin();
+	for ( typename unordered_map< int, STemplate >::iterator i = templates.begin();
 		i != templates.end(); ++i )
 			if ( i->second.nVariantID == nVariantID )
 				return i->first;
@@ -109,7 +109,7 @@ void CScenarioZone::GetVariantInfo( int nTemplateID, SRandomSeed sSeed, STemplat
 		int nItemSlots = 0;
 		int nPersonSlots = 0;
 		int nInventorySlots = 0;
-		for ( vector<SClueSlot>::iterator i = info.slots.begin(); i != info.slots.end(); ++i )
+		for ( typename vector<SClueSlot>::iterator i = info.slots.begin(); i != info.slots.end(); ++i )
 		{
 			if ( (*i).bPersSlot )
 			{
@@ -134,7 +134,7 @@ bool CScenarioZone::CanPlaceClue( NDb::EScenarioClueType type )
 {
 	int nPlaced = 0;
 	int nPlacedAll = 0;
-	for ( vector< CPtr<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
+	for ( typename vector< CPtr<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
 	{
 		if ( !(*clue)->GetDBClue()->bPermanent )
 		{
@@ -267,7 +267,7 @@ void CScenarioZone::DrawNode( fstream &file, int nID, bool bAvailable, bool bDra
 	{
 		if ( !blockers.empty() )
 			file << "\\nBlockers:\\n";
-		for ( vector< CPtr<CScenarioObjective> >::iterator i = blockers.begin();
+		for ( typename vector< CPtr<CScenarioObjective> >::iterator i = blockers.begin();
 			i != blockers.end(); ++i )
 				file << (*i)->GetParentClue()->GetDBClue()->sSmallDescription << "\\n";
 	}
@@ -277,14 +277,14 @@ void CScenarioZone::DrawNode( fstream &file, int nID, bool bAvailable, bool bDra
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenarioZone::DrawRelationship( fstream &file )
 {
-	for ( vector< CPtr<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
+	for ( typename vector< CPtr<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
 		if ( (*clue)->IsPlaced() )
 			file << "  " << pDBZone->sSmallDescription << " -> " << (*clue)->GetDBClue()->sSmallDescription << ";" << endl;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenarioZone::SetCluesInaccessible( bool _bInaccessible )
 {
-	for ( vector< CPtr<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
+	for ( typename vector< CPtr<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
 		(*clue)->SetInaccessible( _bInaccessible );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -295,7 +295,7 @@ void CScenarioZone::GetTemplatesIDs( vector<int> *pIDs )
 		return;
 	//
 	pIDs->clear();
-	for ( unordered_map< int, STemplate >::iterator i = templates.begin(); i != templates.end(); ++i )
+	for ( typename unordered_map< int, STemplate >::iterator i = templates.begin(); i != templates.end(); ++i )
 		pIDs->push_back( i->first );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -326,7 +326,7 @@ CScenarioClue::CScenarioClue( NDb::CDBScenarioClue *_pDBClue, int _nInnerID ):
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CScenarioObjective *CScenarioClue::GetObjectiveByType( NDb::EScenarioObjectiveType type )
 {
-	for (	vector< CPtr<CScenarioObjective> >::iterator i = objectives.begin();
+	for (	typename vector< CPtr<CScenarioObjective> >::iterator i = objectives.begin();
 		i != objectives.end(); ++i )
 			if ( (*i)->GetDBObjective()->type == type )
 				return *i;
@@ -338,7 +338,7 @@ bool CScenarioClue::CanPlaceObjective( CScenarioObjective *pObjective )
 {
 	ASSERT( IsValid( pObjective ) );
 	//
-	for ( vector< CPtr<NDb::CDBScenarioObjective> >::iterator objective = pDBClue->objectives.begin();
+	for ( typename vector< CPtr<NDb::CDBScenarioObjective> >::iterator objective = pDBClue->objectives.begin();
 		objective != pDBClue->objectives.end(); ++objective )
 			if ( *objective == pObjective->GetDBObjective() )
 				return TRUE;
@@ -389,7 +389,7 @@ void CScenarioClue::AddParentZone( CScenarioZone *pZone )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CScenarioClue::IsCorrect()
 {
-	for (	vector< CPtr<CScenarioObjective> >::iterator objective = objectives.begin();
+	for (	typename vector< CPtr<CScenarioObjective> >::iterator objective = objectives.begin();
 		objective != objectives.end(); ++objective )
 			if ( (*objective)->IsCorrect() )
 				return true;
@@ -399,16 +399,16 @@ bool CScenarioClue::IsCorrect()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenarioClue::DrawRelationship( fstream &file )
 {
-	for (	vector< CPtr<CScenarioObjective> >::iterator objective = objectives.begin();
+	for (	typename vector< CPtr<CScenarioObjective> >::iterator objective = objectives.begin();
 		objective != objectives.end(); ++objective )
 		if ( (*objective)->IsCorrect() )
 		{
-			for ( vector< CPtr<CScenarioClue> >::const_iterator clue = (*objective)->GetClues().begin(); 
+			for ( typename vector< CPtr<CScenarioClue> >::const_iterator clue = (*objective)->GetClues().begin(); 
 					clue != (*objective)->GetClues().end(); ++clue )
 				if ( (*clue)->IsPlaced() )
 					file << "  " << pDBClue->sSmallDescription << " -> " << (*clue)->GetDBClue()->sSmallDescription << endl;
 			//
-			for ( vector< CPtr<CScenarioZone> >::const_iterator zone = (*objective)->GetZones().begin(); 
+			for ( typename vector< CPtr<CScenarioZone> >::const_iterator zone = (*objective)->GetZones().begin(); 
 				zone != (*objective)->GetZones().end(); ++zone )
 					file << "  " << pDBClue->sSmallDescription << " -> " << (*zone)->GetDBZone()->sSmallDescription << endl;
 		}
@@ -424,7 +424,7 @@ void CScenarioClue::RemoveChildObjective( CScenarioObjective *pObjective )
 	pObjective->SetPlaced( false );
 	pObjective->ClearZones();
 	//
-	for ( vector< CPtr<CScenarioClue> >::const_iterator clue = pObjective->GetClues().begin();
+	for ( typename vector< CPtr<CScenarioClue> >::const_iterator clue = pObjective->GetClues().begin();
 		clue != pObjective->GetClues().end(); ++clue )
 			(*clue)->RemoveParentObjective( pObjective );
 	pObjective->ClearClues();
@@ -438,7 +438,7 @@ void CScenarioClue::ClearLinks()
 	while ( !objectives.empty() )
 		RemoveChildObjective( objectives.front() );
 	// parent zones
-	for ( vector< CPtr<CScenarioZone> >::iterator i = parentZones.begin();
+	for ( typename vector< CPtr<CScenarioZone> >::iterator i = parentZones.begin();
 		i != parentZones.end(); ++i )
 			(*i)->RemoveClue( this );
 	// parent clues

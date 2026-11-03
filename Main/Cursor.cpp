@@ -2,15 +2,15 @@
 #include "Gfx.h"
 #include "GSceneUtils.h"
 #include "G2DView.h"
-#include "..\Input\Bind.h"
-#include "..\Game\WinFrame.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Input/Bind.h"
+#include "../Game/WinFrame.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"
 #include "UIWrap.h"
 #include "UIML.h"     // BUG 8: NUI::IML / CreateML -- retail draws the cursor caption through the CML engine (outline + pt-size)
-#include "..\MiscDll\Commands.h"      // REGISTER_VAR_EX (ui_hwcursor)
-#include "..\FileIO\BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
+#include "../MiscDll/Commands.h"      // REGISTER_VAR_EX (ui_hwcursor)
+#include "../FileIO/BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGfx
 {
@@ -34,14 +34,14 @@ public:
 	~CNativeCursorCache()
 	{
 		NWinFrame::SetCursor( 0 );
-		for ( unordered_map<string, HCURSOR>::iterator i = cursors.begin(); i != cursors.end(); ++i )
+		for ( typename unordered_map<string, HCURSOR>::iterator i = cursors.begin(); i != cursors.end(); ++i )
 			DestroyCursor( i->second );
 	}
 	HCURSOR Get( NDb::CUICursor *pCursor )
 	{
 		if ( !IsValid(pCursor) || pCursor->szFileName.empty() )
 			return 0;
-		unordered_map<string, HCURSOR>::iterator i = cursors.find( pCursor->szFileName );
+		typename unordered_map<string, HCURSOR>::iterator i = cursors.find( pCursor->szFileName );
 		if ( i != cursors.end() )
 			return i->second;
 		string path = string(".\\res\\Cursors\\") + pCursor->szFileName;

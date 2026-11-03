@@ -12,12 +12,12 @@
 //#include "MemObject.h"
 #include "GMemBuilder.h"
 #include "GBind.h"
-#include "..\Misc\BasicShare.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataGeometry.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataAnimation.h"
-#include "..\DBFormat\DataLight.h"
+#include "../Misc/BasicShare.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataGeometry.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataAnimation.h"
+#include "../DBFormat/DataLight.h"
 #include "GAnimFormat.h"
 #include "TerrainInfo.h"
 #include "grid.h"
@@ -32,12 +32,16 @@
 #include "GfxRender.h" // for GetHardwareOnly()
 #include "LSHead.h"
 #include "GAnimLight.h"
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"
 #include "GPointLightGlow.h"
 #include "GAnimation.h"
 #include "GInit.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+#if defined(__APPLE__)
+void S2WorldEffects( const float *clipToWorld, const float *worldToClip, const float *screenRect );   // port/platform/src/d3d9_worldfx.mm
+namespace NGfx { void BindRegisterForPostFX(); }                            // GfxRender.cpp
+#endif
 namespace NAnimation
 {
 	externA5 CBasicShare<int, CFileSkeleton> shareSkeletons;
@@ -505,7 +509,7 @@ CObjectBase* CGameView::CreateTerrainRegion( CFuncBase<STerrainInfo> *pInfo, CVe
 
 	SFullGroupInfo fg = GetGroupInfo( _g );
 	CRenderNode *pRes = NewRenderNode();
-	for ( list<CObj<CPtrFuncBase<CTerrainPart> > >::const_iterator iTemp = partsList.begin(); iTemp != partsList.end(); iTemp++ )
+	for ( typename list<CObj<CPtrFuncBase<CTerrainPart> > >::const_iterator iTemp = partsList.begin(); iTemp != partsList.end(); iTemp++ )
 	{
 		CObj<NGScene::CTerrainModelPart> pTerrainPart = new NGScene::CTerrainModelPart;
 		pTerrainPart->pInfo = pInfo;
@@ -1098,6 +1102,18 @@ void CGameView::Draw( const SDrawInfo &drawInfo )
 		Draw( &tsClip, &tsClip, &rc, renderPath );
 	else
 		Draw( drawInfo.pTS, &tsClip, &rc, renderPath );
+#if defined(__APPLE__)
+	// macOS port: ambient occlusion, bloom and haze on the finished world, before it reaches the screen and the
+	// interface is drawn over it (not for 3D views inside the interface, nor the lightmap debug views)
+	if ( bUseRegister && !drawInfo.bOverlay && renderMode != SRM_SHOWLIGHTMAP && renderMode != SRM_SHOWSKYMAP )
+	{
+		CTRect<float> rTarget;
+		MakeTargetRect( &rTarget, drawInfo );
+		const float screenRect[4] = { rTarget.x1, rTarget.y1, rTarget.x2, rTarget.y2 };
+		NGfx::BindRegisterForPostFX();
+		::S2WorldEffects( &tsClip.Get().backward._11, &tsClip.Get().forward._11, screenRect );
+	}
+#endif
 	if ( bUseRegister )
 	{
 		//if ( drawInfo.bOverlay )

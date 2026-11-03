@@ -22,14 +22,14 @@
 #include "iCustomGameMenu.h"   // NGame::CICCustomGameMenu (the custom-game / mods-browser screen)
 #include "iOptionsMenu.h"
 #include "iCreditsScreen.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataSound.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataCamera.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataSound.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataCamera.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 const int
 	N_MAINMENU_CAMERA = 26,
@@ -273,7 +273,9 @@ void CMainMenuInterface::Step()
 	if ( CanRender() )
 	{
 		// Retail v1.2 GameStep 0x5f79a0: strictly more than two idle minutes.
-		if ( GetUITime() - sAutoPlayTime > 120000 )
+		// macOS port: S2_NO_AUTOPLAY=1 keeps hidden test runs out of the attract-mode demo
+		static const bool bNoAutoPlay = getenv( "S2_NO_AUTOPLAY" ) != 0;
+		if ( !bNoAutoPlay && GetUITime() - sAutoPlayTime > 120000 )
 			NMainLoop::Command( new CICAutoPlay() );
 		// Render the 3D menu world full-screen. The predecessor derived a sub-rect from a "clientview" UI
 		// control, but the retail menu container (347) ships no such control (-> GetUIWindow fell back to a
@@ -322,6 +324,24 @@ static void StartMainMenu( const string &szID, const vector<wstring> &szParams, 
 	NMainLoop::Command( new NGame::CICMainMenu() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// macOS port test hooks: the menu buttons' own commands, reachable from the console / _s2cmd.txt so a hidden
+// run needs no pointer.
+static void StartCampaignCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	NMainLoop::Command( new CICSideMenu() );
+}
+static void StartTutorialCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	vector<int> personages;
+	personages.push_back( N_TUTORIAL_HERO );
+	CPtr<NRPG::CGlobalGame> pGame = NRPG::CreateGlobalGame( -1 );
+	pGame->players.push_back( NRPG::CreateGlobalPlayer( personages ) );
+	vector<string> templParams;
+	templParams.push_back( "Day" );
+	NMainLoop::Command( new CICBeginMission( N_TUTORIAL_MISSION, -1, templParams, pGame ) );
+}
 START_REGISTER(iMainMenu)
 	REGISTER_CMD( "mainmenu", StartMainMenu )
+	REGISTER_CMD( "menu_campaign", StartCampaignCmd )
+	REGISTER_CMD( "menu_tutorial", StartTutorialCmd )
 FINISH_REGISTER

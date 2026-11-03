@@ -3,7 +3,7 @@
 #include "GLightmapCalc.h"
 #include "GGeometry.h"
 #include "GCombiner.h"
-#include "..\Misc\RandomGen.h"
+#include "../Misc/RandomGen.h"
 #include "GRenderExecute.h"
 #include "GShadowMap.h"
 #include "GShadowVolume.h"
@@ -15,8 +15,8 @@
 #include "GMaterial.h"
 #include "GScene.h"
 #include "Gfx.h"
-#include "..\MiscDll\Commands.h"      // REGISTER_VAR (gfx_cl_use_bump*)
-#include "..\FileIO\BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
+#include "../MiscDll/Commands.h"      // REGISTER_VAR (gfx_cl_use_bump*)
+#include "../FileIO/BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
 
 // number of sky directions used for dynamic lightmaps
 const int N_SKY_DIRECTIONS = 12;
@@ -455,7 +455,7 @@ void CLightmapTracker::RenderCubeMapDepth(
 		CPointHSRParts &receivers = pointHSR[SPointLightPos(_vCenter, fRadius)];
 		list<SRenderPartSet> parts;
 		GeneratePartList( pRender, _vCenter, fRadius, &parts, IRender::DT_STATIC, SGroupSelect(0xfff, 0) );
-		for ( list<SRenderPartSet>::const_iterator i = parts.begin(); i != parts.end(); ++i )
+		for ( typename list<SRenderPartSet>::const_iterator i = parts.begin(); i != parts.end(); ++i )
 			receivers[i->pNode].Init( i->parts, *i->pParts );
 	}
 	CDynamicCast<NGfx::ICubeBuffer> pDepthBuffer( pDepth );

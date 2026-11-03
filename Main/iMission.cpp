@@ -1,4 +1,12 @@
 #include "StdAfx.h"
+#include "RPGUnitInfo.h"
+#include "RPGUnitMission.h"
+#include "RPGAttackMech.h"
+#include "RPGItemSet.h"
+#include "RPGUnit.h"
+#include "../DBFormat/DataObject.h"
+#include "../Misc/RandomGen.h"
+#include <typeinfo>
 #include "ScreenShot.h"
 #include "wInterface.h"
 #include "wMain.h"			// NWorld::CWorld::GetOwnScript -- wire the script-UI bridge to the mission HUD
@@ -21,16 +29,16 @@
 #include "RPGMerc.h"
 #include "RPGUnitInfo.h"
 #include "RPGItemInfo.h"
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\Misc\StrProc.h"
-#include "..\Misc\BasicShare.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataSound.h"
-#include "..\DBFormat\DataLight.h"
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"
+#include "../Misc/StrProc.h"
+#include "../Misc/BasicShare.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataSound.h"
+#include "../DBFormat/DataLight.h"
 #include "iMain.h"
 #include "iSaveManager.h"
 #include "Interface.h"
@@ -74,10 +82,12 @@
 #include "scFlowChartItems.h"
 #include "scFlowChart.h"
 #include "RPGDiplomacy.h"
-#include "..\DBFormat\DataScenario.h"
+#include "../DBFormat/DataScenario.h"
 #include "rpgCheatConstants.h"
-#include "..\DBFormat\DataDifficulty.h"
+#include "../DBFormat/DataDifficulty.h"
 #include "iShowClue.h"
+int S2AITurnSpeed();	// port/platform/src/settings.mm: the enemy and ally turn speed, 1 to 4
+namespace NUI { void S2CompareCheck( NWorld::CUnit *pUnit ); }	// iCommonUI.cpp: the weapon comparison check hook
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGame
 {
@@ -116,6 +126,7 @@ static void CommandSetXPLevel( const string &szID, const vector<wstring> &params
 static void CommandSummonUnit( const string &szID, const vector<wstring> &paramsSet, void *pContext );
 static void CommandUnsummonUnit( const string &szID, const vector<wstring> &paramsSet, void *pContext );
 static void CommandGetItem( const string &szID, const vector<wstring> &paramsSet, void *pContext );
+static void CommandSquadDump( const string &szID, const vector<wstring> &paramsSet, void *pContext );
 ////
 static void VarCheatSeeAll( const string &szID, const NGlobal::CValue &sValue, void *pContext );
 static void VarCheatGodMode( const string &szID, const NGlobal::CValue &sValue, void *pContext );
@@ -142,6 +153,14 @@ void CICSaveRestartMission::Exec()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // W4.2: the base-class members (bPause/bHideInterface/nLightMode/bCheatVisibility/bTutorialMode/...)
 // are initialized by the CMissionBase ctor (retail @0x1a2c70); only the CMission-side state stays here.
+// the script's ShowObjectives has no mission of its own, and the console "orders" hook needs one. Not a CPtr: a reference
+// would keep a finished mission's shell, and the console variables it registers, alive
+static CMission *s_pRunningMission = 0;
+CMission::SRunningMark::~SRunningMark()
+{
+	if ( pOwner && s_pRunningMission == pOwner )
+		s_pRunningMission = 0;
+}
 CMission::CMission():
 	actionsInfoSet( UA_MAXVALUE ), nPanelsState( 0 ), nFramesSameCameraPosition(0), vPrevCameraPosition(0,0,0),
 	fFOV( fDefaultCameraFOV ), eCameraType( CAMERA_PC ),
@@ -158,6 +177,7 @@ CMission::CMission():
 	cmdSummonUnit( "summonunit", CommandSummonUnit, this ), 
 	cmdUnsummonUnit( "unsummonunit", CommandUnsummonUnit, this ), 
 	cmdGetItem( "getitem", CommandGetItem, this ), 
+	cmdSquadDump( "squad_dump", CommandSquadDump, this ), 
 	cmdSetXPLevel( "setxplevel", CommandSetXPLevel, this ),	
 	varCheatGodMode( "godmode", VarCheatGodMode, this, NGlobal::CValue( L"off" ) ), 
 	varCheatSeeAll( "seeall", VarCheatSeeAll, this, NGlobal::CValue( L"off" ) ), 
@@ -181,6 +201,7 @@ CMission::CMission():
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CMission::Initialize( int _nTemplateID, int _nVariantID, NScenario::CScenarioZone *_pZone, const vector<string> &params, NRPG::CGlobalGame *_pGlobalGame, NDb::CUITexture *_pPWLImage )
 {
+	s_pRunningMission = runningMark.pOwner = this;	// a scenario script can ask for the objectives from RunPostInit, before the first GameStep
 	pZone = _pZone;
 	nTemplateID = _nTemplateID;
 	nVariantID = _nVariantID;
@@ -411,7 +432,7 @@ bool CMission::Initialize( int _nTemplateID, int _nVariantID, NScenario::CScenar
 	if ( ( playersSet.size() > 1 ) && !IsPlayerTurn() )
 	{
 		pActivePlayer->Deactivate();
-		for ( vector< CObj<IPlayerTracker> >::iterator iPlayer = playersSet.begin(); iPlayer != playersSet.end(); iPlayer++ )
+		for ( typename vector< CObj<IPlayerTracker> >::iterator iPlayer = playersSet.begin(); iPlayer != playersSet.end(); iPlayer++ )
 		{
 			if ( (*iPlayer)->GetPlayer() == pWorld->GetCurrentPlayer() )
 				pActivePlayer = (*iPlayer);
@@ -811,7 +832,7 @@ NWorld::EUnitCommandResult CMission::CanDoCommand( NWorld::CCmd *pCmd, bool bNoT
 	int nMinAP = -1, nMaxAP = -1;
 	bool bHaveAP = false;
 	NWorld::EUnitCommandResult eTotalRes = NWorld::UCR_NULL;
-	for ( vector< CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 	{
 		CPtr<NWorld::CUnit> pUnit = (*iTemp)->GetUnit();
 
@@ -995,7 +1016,7 @@ void CMission::OnSnapshotRestored()
 	// serialized pWorld/pView CPtrs (CCamera tags 2/3).
 	if ( IsValid( pCamera ) )
 		InstallCameraRuntimeHandles( pCamera, this );
-	for ( vector< CObj<IPlayerTracker> >::iterator iPlayer = playersSet.begin(); iPlayer != playersSet.end(); iPlayer++ )
+	for ( typename vector< CObj<IPlayerTracker> >::iterator iPlayer = playersSet.begin(); iPlayer != playersSet.end(); iPlayer++ )
 	{
 		if ( IsValid( *iPlayer ) && (*iPlayer)->GetCamera() )
 			InstallCameraRuntimeHandles( (*iPlayer)->GetCamera(), this );
@@ -1139,8 +1160,24 @@ void CMission::Step()
 	if ( GetTime() - sFPSLimitLastTime < sMinFrameTime )
 		return;
 	sFPSLimitLastTime = GetTime();
+	const STime tGameBefore = sTimeCounter.GetTime()->GetValue();
 	sTimeCounter.Advance( !bPause, GetTime() );
 	sUITimeCounter.Advance( true, GetTime() );
+	// macOS port: enemy and ally turns at 2x to 4x. Their turn gets k frames of game time per frame through the same
+	// nDeltaTime the skip-part fast-forward uses, so the world runs the same 50 ms segments in the same order, only
+	// more of them each second, and the render, camera and fades read that clock too. Not in the player's turn, in
+	// real time or in a scripted sequence.
+	if ( const int nSpeed = S2AITurnSpeed(); nSpeed > 1 && !bPause && !IsPlayerTurn() && !IsSequence() )
+		SetDeltaTime( GetDeltaTime() + ( sTimeCounter.GetTime()->GetValue() - tGameBefore ) * ( nSpeed - 1 ) );
+	// test trace: each start and end of a turn that is not the player's, on the real clock and the game clock
+	static const bool bTurnTrace = getenv( "S2_TURN_TRACE" ) != 0;
+	static int nLastPlayerTurn = -1;
+	if ( bTurnTrace && (int)IsPlayerTurn() != nLastPlayerTurn )
+	{
+		nLastPlayerTurn = IsPlayerTurn();
+		fprintf( stderr, "[turn-trace] %s real %u game %u speed %d\n", nLastPlayerTurn ? "player turn" : "other turn",
+			(unsigned)GetTime(), (unsigned)GetGameTime(), S2AITurnSpeed() );
+	}
 	EraseInvalidRefs( &soundsList );	// retail @0x5a3b2a
 
 	if ( CanRender() )
@@ -1198,6 +1235,7 @@ void CMission::Step()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CMission::GameStep()
 {
+	s_pRunningMission = runningMark.pOwner = this;	// a loaded mission never went through Initialize
 	// retail CMission::GameStep @0x2017a0 head: track the world current-player; on a change stamp
 	// tLastCurrentPlayerChange with the UI clock (the @0x1fbf10 end-of-turn 2s cooldown reads it).
 	NWorld::IPlayer *pCurrentPlayer = pWorld->GetCurrentPlayer();
@@ -1304,7 +1342,7 @@ void CMission::InternalStep()
 	if ( ( playersSet.size() > 1 ) && !IsPlayerTurn() )
 	{
 		pActivePlayer->Deactivate();
-		for ( vector< CObj<IPlayerTracker> >::iterator iPlayer = playersSet.begin(); iPlayer != playersSet.end(); iPlayer++ )
+		for ( typename vector< CObj<IPlayerTracker> >::iterator iPlayer = playersSet.begin(); iPlayer != playersSet.end(); iPlayer++ )
 		{
 			if ( (*iPlayer)->GetPlayer() == pWorld->GetCurrentPlayer() )
 				pActivePlayer = (*iPlayer);
@@ -1367,7 +1405,7 @@ void CMission::InternalStep()
 	// v1.2 0x5a3688: the SAME mission IsPlayerTurn value goes to every
 	// tracker. In hotseat this removes inactive players' stale selections;
 	// passing false for them instead makes all their units selectable.
-	for ( vector< CObj<IPlayerTracker> >::iterator iPlayer = playersSet.begin(); iPlayer != playersSet.end(); iPlayer++ )
+	for ( typename vector< CObj<IPlayerTracker> >::iterator iPlayer = playersSet.begin(); iPlayer != playersSet.end(); iPlayer++ )
 		(*iPlayer)->Update( IsPlayerTurn() );
 
 	pInterface->UpdateCursor();
@@ -1643,7 +1681,7 @@ bool CMission::ProcessEvent( const NInput::SEvent &sEvent )
 	{
 		vector< CPtr<NGame::IUnitTracker> > unitsSet;
 		GetSelectedUnits( &unitsSet );
-		for ( vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+		for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 			Command( (*iTemp)->GetUnit(), new NWorld::CCmdExplode );
 		return true;
 	}
@@ -1689,7 +1727,7 @@ bool CMission::ProcessEvent( const NInput::SEvent &sEvent )
 			vector<CPtr<IUnitTracker> > unitsSet;
 			GetSelectedUnits( &unitsSet );
 
-			for ( vector<CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+			for ( typename vector<CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 			{
 				NWorld::CUnit::EState eState = (*iTemp)->GetUnit()->GetState();
 				if ( eState == NWorld::CUnit::ST_MACHINE_GUN )
@@ -1752,7 +1790,7 @@ bool CMission::ProcessEvent( const NInput::SEvent &sEvent )
 			vector<CPtr<IUnitTracker> > unitsSet;
 			GetSelectedUnits( &unitsSet );
 
-			for ( vector<CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+			for ( typename vector<CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 				Command( (*iTemp)->GetUnit(), new NWorld::CCmdContinue() );
 
 			return true;
@@ -1816,7 +1854,7 @@ bool CMission::ProcessEvent( const NInput::SEvent &sEvent )
 		vector<CPtr<IUnitTracker> > unitsSet;
 		GetSelectedUnits( &unitsSet );
 
-		for ( vector<CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+		for ( typename vector<CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 			Command( (*iTemp)->GetUnit(), new NWorld::CCmdArrangeInventory() );
 	}
 
@@ -1979,7 +2017,7 @@ bool CMission::ProcessEvent( const NInput::SEvent &sEvent )
 		GetSelectedUnits( &unitsSet );
 		if ( unitsSet.size() == 1 )
 		{
-			for ( vector< CPtr<IUnitTracker> >::iterator iUnit = unitsSet.begin(); iUnit != unitsSet.end(); iUnit++ )
+			for ( typename vector< CPtr<IUnitTracker> >::iterator iUnit = unitsSet.begin(); iUnit != unitsSet.end(); iUnit++ )
 				FocusCameraOnUnit( (*iUnit)->GetUnit() );
 		}
 	}
@@ -2093,7 +2131,7 @@ void CMission::UpdateSound()
 	list< CPtr<NWorld::CUnit> > visible;
 	int nVisibleEnemy = 0;
 	pActivePlayer->GetPlayer()->GetVisible( &visible );
-	for ( list< CPtr<NWorld::CUnit> >::const_iterator it = visible.begin(); it != visible.end(); ++it )
+	for ( typename list< CPtr<NWorld::CUnit> >::const_iterator it = visible.begin(); it != visible.end(); ++it )
 		// retail UpdateSound @0x1feb50 counts only DIPLOMACY enemies (per-unit query == DS_ENEMY) --
 		// the old "any other player's unit" identity test made every visible ALLIED NPC (the base
 		// commander, the 3646 mission commander) trigger combat music and the in-combat state.
@@ -2145,7 +2183,7 @@ void CMission::NewWeaponMode( NDb::EShootMode eMode )
 {
 	vector< CPtr<IUnitTracker> > unitsSet;
 	GetSelectedUnits( &unitsSet );
-	for ( vector< CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 		Command( (*iTemp)->GetUnit(), new NWorld::CCmdShootMode( eMode ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2153,7 +2191,7 @@ void CMission::NewGrenadeMode( NRPG::EGrenadeMode eMode )
 {
 	vector< CPtr<IUnitTracker> > unitsSet;
 	GetSelectedUnits( &unitsSet );
-	for ( vector< CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
+	for ( typename vector< CPtr<IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 		Command( (*iTemp)->GetUnit(), new NWorld::CCmdGrenadeMode( eMode ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2214,7 +2252,7 @@ void CMission::TraceCursor()
 	NWorld::TraceObjects( GetWorld(), rTraceRay, &objectsSet, GetScene()->GetCutFloor() );
 	if ( !objectsSet.empty() )
 	{
-		for ( vector<CObjectBase*>::iterator iTemp = objectsSet.begin(); iTemp != objectsSet.end(); iTemp++ )
+		for ( typename vector<CObjectBase*>::iterator iTemp = objectsSet.begin(); iTemp != objectsSet.end(); iTemp++ )
 		{
 			NWorld::CUnit *pTempUnit = dynamic_cast<NWorld::CUnit*>( *iTemp );
 			if ( pTempUnit )
@@ -2397,7 +2435,7 @@ void CMission::ExecWorldCommands()
 		}
 		else if ( CDynamicCast<NWorld::CUICmdEndFade>( pCmd ) )
 		{
-			for ( list<CObj<NUI::CDesktopWindow> >::reverse_iterator iTemp = desktopWindowsList.rbegin(); iTemp != desktopWindowsList.rend(); iTemp++ )
+			for ( typename list<CObj<NUI::CDesktopWindow> >::reverse_iterator iTemp = desktopWindowsList.rbegin(); iTemp != desktopWindowsList.rend(); iTemp++ )
 			{
 				CDynamicCast<NUI::CMissionFadeUI> pFadeUI( *iTemp );
 				if ( pFadeUI )
@@ -3168,7 +3206,7 @@ static void CommandSetXPLevel( const string &szID, const vector<wstring> &params
 			{
 				vector< CPtr<NWorld::CUnit> > tmpUnits;
 				pWorld->GetAllUnits( &tmpUnits );
-				for ( vector< CPtr<NWorld::CUnit> >::iterator i = tmpUnits.begin(); 
+				for ( typename vector< CPtr<NWorld::CUnit> >::iterator i = tmpUnits.begin(); 
 					i != tmpUnits.end(); ++i )
 				{
 					if ( (*i)->GetPlayer() != pActivePlayer )
@@ -3178,7 +3216,7 @@ static void CommandSetXPLevel( const string &szID, const vector<wstring> &params
 		}
 		//
 		int nLevel = wcstol( paramsSet[	paramsSet.size() - 1 ].c_str(), 0, 10 );
-		for ( vector< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+		for ( typename vector< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 			(*i)->GetRPG()->GetRPGUnit()->SetXPLevel( nLevel );
 	}
 }
@@ -3352,6 +3390,126 @@ void CICMapEditBeginMission::Exec()
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// macOS port test hook: move the mission camera by a small world-space step, for shimmer measurements in hidden runs
+class CICCameraNudge: public NMainLoop::CInterfaceCommand
+{
+	OBJECT_BASIC_METHODS( CICCameraNudge );
+	float fX, fY;
+public:
+	CICCameraNudge(): fX( 0 ), fY( 0 ) {}
+	CICCameraNudge( float _fX, float _fY ): fX( _fX ), fY( _fY ) {}
+	virtual void Exec()
+	{
+		IMission *pMission = dynamic_cast<IMission*>( GetInterface() );
+		if ( pMission && pMission->GetCamera() )
+			pMission->GetCamera()->ScrollAnchor( CVec3( fX, fY, 0 ), true, false );
+	}
+};
+// macOS port: the hub's live squad view asks for this while the game runs. Read-only: it reports what the HUD
+// already knows and only the enemies the squad can see. Written to a temporary name and renamed, so the hub never
+// reads half a file.
+static void WriteSquadText( FILE *f, const wstring &sText )
+{
+	fputc( '"', f );
+	for ( int i = 0; i < (int)sText.size(); ++i )
+	{
+		const unsigned int c = sText[i];
+		if ( c == '"' || c == '\\' ) { fputc( '\\', f ); fputc( (int)c, f ); }
+		else if ( c < 0x20 ) fputc( ' ', f );
+		else if ( c < 0x80 ) fputc( (int)c, f );
+		else if ( c < 0x800 ) { fputc( 0xC0 | ( c >> 6 ), f ); fputc( 0x80 | ( c & 0x3F ), f ); }
+		else { fputc( 0xE0 | ( c >> 12 ), f ); fputc( 0x80 | ( ( c >> 6 ) & 0x3F ), f ); fputc( 0x80 | ( c & 0x3F ), f ); }
+	}
+	fputc( '"', f );
+}
+static void WriteSquadUnit( FILE *f, NWorld::CUnit *pUnit, bool bFirst, bool bDetail )
+{
+	NRPG::IUnitMissionInfo *pRPG = pUnit->GetRPG();
+	NRPG::SUnitInfo sInfo;
+	memset( &sInfo, 0, sizeof( sInfo ) );
+	pUnit->GetInfo( &sInfo );
+	NDb::CRPGPers *pPers = pRPG->GetRPGPers();
+	fprintf( f, "%s{\"pers\":%d,\"name\":", bFirst ? "" : ",", IsValid( pPers ) ? pPers->GetRecordID() : 0 );
+	WriteSquadText( f, pRPG->GetName() );
+	fprintf( f, ",\"hp\":%d,\"healed\":%d,\"maxHP\":%d,\"ap\":%d,\"maxAP\":%d,\"down\":%s",
+		sInfo.nHP, sInfo.nHealedHP, sInfo.nMaxHP, sInfo.nAP, sInfo.nMaxAP, pUnit->CanFight() ? "false" : "true" );
+	if ( bDetail )
+	{
+		NRPG::IInventoryInfo *pInventory = pRPG->GetInventoryInfo();
+		NRPG::IInventoryItem *pActive = pInventory ? pInventory->GetActive() : 0;
+		list< CPtr<NRPG::ICriticalInfo> > criticals;
+		pRPG->GetCriticalsList( &criticals );
+		fprintf( f, ",\"item\":%d,\"sight\":%d,\"interrupt\":%d,\"ic\":%d,\"criticals\":%d,\"hero\":%s,\"hidden\":%s,\"skills\":{",
+			IsValid( pActive ) && IsValid( pActive->GetDBItem() ) ? pActive->GetDBItem()->GetRecordID() : 0,
+			sInfo.nSightDistance, pRPG->GetInterrupt(), pRPG->GetIC(), (int)criticals.size(),
+			pRPG->IsHero() ? "true" : "false", pRPG->IsHiding() ? "true" : "false" );
+		static const struct { const char *pszName; NDb::ESkillType eSkill; } skills[] = {
+			{ "Melee", NDb::ST_MELEE }, { "Shooting", NDb::ST_SHOOTING }, { "Throwing", NDb::ST_THROWING }, { "Burst", NDb::ST_BURST },
+			{ "Snipe", NDb::ST_SNIPE }, { "Stealth", NDb::ST_STEALTH }, { "Spot", NDb::ST_SPOT }, { "Medicine", NDb::ST_MEDICINE },
+			{ "Engineering", NDb::ST_ENGINEERING }, { "Level", NDb::ST_LEVEL }
+		};
+		for ( int i = 0; i < (int)( sizeof( skills ) / sizeof( skills[0] ) ); ++i )
+			fprintf( f, "%s\"%s\":%d", i ? "," : "", skills[i].pszName, pRPG->GetSkillValue( skills[i].eSkill ) );
+		fputc( '}', f );
+	}
+	fputc( '}', f );
+}
+static void CommandSquadDump( const string &szID, const vector<wstring> &paramsSet, void *pContext )
+{
+	CObjectBase *pObject = (CObjectBase *)pContext;
+	CDynamicCast<CMission> pMission( pObject );
+	if ( !pMission )
+		return;
+	CPtr<IPlayerTracker> pTracker = pMission->GetActivePlayer();
+	if ( !IsValid( pTracker ) )
+		return;
+	vector< CPtr<NWorld::CUnit> > units;
+	pTracker->GetPlayer()->GetUnits( &units );
+	FILE *f = fopen( "_squad.json.tmp", "wb" );
+	if ( !f )
+		return;
+	fprintf( f, "{\"realTime\":%s,\"playerTurn\":%s,\"squad\":[", pMission->IsRealTime() ? "true" : "false", pMission->IsPlayerTurn() ? "true" : "false" );
+	bool bFirst = true;
+	for ( int i = 0; i < (int)units.size(); ++i )
+		if ( IsValid( units[i] ) )
+		{
+			WriteSquadUnit( f, units[i], bFirst, true );
+			bFirst = false;
+		}
+	fputs( "],\"enemies\":[", f );
+	vector< CPtr<IUnitTracker> > trackers;
+	pTracker->GetUnits( &trackers );
+	list< CPtr<NWorld::CUnit> > seen;
+	for ( int i = 0; i < (int)trackers.size(); ++i )
+		if ( IsValid( trackers[i] ) )
+		{
+			list< CPtr<NWorld::CUnit> > visible;
+			trackers[i]->GetVisibleEnemiesList( &visible );
+			for ( list< CPtr<NWorld::CUnit> >::iterator it = visible.begin(); it != visible.end(); ++it )
+				if ( find( seen.begin(), seen.end(), *it ) == seen.end() )
+					seen.push_back( *it );
+		}
+	bFirst = true;
+	for ( list< CPtr<NWorld::CUnit> >::iterator it = seen.begin(); it != seen.end(); ++it )
+		if ( IsValid( *it ) )
+		{
+			WriteSquadUnit( f, *it, bFirst, false );
+			bFirst = false;
+		}
+	fputs( "]}\n", f );
+	fclose( f );
+	rename( "_squad.json.tmp", "_squad.json" );
+}
+// macOS port test hook: the in-game menu's Restart Mission, for hidden runs
+static void CommandMissionRestart( const string &szID, const vector<wstring> &paramsSet, void *pContext )
+{
+	NMainLoop::Command( new NMainLoop::CICLoadFile( string( "restart.sav" ) ) );
+}
+static void CommandCameraNudge( const string &szID, const vector<wstring> &paramsSet, void *pContext )
+{
+	if ( paramsSet.size() >= 2 )
+		NMainLoop::Command( new CICCameraNudge( (float)wcstod( paramsSet[0].c_str(), 0 ), (float)wcstod( paramsSet[1].c_str(), 0 ) ) );
+}
 static void CommandStartScenarioZone( const string &szID, const vector<wstring> &paramsSet, void *pContext )
 {
 	if ( paramsSet.size() < 2 )
@@ -3396,10 +3554,10 @@ static void CommandStartScenarioZone( const string &szID, const vector<wstring> 
 			{
 				// remove clues
 				vector< CPtr<NScenario::CScenarioClue> > tmpClues = pZone->GetClues();
-				for ( vector< CPtr<NScenario::CScenarioClue> >::iterator i  = tmpClues.begin(); i != tmpClues.end(); ++i )
+				for ( typename vector< CPtr<NScenario::CScenarioClue> >::iterator i  = tmpClues.begin(); i != tmpClues.end(); ++i )
 					pZone->RemoveClue( *i );
 				// add clues
-				for ( vector<string>::iterator i = clues.begin(); i != clues.end(); ++i )
+				for ( typename vector<string>::iterator i = clues.begin(); i != clues.end(); ++i )
 				{
 					CPtr<NScenario::CScenarioClue> pClue = pScenario->GetClueByName( *i );
 					if ( IsValid( pClue ) )
@@ -3419,10 +3577,24 @@ static void CommandStartScenarioZone( const string &szID, const vector<wstring> 
 		csSystem << CC_RED << "Error : " << CC_GREY << " scenario " << szScenarioName << " not found" << endl;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// iShowObjectives.cpp: the mission a script-opened objectives screen belongs to
+IMission* GetRunningMission() { return s_pRunningMission; }
+// test hook: the weapon comparison's hit chances against the game's own calculator, for the selected soldier
+static void CompareCheckCmd( const string &, const vector<wstring> &, void * )
+{
+	if ( !s_pRunningMission )
+		return;
+	vector< CPtr<IUnitTracker> > unitsSet;
+	s_pRunningMission->GetSelectedUnits( &unitsSet );
+	if ( !unitsSet.empty() )
+		::NUI::S2CompareCheck( unitsSet.front()->GetUnit() );
+}
 START_REGISTER(iMission)
 	REGISTER_CMD( "map", CommandStartMission )
 	REGISTER_CMD( "template", CommandStartMissionByTemplateID )
 	REGISTER_CMD( "zone", CommandStartScenarioZone )
+	REGISTER_CMD( "camera_nudge", CommandCameraNudge )
+	REGISTER_CMD( "mission_restart", CommandMissionRestart )
 	REGISTER_CMD( "mission_camera_limits", CommandSetDefaultCameraLimits )
 	REGISTER_CMD( "mission_camera_softlimits", CommandSetDefaultCameraSoftLimits )
 	REGISTER_CMD( "mission_camera_attenuation", CommandSetDefaultCameraAttenuation )
@@ -3436,6 +3608,7 @@ START_REGISTER(iMission)
 	REGISTER_CMD( "mission_camera_yaw_acceleration", CommandSetDefaultCameraYawAcceleration )
 	REGISTER_CMD( "mission_camera_pitch_speed", CommandSetDefaultCameraPitchSpeed )
 	REGISTER_VAR( "cheat_showall", VarCheatShowAll, 0, false )
+	REGISTER_CMD( "compare_check", CompareCheckCmd )
 FINISH_REGISTER
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 } // NAMESPACE

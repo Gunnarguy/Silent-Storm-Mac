@@ -36,12 +36,12 @@ int CHeightLayers::operator&( CStructureSaver &f )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int CHeightLayers::GetRealFloor( int nFloor )
 {
-	unordered_map<int, int>::iterator it = desired2realFloor.find( nFloor );
+	typename unordered_map<int, int>::iterator it = desired2realFloor.find( nFloor );
 	if ( it != desired2realFloor.end() )
 		return it->second;
 
 	int nResult = 0;
-	unordered_map<int, SHLayer>::iterator k = layers.begin();
+	typename unordered_map<int, SHLayer>::iterator k = layers.begin();
 	if ( k != layers.end() )
 	{
 		nResult = k->first;                 // baseline: first-iterated layer key
@@ -70,7 +70,7 @@ SHLayer* CHeightLayers::GetLayer( int nFloor )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 SHLayer* CHeightLayers::GetCreateLayer( int nFloor )
 {
-	unordered_map<int, SHLayer>::iterator it = layers.find( nFloor );
+	typename unordered_map<int, SHLayer>::iterator it = layers.find( nFloor );
 	if ( it != layers.end() )
 		return &it->second;
 
@@ -121,7 +121,7 @@ void CHeightLayers::ComputeLayers( int nXCells, int nYCells, CFuncBase<STerrainI
 	int nMinFloor = 100, nMaxFloor = -100;                    // @0x35d976 / @0x35d97e
 
 	const vector< CObj<NAI::CNodesLayer> > &netLayers = pNet->GetLayers();
-	for ( vector< CObj<NAI::CNodesLayer> >::const_iterator it = netLayers.begin(); it != netLayers.end(); ++it )
+	for ( typename vector< CObj<NAI::CNodesLayer> >::const_iterator it = netLayers.begin(); it != netLayers.end(); ++it )
 	{
 		NAI::CNodesLayer *pLayer = *it;
 		if ( pLayer == 0 )

@@ -140,7 +140,7 @@ bool CKnifeServer::Segment()
 	NRPG::EAttackResult res = NRPG::AR_IGNORE;
 	float fCollDist = 0;
 	int nCollFloor = 0;   // retail @0x76002c: 0 until a hull is inspected; the landed knife's CDItem floor
-	for ( vector<NAI::SInterval>::iterator i = makeDamage.begin(); i != makeDamage.end(); ++i )
+	for ( typename vector<NAI::SInterval>::iterator i = makeDamage.begin(); i != makeDamage.end(); ++i )
 	{
 		if ( i->enter.fT > 0 && i->enter.fT < fDist )
 		{

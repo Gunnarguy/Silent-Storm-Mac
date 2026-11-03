@@ -14,7 +14,7 @@ void GetObjectsThatMayBeDamaged( CCoverGridInfo *pCover,
 	// looseRays into it; this is set-union semantics, so ordering is irrelevant.
 	vector<CCoverGridInfo::SRay> rays( pCover->hitRays );
 	rays.insert( rays.end(), pCover->looseRays.begin(), pCover->looseRays.end() );
-	for ( vector<CCoverGridInfo::SRay>::const_iterator i = rays.begin(); i != rays.end(); ++i )
+	for ( typename vector<CCoverGridInfo::SRay>::const_iterator i = rays.begin(); i != rays.end(); ++i )
 	{
 		// Walk this ray's grid-cell depth-interval list and key on each interval's source object.
 		// Decode @0x294300 keys on *(CPtr<CObjectBase>*)p->pSrc->pSrc; since NAI::SSourceInfo's

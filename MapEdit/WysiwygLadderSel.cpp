@@ -1,10 +1,10 @@
 #include "StdAfx.h"
 #include "WysiwygLadderSel.h"
-#include "..\Main\Grid.h"
-#include "..\MapEdit\UserSettingsSetup.h"
+#include "../Main/Grid.h"
+#include "../MapEdit/UserSettingsSetup.h"
 #include "iWysiwyg.h"
 #include "WysiwygClipboard.h"
-#include "..\Main\aiGrid.h"
+#include "../Main/aiGrid.h"
 /////////////////////////////////////////////////////////////////////////////////////
 namespace NWysiwyg
 {
@@ -18,7 +18,7 @@ CLadderSel::CLadderSel( ISelection *pSelection, const CTPoint<int> &ptSize, int 
 	GetFragmentID( nUserID, &type, &nID );
 	if ( type = BT_LADDER )
 	{
-		for ( vector<NBuilding::SLadder>::iterator it = pBInfo->ladders.begin(); it != pBInfo->ladders.end(); ++it )
+		for ( typename vector<NBuilding::SLadder>::iterator it = pBInfo->ladders.begin(); it != pBInfo->ladders.end(); ++it )
 			if ( it->nID == nID )
 			{
 				pLadder = &(*it);
@@ -67,7 +67,7 @@ bool CLadderSel::DelayedDelete()
 {
 	if ( !IsInitialized() )
 		return false;
-	for ( vector<NBuilding::SLadder>::iterator it = pBInfo->ladders.begin(); it != pBInfo->ladders.end(); ++it )
+	for ( typename vector<NBuilding::SLadder>::iterator it = pBInfo->ladders.begin(); it != pBInfo->ladders.end(); ++it )
 		if ( it->nID == pLadder->nID )
 		{
 			pBInfo->ladders.erase( it );

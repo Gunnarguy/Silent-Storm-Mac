@@ -1,9 +1,9 @@
 #include "StdAfx.h"
 #include "MEUndoRedo.h"
-#include "..\MapEdit\history.h"
-#include "..\MapEdit\MapEdit.h"
+#include "../MapEdit/history.h"
+#include "../MapEdit/MapEdit.h"
 #include "weInterface.h"
-#include "..\Input\Bind.h"
+#include "../Input/Bind.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NMapEditor
 {
@@ -26,14 +26,14 @@ public:
 	void Push( CUndoRedo *pCmd ) { info.push_back( pCmd ); }
 	virtual bool DoUndo( CPostProcessQueue *pQueue )
 	{
-		for ( list<CObj<CUndoRedo> >::reverse_iterator i = info.rbegin(); i != info.rend(); ++i )
+		for ( typename list<CObj<CUndoRedo> >::reverse_iterator i = info.rbegin(); i != info.rend(); ++i )
 			if ( !(*i)->DoUndo( pQueue ) )
 				return false;
 		return true;
 	}
 	virtual bool DoRedo( CPostProcessQueue *pQueue )
 	{
-		for ( list<CObj<CUndoRedo> >::iterator i = info.begin(); i != info.end(); ++i )
+		for ( typename list<CObj<CUndoRedo> >::iterator i = info.begin(); i != info.end(); ++i )
 			if ( !(*i)->DoRedo( pQueue ) )
 				return false;
 		return true;
@@ -82,7 +82,7 @@ void PushUndoCmd( CUndoRedo *pCmd )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void PosProcess( CPostProcessQueue &queue )
 {
-	for ( CPostProcessQueue::iterator i = queue.begin(); i !=	queue.end(); ++i )
+	for ( typename CPostProcessQueue::iterator i = queue.begin(); i !=	queue.end(); ++i )
 		if ( IsValid( *i ) )
 			(*i)->OnPostProcess();
 }

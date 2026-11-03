@@ -1,8 +1,8 @@
 #include "StdAfx.h"
 #include "RodJunction.h"
 #include "BuildingSchema.h"
-#include "..\Misc\RandomGen.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../Misc/RandomGen.h"
+#include "../DBFormat/DataRPG.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NBuilding
 {
@@ -404,7 +404,7 @@ void CJunction::ComputeMoment()
 	}
 	const float fScale = 1.0f / fStableWeight;
 	float fCheck = 0;
-	for ( vector<int>::const_iterator i = stableJunctions.begin(); i != stableJunctions.end(); ++i )
+	for ( typename vector<int>::const_iterator i = stableJunctions.begin(); i != stableJunctions.end(); ++i )
 	{
 		const SPath &node = (*pWaves)[*i];
 		const float dw = GetWeight() * fScale * node.fWeight;
@@ -417,7 +417,7 @@ bool CJunction::HasRightAngle()
 	/*
 	if ( nlist.size() < 2 )
 		return true;
-	for ( CNeighbList::const_iterator i = nlist.begin(); i != nlist.end(); ++i )
+	for ( typename CNeighbList::const_iterator i = nlist.begin(); i != nlist.end(); ++i )
 	{
 		for ( int j = 0; j < NDIRECTIONS; ++j )
 		{

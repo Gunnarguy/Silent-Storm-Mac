@@ -6,14 +6,14 @@
 #include "wUICommands.h"
 #include "wMisc.h"			// NWorld::GetDMeshUnit -- clue ("ear") markers over heard-not-seen units
 #include "RPGItemInfo.h"
-#include "..\Misc\StrProc.h"
-#include "..\Input\Bind.h"
-#include "..\MiscDll\Commands.h"	// NGlobal::GetVar -- the "ui_showhints" gate of the hint-icon pass (retail @0x2130c0)
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataAck.h"
-#include "..\DBFormat\DataInterface.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataMap.h"
+#include "../Misc/StrProc.h"
+#include "../Input/Bind.h"
+#include "../MiscDll/Commands.h"	// NGlobal::GetVar -- the "ui_showhints" gate of the hint-icon pass (retail @0x2130c0)
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataAck.h"
+#include "../DBFormat/DataInterface.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataMap.h"
 #include "Sound.h"
 #include "RWGame.h"			// NRender::IRenderGame::GetHeadController (the shared portrait heads controller)
 #include "LSController.h"	// NLSHead::CHeadsController::PlaySequence -- drives the HUD portrait's mouth/gesture
@@ -34,7 +34,7 @@
 #include "iActionDecorator.h"
 #include "UIWrap.h"
 #include "rpgUnitInfo.h"
-#include "RPGUnit.h"        // NRPG::CUnit complete type (GetRPGUnit()->GetVoice() for the in-game ack voice)
+#include "RPGUnit.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -87,7 +87,7 @@ public:
 inline wstring ConvertLineBreaks( const wstring &szStr )
 {
 	wstring szRet;
-	for ( wstring::const_iterator i = szStr.begin(); i != szStr.end(); )
+	for ( typename wstring::const_iterator i = szStr.begin(); i != szStr.end(); )
 	{
 		switch ( wchar_t(*i) )
 		{
@@ -1158,11 +1158,13 @@ bool CMissionUI::ProcessMessage( const SEvent &sEvent )
 			pTopBar = new CTopBar( sEvent.pLoader->GetControl( "topbar" ), pMission );
 			pUnitPanel = new CUnitPanel( sEvent.pLoader->GetControl( "unitpanel" ), pMission );
 			pPerksPanel = new CPerksPanel( sEvent.pLoader->GetControl( "perkspanel" ), pMission );
-			pStorePanel = new CStorePanel( sEvent.pLoader->GetControl( "storepanel" ), pMission );
+			if ( sEvent.pLoader->HasControl( "storepanel" ) )
+				pStorePanel = new CStorePanel( sEvent.pLoader->GetControl( "storepanel" ), pMission );
 			pInventoryPanel = new CInventoryPanel( sEvent.pLoader->GetControl( "inventorypanel" ), pMission );
 			pCharacterPanel = new CCharacterPanel( sEvent.pLoader->GetControl( "characterpanel" ), pMission );
 			// retail @0x214d40: the medals + biography sub-panels are hosted alongside the others
-			pMedalsPanel = new CMedalsPanel( sEvent.pLoader->GetControl( "medalspanel" ), pMission );
+			if ( sEvent.pLoader->HasControl( "medalspanel" ) )
+				pMedalsPanel = new CMedalsPanel( sEvent.pLoader->GetControl( "medalspanel" ), pMission );
 			pBiographyPanel = new CBiographyPanel( sEvent.pLoader->GetControl( "biographypanel" ), pMission );
 
 			pInventory = new CHoverButton( sEvent.pLoader->GetControl( "inventory" ) );
@@ -1279,10 +1281,12 @@ bool CMissionUI::Update( const STime &sTime, NGScene::I2DGameView *pView )
 	const int nCharacterFamily = NGame::PANEL_STORE | NGame::PANEL_PERKS | NGame::PANEL_CHARACTER
 		| NGame::PANEL_MEDALS | NGame::PANEL_BIOGRAPHY;
 	pPerksPanel->SetStyle( STYLE_VISIBLE, ( pMission->GetPanelState( nCharacterFamily ) == NGame::PANEL_PERKS ) );
-	pStorePanel->SetStyle( STYLE_VISIBLE, ( pMission->GetPanelState( nCharacterFamily ) == NGame::PANEL_STORE ) );
+	if ( IsValid( pStorePanel ) )
+		pStorePanel->SetStyle( STYLE_VISIBLE, ( pMission->GetPanelState( nCharacterFamily ) == NGame::PANEL_STORE ) );
 	pInventoryPanel->SetStyle( STYLE_VISIBLE, ( pMission->GetPanelState( NGame::PANEL_INVENTORY ) != 0 ) );
 	pCharacterPanel->SetStyle( STYLE_VISIBLE, ( pMission->GetPanelState( nCharacterFamily ) == NGame::PANEL_CHARACTER ) );
-	pMedalsPanel->SetStyle( STYLE_VISIBLE, ( pMission->GetPanelState( nCharacterFamily ) == NGame::PANEL_MEDALS ) );
+	if ( IsValid( pMedalsPanel ) )
+		pMedalsPanel->SetStyle( STYLE_VISIBLE, ( pMission->GetPanelState( nCharacterFamily ) == NGame::PANEL_MEDALS ) );
 	pBiographyPanel->SetStyle( STYLE_VISIBLE, ( pMission->GetPanelState( nCharacterFamily ) == NGame::PANEL_BIOGRAPHY ) );
 
 	// retail Update @0x211d60 tail (disasm @0x612176..0x6121f7): reposition the ack subtitle band
@@ -1371,8 +1375,8 @@ static float ProjectOverlayIconPos( const CVec3 &vAnchor, CTransformStack &sTS, 
 			fAngle += 360;
 	}
 
-	vScreenPos.x = max( min( vScreenPos.x, sViewRect.x2 ), sViewRect.x1 );
-	vScreenPos.y = max( min( vScreenPos.y, sViewRect.y2 ), sViewRect.y1 );
+	vScreenPos.x = s2max( s2min( vScreenPos.x, sViewRect.x2 ), sViewRect.x1 );
+	vScreenPos.y = s2max( s2min( vScreenPos.y, sViewRect.y2 ), sViewRect.y1 );
 	*pIconPos = vScreenPos;
 	return fAngle;
 }
@@ -1404,10 +1408,10 @@ void CMissionUI::UpdateItems( NGScene::I2DGameView *pView )
 	// retail UpdateHash<CObjectBase,CHintIcon> @0x217170 / <CObjectBase,CClueIcon> @0x217220: key
 	// every existing icon by its inventory item so the rebuild reuses the live widget.
 	unordered_map<CPtr<NRPG::IInventoryItem>, CPtr<CHintIcon>, SPtrHash> knownHintIcons;
-	for ( list<CObj<CHintIcon> >::const_iterator iIcon = hintIconsList.begin(); iIcon != hintIconsList.end(); ++iIcon )
+	for ( typename list<CObj<CHintIcon> >::const_iterator iIcon = hintIconsList.begin(); iIcon != hintIconsList.end(); ++iIcon )
 		knownHintIcons[ (*iIcon)->GetInvItem() ] = *iIcon;
 	unordered_map<CPtr<NRPG::IInventoryItem>, CPtr<CClueIcon>, SPtrHash> knownClueIcons;
-	for ( list<CObj<CClueIcon> >::const_iterator iIcon = clueItemIconsList.begin(); iIcon != clueItemIconsList.end(); ++iIcon )
+	for ( typename list<CObj<CClueIcon> >::const_iterator iIcon = clueItemIconsList.begin(); iIcon != clueItemIconsList.end(); ++iIcon )
 		knownClueIcons[ (*iIcon)->GetInvItem() ] = *iIcon;
 
 	// PASS-1 keep step (gated): keep an existing label only while ALL its grouped items stay
@@ -1418,11 +1422,11 @@ void CMissionUI::UpdateItems( NGScene::I2DGameView *pView )
 	unordered_map<CPtr<NRPG::IInventoryItem>, CPtr<CItemText>, SPtrHash> knownItems;
 	if ( bShowItems )
 	{
-		for ( list<CObj<CItemText> >::const_iterator iTemp = itemTextsList.begin(); iTemp != itemTextsList.end(); iTemp++ )
+		for ( typename list<CObj<CItemText> >::const_iterator iTemp = itemTextsList.begin(); iTemp != itemTextsList.end(); iTemp++ )
 		{
 			CItemText *pIt = *iTemp;
 			bool bKeep = !pIt->GetItems().empty();
-			for ( list<CItemText::SItem>::const_iterator iS = pIt->GetItems().begin(); bKeep && iS != pIt->GetItems().end(); ++iS )
+			for ( typename list<CItemText::SItem>::const_iterator iS = pIt->GetItems().begin(); bKeep && iS != pIt->GetItems().end(); ++iS )
 			{
 				CObjectBase *pObj = CDynamicCast<CObjectBase>( iS->pWorldItem.GetPtr() );
 				bKeep = IsValid( pObj ) && IsInSet( visObjs, pObj );
@@ -1430,7 +1434,7 @@ void CMissionUI::UpdateItems( NGScene::I2DGameView *pView )
 			if ( !bKeep )
 				continue;
 			newItemTextsList.push_back( pIt );
-			for ( list<CItemText::SItem>::const_iterator iS = pIt->GetItems().begin(); iS != pIt->GetItems().end(); ++iS )
+			for ( typename list<CItemText::SItem>::const_iterator iS = pIt->GetItems().begin(); iS != pIt->GetItems().end(); ++iS )
 				knownItems[ iS->pInvItem ] = pIt;
 		}
 	}
@@ -1450,7 +1454,7 @@ void CMissionUI::UpdateItems( NGScene::I2DGameView *pView )
 	list<CObj<CClueIcon> > newClueItemIconsList;
 
 	const float F_ITEMS_SECTOR_SIZE = 1.875f;   // retail .data @0x57d108
-	for ( list< CPtr<CObjectBase> >::iterator iObj = visObjs.begin(); iObj != visObjs.end(); ++iObj )
+	for ( typename list< CPtr<CObjectBase> >::iterator iObj = visObjs.begin(); iObj != visObjs.end(); ++iObj )
 	{
 		CDynamicCast<NWorld::IItem> pWItem( iObj->GetPtr() );
 		if ( !IsValid( pWItem ) )
@@ -1464,7 +1468,7 @@ void CMissionUI::UpdateItems( NGScene::I2DGameView *pView )
 			int nSX = (int)( pWItem->GetPos().x / F_ITEMS_SECTOR_SIZE + 0.5f );
 			int nSY = (int)( pWItem->GetPos().y / F_ITEMS_SECTOR_SIZE + 0.5f );
 			CItemText *pMerge = 0;
-			for ( list<CObj<CItemText> >::iterator iN = newItemTextsList.begin(); !pMerge && iN != newItemTextsList.end(); ++iN )
+			for ( typename list<CObj<CItemText> >::iterator iN = newItemTextsList.begin(); !pMerge && iN != newItemTextsList.end(); ++iN )
 			{
 				const CItemText::SItem &sF = (*iN)->GetItems().front();
 				if ( !IsValid( sF.pInvItem ) || !IsValid( sF.pWorldItem ) )
@@ -1503,7 +1507,7 @@ void CMissionUI::UpdateItems( NGScene::I2DGameView *pView )
 		{
 			// PASS 2 (ungated, @0x613800): reuse the keyed icon or build a fresh one (@0x61391b ctor)
 			CClueIcon *pIcon = 0;
-			unordered_map<CPtr<NRPG::IInventoryItem>, CPtr<CClueIcon>, SPtrHash>::iterator iKnown = knownClueIcons.find( pInv );
+			typename unordered_map<CPtr<NRPG::IInventoryItem>, CPtr<CClueIcon>, SPtrHash>::iterator iKnown = knownClueIcons.find( pInv );
 			if ( iKnown != knownClueIcons.end() )
 				pIcon = iKnown->second;
 			if ( !pIcon )
@@ -1516,7 +1520,7 @@ void CMissionUI::UpdateItems( NGScene::I2DGameView *pView )
 		{
 			// PASS 3 (gated by ui_showhints, @0x613a38): reuse or build (@0x613b5a ctor)
 			CHintIcon *pIcon = 0;
-			unordered_map<CPtr<NRPG::IInventoryItem>, CPtr<CHintIcon>, SPtrHash>::iterator iKnown = knownHintIcons.find( pInv );
+			typename unordered_map<CPtr<NRPG::IInventoryItem>, CPtr<CHintIcon>, SPtrHash>::iterator iKnown = knownHintIcons.find( pInv );
 			if ( iKnown != knownHintIcons.end() )
 				pIcon = iKnown->second;
 			if ( !pIcon )
@@ -1547,7 +1551,7 @@ void CMissionUI::UpdateItems( NGScene::I2DGameView *pView )
 
 		CVec2 vScreenRect = pView->GetViewportSize();
 		CTransformStack sTS = pMission->GetCameraTransform();
-		for ( list<CObj<CItemText> >::const_iterator iTemp = itemTextsList.begin(); iTemp != itemTextsList.end(); iTemp++ )
+		for ( typename list<CObj<CItemText> >::const_iterator iTemp = itemTextsList.begin(); iTemp != itemTextsList.end(); iTemp++ )
 		{
 			CItemText *pItemText = *iTemp;
 
@@ -1647,7 +1651,7 @@ void CMissionUI::UpdateHits( const STime &sTime )
 		hitsList.push_back( new CHitTracker( SWindowInfo( GetClientWindow(), SPoint( 0, 0 ), SPoint( 120, 20 ), "hit", STYLE_ENABLED | STYLE_TRANSPARENT | STYLE_TOPMOST | STYLE_VISIBLE ), pMission, pTempLocator, sTime ) );
 	}
 
-	for ( list<CObj<CHitTracker> >::iterator iTemp = hitsList.begin(); iTemp != hitsList.end(); )
+	for ( typename list<CObj<CHitTracker> >::iterator iTemp = hitsList.begin(); iTemp != hitsList.end(); )
 	{
 		if ( !(*iTemp)->IsComplete() )
 			iTemp++;
@@ -1681,13 +1685,13 @@ void CMissionUI::UpdateEnemies()
 	list<CPtr<NWorld::CUnit> > visibleUnits;
 	pPlayer->GetVisible( &visibleUnits );
 	unordered_map<CPtr<NWorld::CUnit>, CPtr<CClueIcon>, SPtrHash> knownClueIcons;
-	for ( list<CObj<CClueIcon> >::iterator i = clueUnitIconsList.begin(); i != clueUnitIconsList.end(); ++i )
+	for ( typename list<CObj<CClueIcon> >::iterator i = clueUnitIconsList.begin(); i != clueUnitIconsList.end(); ++i )
 		knownClueIcons[(*i)->GetWorldUnit()] = *i;
 	list<CObj<CClueIcon> > newClueIconsList;
 
 	list<CObj<CEnemyIcon> > newEnemyIconsList;
-	list<CObj<CEnemyIcon> >::iterator iOldIcons = enemyIconsList.begin();
-	for ( list<CPtr<NWorld::CUnit> >::iterator iTemp = visibleUnits.begin(); iTemp != visibleUnits.end(); ++iTemp )
+	typename list<CObj<CEnemyIcon> >::iterator iOldIcons = enemyIconsList.begin();
+	for ( typename list<CPtr<NWorld::CUnit> >::iterator iTemp = visibleUnits.begin(); iTemp != visibleUnits.end(); ++iTemp )
 	{
 		CPtr<NWorld::CUnit> pEnemy = *iTemp;
 		if ( pEnemy->IsDead() || pEnemy->GetPlayer() == pPlayer )
@@ -1757,8 +1761,8 @@ void CMissionUI::UpdateEnemies()
 		}
 
 		const NUI::SPoint &sSize = pIcon->GetSize();
-		vScreenPos.x = max( min( vScreenPos.x, sViewRect.x2 ), sViewRect.x1 );
-		vScreenPos.y = max( min( vScreenPos.y, sViewRect.y2 ), sViewRect.y1 );
+		vScreenPos.x = s2max( s2min( vScreenPos.x, sViewRect.x2 ), sViewRect.x1 );
+		vScreenPos.y = s2max( s2min( vScreenPos.y, sViewRect.y2 ), sViewRect.y1 );
 
 		pIcon->Set( pEnemy, bVisible, fAngle );
 		SPoint sIconPos;	// icon is a CLIENT-window child now -- convert the 1024x768 screen point
@@ -1812,7 +1816,7 @@ void CMissionUI::UpdateClues()
 	// unit's position would leak its movement while unseen. No dead/unconscious filtering either:
 	// hiding the ear on death would itself leak the death.
 	list<CObj<CSoundIcon> > newClueIconsList;
-	list<CObj<CSoundIcon> >::iterator iOldIcons = clueIconsList.begin();
+	typename list<CObj<CSoundIcon> >::iterator iOldIcons = clueIconsList.begin();
 	for ( int nTemp = 0; nTemp < soundsList.size(); nTemp++ )
 	{
 		CObjectBase *pMarker = soundsList[nTemp];
@@ -1857,8 +1861,8 @@ void CMissionUI::UpdateClues()
 				fAngle += 360;
 		}
 
-		vScreenPos.x = max( min( vScreenPos.x, sViewRect.x2 ), sViewRect.x1 );
-		vScreenPos.y = max( min( vScreenPos.y, sViewRect.y2 ), sViewRect.y1 );
+		vScreenPos.x = s2max( s2min( vScreenPos.x, sViewRect.x2 ), sViewRect.x1 );
+		vScreenPos.y = s2max( s2min( vScreenPos.y, sViewRect.y2 ), sViewRect.y1 );
 
 		pIcon->Set( pMarker, pHeard, fAngle );
 		SPoint sIconPos;	// icon is a CLIENT-window child now -- convert the 1024x768 screen point
@@ -1904,11 +1908,11 @@ void CMissionUI::UpdateTraps()
 
 	// keyed reuse: index the existing icons by their trapped object (retail UpdateHash @0x2173b0)
 	unordered_map<CPtr<CObjectBase>, CPtr<CTrapIcon>, SPtrHash> knownIcons;
-	for ( list<CObj<CTrapIcon> >::const_iterator iIcon = trapIconsList.begin(); iIcon != trapIconsList.end(); ++iIcon )
+	for ( typename list<CObj<CTrapIcon> >::const_iterator iIcon = trapIconsList.begin(); iIcon != trapIconsList.end(); ++iIcon )
 		knownIcons[ (*iIcon)->GetItem() ] = *iIcon;
 
 	list<CObj<CTrapIcon> > newTrapIconsList;
-	for ( list< CPtr<CObjectBase> >::iterator iObj = traps.begin(); iObj != traps.end(); ++iObj )
+	for ( typename list< CPtr<CObjectBase> >::iterator iObj = traps.begin(); iObj != traps.end(); ++iObj )
 	{
 		CObjectBase *pObj = iObj->GetPtr();
 		CDynamicCast<NWorld::IMine> pMine( pObj );
@@ -1916,7 +1920,7 @@ void CMissionUI::UpdateTraps()
 			continue;   // GetTrappedObjectsList already filters, but the cast also yields GetMinePos
 
 		CTrapIcon *pIcon;
-		unordered_map<CPtr<CObjectBase>, CPtr<CTrapIcon>, SPtrHash>::iterator iKnown = knownIcons.find( pObj );
+		typename unordered_map<CPtr<CObjectBase>, CPtr<CTrapIcon>, SPtrHash>::iterator iKnown = knownIcons.find( pObj );
 		if ( iKnown != knownIcons.end() )
 			pIcon = iKnown->second;
 		else

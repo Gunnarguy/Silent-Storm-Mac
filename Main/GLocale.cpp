@@ -5,11 +5,11 @@
 #include "GLocale.h"
 #include "GFont.h"
 #include "GTexture.h"
-#include "..\Misc\BasicShare.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\LogStream.h"   // csSystem (font-load diagnostics)
+#include "../Misc/BasicShare.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/LogStream.h"   // csSystem (font-load diagnostics)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
 {
@@ -63,7 +63,7 @@ CFontInfo* CTextLocaleInfo::SearchFont( const SFont &sFont )
 	int nSize;
 	CPtr<CFontInfo> pResFontInfo;
 
-	for ( vector< CObj<CFontInfo> >::iterator iTemp = fonts.begin(); iTemp != fonts.end(); iTemp++ )
+	for ( typename vector< CObj<CFontInfo> >::iterator iTemp = fonts.begin(); iTemp != fonts.end(); iTemp++ )
 	{
 		const SFont &sDBFont = (*iTemp)->GetType();
 		if ( sDBFont.szName != sFont.szName )

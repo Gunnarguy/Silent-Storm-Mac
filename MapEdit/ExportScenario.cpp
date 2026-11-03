@@ -23,7 +23,7 @@ static int InsertString( CItemsMgr *pStrs, const string &szStr )
 		const CPropMap *pProps = pStrs->GetPropList( nRet );
 		if ( pProps )
 		{
-			CPropMap::const_iterator i = pProps->find( "String" );
+			typename CPropMap::const_iterator i = pProps->find( "String" );
 			i->second->SetValue( szStr );
 			pStrs->ReleasePropList( pProps );
 		}
@@ -36,7 +36,7 @@ static bool Export( int nScenarioID, CItemsMgr *pMgr )
 	const CPropMap *props = pMgr->GetPropList( nScenarioID );
 	if ( !props )
 		return false;
-	CPropMap::const_iterator isrc = props->find( "SrcName" );
+	typename CPropMap::const_iterator isrc = props->find( "SrcName" );
 	if ( isrc == props->end() )
 		return false;
 	string szSrc = GetExportSrcDir() + (string)isrc->second->GetValue();
@@ -55,7 +55,7 @@ static bool Export( int nScenarioID, CItemsMgr *pMgr )
 	if ( !pStrings )
 		return false;
 
-	for ( unordered_map<string,CClue>::const_iterator i = graph.clues.begin(); i != graph.clues.end(); ++i )
+	for ( typename unordered_map<string,CClue>::const_iterator i = graph.clues.begin(); i != graph.clues.end(); ++i )
 	{
 		const CClue &clue = i->second;
 		vector<int> objectivesIDs;

@@ -44,7 +44,7 @@ bool IsLocallyPassable( CNodesLayerProxy* pMap, int nX, int nY, EDirection direc
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 inline void SNetNode::AddNeighbour( WORD wNode, int wDistance, int nLayer ) 
 { 
-	for ( list<SNeighbour>::iterator i = neighbours.begin(); i != neighbours.end(); ++i )
+	for ( typename list<SNeighbour>::iterator i = neighbours.begin(); i != neighbours.end(); ++i )
 		if ( ( i->wNodeNumber == wNode ) && ( i->nLayer == nLayer ) ) 
 		{
 			if ( wDistance < i->wDistance )
@@ -59,7 +59,7 @@ inline void SNetNode::AddNeighbour( WORD wNode, int wDistance, int nLayer )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 inline void SNet::Clear() 
 { 
-	for ( vector<SNetNode>::iterator i = nodes.begin(); i != nodes.end(); ++i ) 
+	for ( typename vector<SNetNode>::iterator i = nodes.begin(); i != nodes.end(); ++i ) 
 		(i->neighbours).clear(); 			
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -185,7 +185,7 @@ void CMapColourer::InvestigateSquareMap( const vector< CTRect<unsigned char> > &
 	for ( nX = 0; nX < ( (nMaxX + 7) >> 3 ); ++nX )
 		for ( nY = 0; nY < ( (nMaxY + 7) >> 3 ); ++nY )
 			mustInvestigate[ nY ][ nX ] = false;
-	for ( vector< CTRect<unsigned char> >::const_iterator i = areas.begin(); i != areas.end(); ++i )
+	for ( typename vector< CTRect<unsigned char> >::const_iterator i = areas.begin(); i != areas.end(); ++i )
 	{
 		for ( nX = (i->minx >> 3); nX < ((i->maxx + 7) >> 3); ++nX )
 			for ( nY = (i->miny >> 3); nY < ((i->maxy + 7) >> 3); ++nY )
@@ -458,7 +458,7 @@ void CColouredWaysCalcer::CalcBestWays( CPathNetwork *pPathNet, CLayerColorConst
 	{
 		CUpperNetWay way;
 		// check, if we calculated that zone already
-		CZonesToDistInfo::iterator calced = distances.find( dst[i] );
+		typename CZonesToDistInfo::iterator calced = distances.find( dst[i] );
 		if ( calced != distances.end() )
 		{
 			SZone best = dst[i];
@@ -493,13 +493,13 @@ void CColouredWaysCalcer::CalcBestWays( CPathNetwork *pPathNet, CLayerColorConst
 	for ( int i = firstNotFound; i < dst.size(); ++i )
 	{
 		CUpperNetWay way;
-		CZonesToDistInfo::iterator calced = distances.find( dst[i] );
+		typename CZonesToDistInfo::iterator calced = distances.find( dst[i] );
 		SZone best;
 		if ( calced == distances.end() ) // the zone is truly unreachable
 		{
 			float bestDist = 1e8;
 			float fKoeff = ( FP_GRID_STEP / 32 );
-			for ( CZonesToDistInfo::iterator z = distances.begin(); z != distances.end(); ++z )
+			for ( typename CZonesToDistInfo::iterator z = distances.begin(); z != distances.end(); ++z )
 			{
 				const SZone &that = z->first;
 				float curLinDist = fabs2( dstCP[i] - that.GetCP( pPathNet ) );
@@ -636,7 +636,7 @@ bool CalcWay( CPathNetwork *pPathNet, CUpperNetWay *pWay, const SZone &src,
 		else // generic node
 		{
 			list<SNeighbour> &ns = pNet->nodes[best.wColor].neighbours;
-			for (list<SNeighbour>::iterator i = ns.begin(); i != ns.end(); ++i) 
+			for (typename list<SNeighbour>::iterator i = ns.begin(); i != ns.end(); ++i) 
 			{
 				AddNeighborToProceedList( *i, start, best, distances, bestdist );
 			}
@@ -653,7 +653,7 @@ void CMapColourer::ClearColor( EPathfinderMode mode, CPathNetwork* pNet, WORD wC
 	else
 		pMyNeighbours = &zonesAnyMove.nodes[wColor].neighbours;
 	// remove references to this color from neighbors from other layers
-	for ( list<SNeighbour>::iterator i = pMyNeighbours->begin(); i != pMyNeighbours->end(); ++i )
+	for ( typename list<SNeighbour>::iterator i = pMyNeighbours->begin(); i != pMyNeighbours->end(); ++i )
 	{
 		if ( i->nLayer == nLayer )
 			continue;
@@ -665,7 +665,7 @@ void CMapColourer::ClearColor( EPathfinderMode mode, CPathNetwork* pNet, WORD wC
 			pNeighbours = &pOther->zonesStandOnly.nodes[ i->wNodeNumber ].neighbours;
 		else
 			pNeighbours = &pOther->zonesAnyMove.nodes[ i->wNodeNumber ].neighbours;
-		for ( list<SNeighbour>::iterator j = pNeighbours->begin(); j != pNeighbours->end(); ++j )
+		for ( typename list<SNeighbour>::iterator j = pNeighbours->begin(); j != pNeighbours->end(); ++j )
 		{
 			if ( ( j->wNodeNumber == wColor ) && ( j->nLayer == nLayer ) )
 			{
@@ -682,7 +682,7 @@ void CMapColourer::ClearColor( EPathfinderMode mode, CPathNetwork* pNet, WORD wC
 	}
 	list<SNeighbour> temp;
 	// only references to fully cleared neighbors clear case
-	for ( list<SNeighbour>::iterator i = pMyNeighbours->begin(); i != pMyNeighbours->end(); ++i )
+	for ( typename list<SNeighbour>::iterator i = pMyNeighbours->begin(); i != pMyNeighbours->end(); ++i )
 	{
 		if ( i->nLayer != nLayer )
 			continue; // delete
@@ -700,7 +700,7 @@ bool CMapColourer::IsColorInArea( WORD wColor, const vector< CTRect<unsigned cha
 {
 	unsigned char cAX = (unsigned char)localColorInfos[wColor].wAverageX;
 	unsigned char cAY = (unsigned char)localColorInfos[wColor].wAverageY;
-	for ( vector< CTRect<unsigned char> >::const_iterator i = areas.begin(); i != areas.end(); ++i )
+	for ( typename vector< CTRect<unsigned char> >::const_iterator i = areas.begin(); i != areas.end(); ++i )
 	{
 		unsigned char 
 			cMaxX = ( (i->maxx + 7) >> 3) << 3, 
@@ -719,7 +719,7 @@ bool CMapColourer::IsColorInArea( WORD wColor, const vector< CTRect<unsigned cha
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool IsPointTouchingArea( unsigned char cAX, unsigned char cAY, const vector< CTRect<unsigned char> > &areas )
 {
-	for ( vector< CTRect<unsigned char> >::const_iterator i = areas.begin(); i != areas.end(); ++i )
+	for ( typename vector< CTRect<unsigned char> >::const_iterator i = areas.begin(); i != areas.end(); ++i )
 	{
 		unsigned char 
 			cMaxX = ( ((i->maxx + 7) >> 3) + 1 )<<3, 
@@ -813,7 +813,7 @@ bool CMapColourer::RecalcColouring( CPathNetwork *pNet, int nCurrentLayer )
 		sprintf( buf, "Recalc started on layer %d\n", pLayer->nLayer );
 		OutputDebugString( buf ); 
 	}*/
-	for ( vector< CTRect<unsigned char> >::iterator i = zonesToRecalc.begin(); i != zonesToRecalc.end(); ++i )
+	for ( typename vector< CTRect<unsigned char> >::iterator i = zonesToRecalc.begin(); i != zonesToRecalc.end(); ++i )
 	{
 		unsigned char 
 			cMinX = i->minx, cMaxX = i->maxx,
@@ -841,7 +841,7 @@ bool CMapColourer::RecalcColouring( CPathNetwork *pNet, int nCurrentLayer )
 		for ( cX = 0; cX < ( (nSizeX + 7) >> 3 ); ++cX )
 			for ( cY = 0; cY < ( (nSizeY + 7) >> 3 ); ++cY )
 				mustInvestigate[ cY ][ cX ] = false;
-		for ( vector< CTRect<unsigned char> >::const_iterator i = zonesToRecalc.begin(); i != zonesToRecalc.end(); ++i )
+		for ( typename vector< CTRect<unsigned char> >::const_iterator i = zonesToRecalc.begin(); i != zonesToRecalc.end(); ++i )
 		{
 			for ( cX = (i->minx >> 3); cX < ((i->maxx + 7) >> 3); ++cX )
 				for ( cY = (i->miny >> 3); cY < ((i->maxy + 7) >> 3); ++cY )
@@ -891,7 +891,7 @@ bool CMapColourer::RecalcColouring( CPathNetwork *pNet, int nCurrentLayer )
 		}
 	}
 
-	for ( vector< CTRect<unsigned char> >::const_iterator i = zonesToRecalc.begin(); i != zonesToRecalc.end(); ++i )
+	for ( typename vector< CTRect<unsigned char> >::const_iterator i = zonesToRecalc.begin(); i != zonesToRecalc.end(); ++i )
 	{
 		unsigned char cMinBlockX = i->minx >> 3;
 		unsigned char cMaxBlockX = ( i->maxx + 7 ) >> 3;
@@ -1240,7 +1240,7 @@ void CMapColourer::AttachTransitions( CPathNetwork* pNet,
 {
 	unsigned char cX = (unsigned char)p.GetX();
 	unsigned char cY = (unsigned char)p.GetY();
-	for ( list<CNodesLayer::SLink>::const_iterator l = trSet.links.begin(); l != trSet.links.end(); ++l )
+	for ( typename list<CNodesLayer::SLink>::const_iterator l = trSet.links.begin(); l != trSet.links.end(); ++l )
 	{
 		const SPathPlace &dst = l->dst;
 		SPathPlace search( p.GetX(), p.GetY(), p.GetLayer() );
@@ -1320,10 +1320,10 @@ bool CMapColourer::RecalcTransitions( CPathNetwork* pNet )
 			pMap->pLayer->nLayer, nUpLayer, nColor, x, y );
 		OutputDebugString( buf );
 	}
-	for ( vector<SNetNode>::iterator it = zonesAnyMove.nodes.begin(); it != zonesAnyMove.nodes.end(); ++it )
+	for ( typename vector<SNetNode>::iterator it = zonesAnyMove.nodes.begin(); it != zonesAnyMove.nodes.end(); ++it )
 	{
 		SNetNode &node = *it;
-		for ( list<SNeighbour>::iterator lit = node.neighbours.begin(); lit != node.neighbours.end(); ++lit )
+		for ( typename list<SNeighbour>::iterator lit = node.neighbours.begin(); lit != node.neighbours.end(); ++lit )
 		{
 			SNeighbour &ne = *lit;
 			if ( ne.wNodeNumber > EC_LADDER_COLOR )
@@ -1341,7 +1341,7 @@ bool CMapColourer::RecalcTransitions( CPathNetwork* pNet )
 void CMapColourer::RecalcTransitions( CPathNetwork* pNet, EPathfinderMode mode )
 {
 	const CNodesLayer::CTransitionsHash &tr = pMap->pLayer->transitions;
-	for (CNodesLayer::CTransitionsHash::const_iterator k = tr.begin(); k != tr.end(); ++k )
+	for (typename CNodesLayer::CTransitionsHash::const_iterator k = tr.begin(); k != tr.end(); ++k )
 	{
 		unsigned char cX = (unsigned char)k->first.GetX();
 		unsigned char cY = (unsigned char)k->first.GetY();
@@ -1357,7 +1357,7 @@ void CMapColourer::RecalcTransitions( CPathNetwork* pNet, EPathfinderMode mode )
 	for ( cX = 0; cX < nMaxCellX; ++cX )
 		for ( cY = 0; cY < nMaxCellY; ++cY )
 			mustInvestigate[ cY ][ cX ] = false;
-	for ( vector< CTRect<unsigned char> >::const_iterator i = zonesToRecalc.begin(); i != zonesToRecalc.end(); ++i )
+	for ( typename vector< CTRect<unsigned char> >::const_iterator i = zonesToRecalc.begin(); i != zonesToRecalc.end(); ++i )
 	{
 		int nMinNowX = Max( 0, (i->minx >> 3) - 1 ),
 				nMinNowY = Max( 0, (i->miny >> 3) - 1 );
@@ -1396,9 +1396,9 @@ void CMapColourer::RecalcTransitions( CPathNetwork* pNet, EPathfinderMode mode )
 void CMapColourer::AttachTransitions(	CPathNetwork* pNet )
 {
 	const CNodesLayer::CTransitionsHash &tr = pMap->pLayer->transitions;
-	for (CNodesLayer::CTransitionsHash::const_iterator k = tr.begin(); k != tr.end(); ++k )
+	for (typename CNodesLayer::CTransitionsHash::const_iterator k = tr.begin(); k != tr.end(); ++k )
 		AttachTransitions( pNet, k->first, k->second, PM_STAND_ONLY );
-	for (CNodesLayer::CTransitionsHash::const_iterator k = tr.begin(); k != tr.end(); ++k )
+	for (typename CNodesLayer::CTransitionsHash::const_iterator k = tr.begin(); k != tr.end(); ++k )
 		AttachTransitions( pNet, k->first, k->second, PM_ANY_MOVE );
 	for ( int i = 0; i < pMap->pLayer->ladders.size(); ++i )
 		AttachLadderTransition( pNet, i, pMap->pLayer->ladders[i] );
@@ -1426,7 +1426,7 @@ void CMapColourer::GetColorNeighbourCenters( CPathNetwork *pNet, WORD wColor,
 		myNeighbours = &zonesAnyMove.nodes[wColor].neighbours;
 	else
 		myNeighbours = &zonesStandOnly.nodes[wColor].neighbours;
-	for ( list<SNeighbour>::iterator i = myNeighbours->begin(); i != myNeighbours->end(); ++i )
+	for ( typename list<SNeighbour>::iterator i = myNeighbours->begin(); i != myNeighbours->end(); ++i )
 	{
 		WORD wCurrColor = i->wNodeNumber;
 		CMapColourer *pOther = pNet->GetColourer( i->nLayer );

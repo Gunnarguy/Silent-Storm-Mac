@@ -53,7 +53,7 @@ static void WalkVector( vector<T> *pRes )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CDecal::OnCreate( IDecalQuery *pScene, CNonePart *pNew, const SSrcPosInfo &tp )
 {
-	CDecalTarget::CSrcPosHash::iterator i = pTarget->srcPositions.find( tp );
+	typename CDecalTarget::CSrcPosHash::iterator i = pTarget->srcPositions.find( tp );
 	CObjectBase *pRes;
 	if ( i != pTarget->srcPositions.end() )
 		pRes = pScene->CreateDecal( pNew, i->second, pTarget->mapInfo, pMaterial );
@@ -76,7 +76,7 @@ void CDecalsManager::OnCreate( CNonePart *pNew )
 	const SFullGroupInfo &fg = pNew->GetFullGroupInfo();
 	SDecalTargetPart tp( fg.pUser, fg.nUserID );
 	SSrcPosInfo srcPos( tp.pUser, tp.nUserID, pNew->GetObjectInfoNode() );
-	CPerUserHash::iterator i = decalsPerUser.find( tp );
+	typename CPerUserHash::iterator i = decalsPerUser.find( tp );
 	if ( i != decalsPerUser.end() )
 	{
 		// add decal on each CDecal
@@ -158,7 +158,7 @@ void CDecalsManager::Unregister( CDecal *pDecal, CDecalTarget *pTarget )
 	const vector<SDecalTargetPart> &targetParts = pTarget->targetParts;
 	for ( int k = 0; k < targetParts.size(); ++k )
 	{
-		CPerUserHash::iterator i = decalsPerUser.find( targetParts[k] );
+		typename CPerUserHash::iterator i = decalsPerUser.find( targetParts[k] );
 		if ( i == decalsPerUser.end() )
 			continue;
 		vector<CPtr<CDecal> > &d = i->second;
@@ -177,7 +177,7 @@ void CDecalsManager::Unregister( CDecal *pDecal, CDecalTarget *pTarget )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CDecalsManager::Walk()
 {
-	for ( CPerUserHash::iterator i = decalsPerUser.begin(); i != decalsPerUser.end(); ++i )
+	for ( typename CPerUserHash::iterator i = decalsPerUser.begin(); i != decalsPerUser.end(); ++i )
 	{
 		vector<CPtr<CDecal> > &r = i->second;
 		for ( int k = 0; k < r.size(); ++k )

@@ -1,10 +1,10 @@
 #include "StdAfx.h"
 #include "wAnimation.h"
 #include "wObject.h"
-#include "..\Misc\2DArray.h"
-#include "..\Misc\randomGen.h"
-#include "..\DBFormat\DataAnimation.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../Misc/2DArray.h"
+#include "../Misc/randomGen.h"
+#include "../DBFormat/DataAnimation.h"
+#include "../DBFormat/DataRPG.h"
 #include "aiMap.h"
 #include "aiHeight.h"
 #include "aiGridSet.h"
@@ -348,7 +348,7 @@ void CUnitAnimator::DropStep()
 		tSteps.erase( tSteps.begin() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void CUnitAnimator::StandStill( CVec2 &pos, float fAngle, bool bNeedStrafe )
+void CUnitAnimator::StandStill( const CVec2 &pos, float fAngle, bool bNeedStrafe )
 {
 	CPtr<NAnimation::CAnimation> pAnim;
 	if ( bNeedStrafe )
@@ -722,7 +722,7 @@ void CUnitAnimator::Move(
 	pSeq->pSkeleton = pAnimator->pSkeleton;
 
 	//tSteps.clear();
-	for ( vector<STime>::iterator i = tSteps.begin(); i != tSteps.end(); ++i )
+	for ( typename vector<STime>::iterator i = tSteps.begin(); i != tSteps.end(); ++i )
 		if ( *i > tEnd )
 		{
 			tSteps.erase( i, tSteps.end() );
@@ -2526,7 +2526,7 @@ bool CUnitAnimator::CanStandAimed( const NAI::SUnitPosition &cmdPos )
 	vector<NAI::SInterval> intersect;
 	pAIMap->Trace( ray, &intersect, NWorld::TS_COVER );//OBJECTS );
 	bool bObstacle = false;
-	for ( vector<NAI::SInterval>::const_iterator i = intersect.begin(); i != intersect.end(); ++i )
+	for ( typename vector<NAI::SInterval>::const_iterator i = intersect.begin(); i != intersect.end(); ++i )
 	{
 		if ( (i->pSrc->nTSFlags & NWorld::TS_WEAPON_BLOCKER)/* && i->pUserData != pIgnore*/ && i->enter.fT < fMinDistance )
 		{

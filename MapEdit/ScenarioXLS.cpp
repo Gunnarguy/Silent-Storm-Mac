@@ -36,7 +36,7 @@ string GetString( int nID  )
 	const CPropMap *pProps = tree.pItemsTree->GetPropList( nID );
 	if ( !pProps )
 		return "";
-	CPropMap::const_iterator i = pProps->find( "String" );
+	typename CPropMap::const_iterator i = pProps->find( "String" );
 	return i->second->GetValue();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////

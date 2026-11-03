@@ -2,8 +2,8 @@
 #include "LSHead.h"
 #include "LSController.h"
 #include "wInterface.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\Misc\RandomGen.h"
+#include "../DBFormat/DataFormat.h"
+#include "../Misc/RandomGen.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NLSHead
 {
@@ -40,7 +40,7 @@ void CHeadsController::Advance( STime currentTime )
 // release GetInfo @0x25dc40: raw-pointer scan of the records by CHeadInfo.
 SUnitHeadAnimator* CHeadsController::GetInfo( CHeadInfo *pHeadInfo )
 {
-	for ( vector<SUnitHeadAnimator>::iterator i = animators.begin(); i != animators.end(); ++i )
+	for ( typename vector<SUnitHeadAnimator>::iterator i = animators.begin(); i != animators.end(); ++i )
 	{
 		if ( i->pHead == pHeadInfo )
 			return &*i;
@@ -81,7 +81,7 @@ void CHeadsController::PlaySequence( CHeadInfo *pHeadInfo, NDb::CSequence *pSeq,
 // IDLE_NORMAL) into the weak pIdler slot, and return it for the caller to own via its sync destination.
 CObjectBase* CHeadsController::PlayIdle( CHeadInfo *pHeadInfo )
 {
-	for ( vector<SUnitHeadAnimator>::iterator i = animators.begin(); i != animators.end(); ++i )
+	for ( typename vector<SUnitHeadAnimator>::iterator i = animators.begin(); i != animators.end(); ++i )
 	{
 		if ( i->pHead != pHeadInfo )
 			continue;
@@ -96,7 +96,7 @@ CObjectBase* CHeadsController::PlayIdle( CHeadInfo *pHeadInfo )
 // is already there). No-op when the head has no animator record.
 void CHeadsController::KillHead( CHeadInfo *pHeadInfo )
 {
-	for ( vector<SUnitHeadAnimator>::iterator i = animators.begin(); i != animators.end(); ++i )
+	for ( typename vector<SUnitHeadAnimator>::iterator i = animators.begin(); i != animators.end(); ++i )
 	{
 		if ( i->pHead != pHeadInfo )
 			continue;

@@ -7,7 +7,7 @@ template<class PROP_MAP> bool ReadPropsFromDB( CCommand<CDynamicAccessor > *pDB,
   if ( !pPropMap )
     return true;
   //
-  for ( PROP_MAP::const_iterator it = pPropMap->begin(); it != pPropMap->end(); ++it )
+  for ( typename PROP_MAP::const_iterator it = pPropMap->begin(); it != pPropMap->end(); ++it )
   {
     TCHAR    colName[128];    
 		DBSTATUS status;
@@ -305,7 +305,7 @@ template<class PROP_MAP> bool WritePropsToDB( CCommand<CDynamicAccessor > *pDB, 
 	OLECHAR *pStrings;
  	((CDynamicAccessor*)pDB)->GetColumnInfo( pDB->GetInterface(), &nColumns, &pColumnInfo, &pStrings );
 	//
-  for ( PROP_MAP::const_iterator it = pPropMap->begin(); it != pPropMap->end(); ++it )
+  for ( typename PROP_MAP::const_iterator it = pPropMap->begin(); it != pPropMap->end(); ++it )
   {
     TCHAR colName[128];    
 		DBORDINAL col;

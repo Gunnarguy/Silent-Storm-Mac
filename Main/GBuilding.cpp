@@ -1,17 +1,17 @@
 #include "StdAfx.h"
 #include "GScene.h"
 #include "GSceneUtils.h"
-#include "..\Misc\2DArray.h"
+#include "../Misc/2DArray.h"
 #include "MapBuildingInfo.h"
 #include "GBuilding.h"
 #include "MakeBuilding.h"
 #include "GResource.h"
-#include "..\Misc\BasicShare.h"
+#include "../Misc/BasicShare.h"
 #include "GObjectInfo.h"
 #include "BuildingInfo.h"
 #include "BuildingGrid.h"
-#include "..\DBFormat\DataGeometry.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../DBFormat/DataGeometry.h"
+#include "../DBFormat/DataFormat.h"
 #include "Transform.h"
 #include "Grid.h"
 #include "GDecalGeometry.h"
@@ -88,12 +88,12 @@ void CBuilding::Build( IGScene *pScene, CMaterialShare *pMaterials )
 	const SBuildingInfo &info = pBInfo->GetInfo();
 	NBuilding::SPart part;
 	part.nID = nPartID;
-	unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i = info.info.find( part );
+	typename unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i = info.info.find( part );
 	if ( info.info.end() == i )
 		return;
 	{
 		const SStoreyInfo &storey = i->second;
-		for ( vector<SStoreyInfo::SFragment>::const_iterator k = storey.walls.begin(); k != storey.walls.end(); ++k )
+		for ( typename vector<SStoreyInfo::SFragment>::const_iterator k = storey.walls.begin(); k != storey.walls.end(); ++k )
 		{
 			const SStoreyInfo::SFragment &wall = *k;
 			CVec3 ptPos = wall.info.ptPos;
@@ -153,7 +153,7 @@ void CBuilding::Build( IGScene *pScene, CMaterialShare *pMaterials )
 			}
 		}
 		//
-		for ( vector<SStoreyInfo::SFragment>::const_iterator k = storey.fragments.begin(); k != storey.fragments.end(); ++k )
+		for ( typename vector<SStoreyInfo::SFragment>::const_iterator k = storey.fragments.begin(); k != storey.fragments.end(); ++k )
 		{
 			const SStoreyInfo::SFragment &solid = *k;
 			CVec3 ptPos = solid.info.ptPos;
@@ -214,7 +214,7 @@ void CBuilding::Build( IGScene *pScene, CMaterialShare *pMaterials )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CBuilding::GetRoomLights( vector<SRoomAmbient> *pLights )
 {
-	for ( CRoomLightsHash::iterator it = lights.begin(); it != lights.end(); ++it )
+	for ( typename CRoomLightsHash::iterator it = lights.begin(); it != lights.end(); ++it )
 		pLights->push_back( SRoomAmbient( it->first, it->second ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -231,7 +231,7 @@ void CBuilding::Setup( int _nPartID, const SMapBuilding &info, NBuilding::CBuild
 	{
 		const SMapBuilding::SAmbientLight &l = info.lights[i];
 		int nRoomID = 0;//pBuildingGrid->GetRoomGlobal( l.nFloor, l.nRoomID );
-		CRoomLightsHash::iterator it = lights.find( nRoomID );
+		typename CRoomLightsHash::iterator it = lights.find( nRoomID );
 		if ( it == lights.end() )
 			lights[nRoomID] = new CLocalAmbientCalcer;
 		lights[nRoomID]->AddLight( new CCVec3( l.color ) );

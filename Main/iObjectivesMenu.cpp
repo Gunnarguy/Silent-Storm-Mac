@@ -3,11 +3,11 @@
 #include "iMain.h"
 #include "G2DView.h"
 #include "RPGGlobal.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
-#include "..\DBFormat\DataScenario.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
+#include "../DBFormat/DataScenario.h"
 #include "Interface.h"
 #include "iCommonUI.h"
 #include "iObjectivesMenu.h"
@@ -101,7 +101,7 @@ void CObjectivesUI::GenerateList()
 		zonesList.push_back( pGame->pCurrentZone );
 
 	int nCount = 0;
-	for ( list< CPtr<NScenario::CScenarioZone> >::const_iterator iZone = zonesList.begin(); iZone != zonesList.end(); iZone++ )
+	for ( typename list< CPtr<NScenario::CScenarioZone> >::const_iterator iZone = zonesList.begin(); iZone != zonesList.end(); iZone++ )
 	{
 		if ( !IsValid( *iZone ) )
 			continue;

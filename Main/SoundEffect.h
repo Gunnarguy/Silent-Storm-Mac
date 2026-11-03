@@ -15,7 +15,7 @@ protected:
 	virtual void Recalc();
 private:
 	ZDATA
-	STime tStartTime; // elapsed seek offset, v1.2/Sentinels +0x18
+	STime tStartTime; // elapsed seek offset, v1.2 +0x18
 	STime stBeginTime;
 	STime tLastSound;
 	CDBPtr<NDb::CSoundInstance> pInstance;
@@ -24,7 +24,7 @@ private:
 	CObj<NFMSound::CSound3D> pSound;
 	vector<int> flags;
 public:
-	// Retail v1.2 0x709c20 / Sentinels 0x409370: original tags, not a save migration.
+	// Retail v1.2 0x709c20: original tags, not a save migration.
 	ZEND int operator&( CStructureSaver &f ) { f.Add(2,&tStartTime); f.Add(3,&stBeginTime); f.Add(4,&tLastSound); f.Add(5,&pInstance); f.Add(6,&pTime); f.Add(7,&pPlacement); f.Add(8,&pSound); f.Add(9,&flags); return 0; }
 
 	CSoundInstance() : tStartTime(0), stBeginTime(0), tLastSound(0) { value = false; }

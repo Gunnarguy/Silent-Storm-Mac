@@ -18,23 +18,23 @@
 #include "ParamsView.h"
 #include "UIView.h"
 #include "ChapterView.h"
-#include "..\FileIO\BasicChunk1.h"
-#include "..\Input\Input.h"
-#include "..\Main\iMain.h"
+#include "../FileIO/BasicChunk1.h"
+#include "../Input/Input.h"
+#include "../Main/iMain.h"
 #include "iWysiwyg.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\Main\GResource.h"
-#include "..\Main\Gfx.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
+#include "../Main/GResource.h"
+#include "../Main/Gfx.h"
 #include "MEUserSettings.h"
 #include "MEParams.h"
 #include "history.h"
-#include "..\Input\Bind.h"
+#include "../Input/Bind.h"
 #include "ScenarioView.h"
 #include "GlobalMapView.h"
 #include "DiplomacyView.h"
-#include "..\Scintilla\Platform.h"
-#include "..\Scintilla\Scintilla.h"
+#include "../Scintilla/Platform.h"
+#include "../Scintilla/Scintilla.h"
 
 #include "TreeSelItemDlg.h"
 #include "ItemsMgr.h"
@@ -595,7 +595,7 @@ void CTEditApp::OnFileSaveall()
   }
 	*/
   // Запись данных из ресурсных деревьев
-  for ( unordered_map<int, SResTree>::const_iterator i = resTreesHash.begin(); i != resTreesHash.end(); ++i )
+  for ( typename unordered_map<int, SResTree>::const_iterator i = resTreesHash.begin(); i != resTreesHash.end(); ++i )
   {
     if ( i->second.pItemsTree )
 			i->second.pItemsTree->UpdateModified();
@@ -672,7 +672,7 @@ bool CTEditApp::DropItem( int nDstTableID, const CPropMap *pDstProps, COIDlg *pV
 	if ( !pView )
 		return false; // это не изменение св-ва, а добавление объекта на карту
   // Просматриваем все св-ва активного объекта и ищем связь с таблицей nTableID
-  for ( CPropMap::const_iterator it = pDstProps->begin(); it != pDstProps->end(); ++it )
+  for ( typename CPropMap::const_iterator it = pDstProps->begin(); it != pDstProps->end(); ++it )
     if ( it->second->IsRelatedTable( nTableID ) )
     {
       int nActiveProp = pView->GetActiveProp( it->second->GetGroup() );
@@ -958,7 +958,7 @@ static int GetModelID( CItemsMgr *pMgr, int nID )
 	const CPropMap *props = pMgr->GetPropList( nID );
 	if ( props )
 	{
-		CPropMap::const_iterator it = props->find( "ModelID" );
+		typename CPropMap::const_iterator it = props->find( "ModelID" );
 		if ( it != props->end() )
 			nModel = it->second->GetValue();
 		pMgr->ReleasePropList( props );
@@ -984,7 +984,7 @@ void CTEditApp::SetWeapon( int id, int nVarID )
 	const CPropMap *pProps = pRes->pItemsTree->GetPropList( id, nVarID );
 	if ( pProps )
 	{
-		CPropMap::const_iterator iIt = pProps->find( "ItemID" );
+		typename CPropMap::const_iterator iIt = pProps->find( "ItemID" );
 		if ( iIt != pProps->end() )
 		{
 			nModel = GetModelID( pItemsRes->pItemsTree, iIt->second->GetValue() );
@@ -1056,7 +1056,7 @@ void CTEditApp::SetAnimation( int id, int nVarID )
 		const CPropMap *pAnimProps = pRes->pItemsTree->GetPropList( id );
 		if ( pAnimProps )
 		{
-			CPropMap::const_iterator it = pAnimProps->find( "SkeletonID" );
+			typename CPropMap::const_iterator it = pAnimProps->find( "SkeletonID" );
 			if ( it != pAnimProps->end() )
 			{
 				var = it->second->GetValue();
@@ -1075,7 +1075,7 @@ void CTEditApp::SetAnimation( int id, int nVarID )
 							const CPropMap *props = pModelRes->pItemsTree->GetPropList( nSelID );
 							if ( props )
 							{
-								CPropMap::const_iterator it = props->find( "SkeletonID" );
+								typename CPropMap::const_iterator it = props->find( "SkeletonID" );
 								if ( it != props->end() && (int)it->second->GetValue() == (int)var )
 									nModel = nSelID;
 								else
@@ -1113,7 +1113,7 @@ void CTEditApp::SetActiveBrushModel( int nTreeID, int brushID, int nVarID )
     const CPropMap *props = pRes->pItemsTree->GetPropList( brushID );
     if ( props )
     {
-      CPropMap::const_iterator it = props->find( "ModelID" );
+      typename CPropMap::const_iterator it = props->find( "ModelID" );
       if ( it != props->end() )
       {
 				vector<EView> views( 1, GAME_VIEW );
@@ -1232,7 +1232,7 @@ void CTEditApp::OnViewUpdgame()
 
 const SResTree* CTEditApp::GetResTree( int nTreeID )
 {
-	unordered_map<int, SResTree>::const_iterator i = resTreesHash.find( nTreeID );
+	typename unordered_map<int, SResTree>::const_iterator i = resTreesHash.find( nTreeID );
 	if ( i == resTreesHash.end() )
 		return 0;
 	//
@@ -1430,10 +1430,10 @@ int CTEditApp::GetDropExeptionTarget( int nTblTarget, int nItemTarget, int nTblD
 		const CPropMap *pTargProps = pTargTree->pItemsTree->GetPropList( nItemTarget );
 		if ( !pDropProps || !pTargProps )
 			return -1;
-		CPropMap::const_iterator it = pDropProps->find( "Format" );
+		typename CPropMap::const_iterator it = pDropProps->find( "Format" );
 		if ( pDropProps->end() == it )
 			return -1;
-		CPropMap::const_iterator itTarg = string(it->second->GetValue()) == "normals" ?
+		typename CPropMap::const_iterator itTarg = string(it->second->GetValue()) == "normals" ?
 			pTargProps->find( "BumpID" ) : pTargProps->find( "TextureID" );
 		if ( pTargProps->end() == itTarg )
 			return -1;
@@ -1458,9 +1458,9 @@ void CTEditApp::SelChanged( int nTreeID, int nItemID )
 		const CPropMap *pProps = pRes->pItemsTree->GetPropList( nItemID );
 		if ( !pProps )
 			return;
-		CPropMap::const_iterator iL = pProps->find( "Length" );
-		CPropMap::const_iterator iW = pProps->find( "Width" );
-		CPropMap::const_iterator iC = pProps->find( "UserColor" );
+		typename CPropMap::const_iterator iL = pProps->find( "Length" );
+		typename CPropMap::const_iterator iW = pProps->find( "Width" );
+		typename CPropMap::const_iterator iC = pProps->find( "UserColor" );
 		if ( pProps->end() == iL || pProps->end() == iW || pProps->end() == iC )
 			return;
 		float fLength = iL->second->GetValue();
@@ -1474,10 +1474,10 @@ void CTEditApp::SelChanged( int nTreeID, int nItemID )
 		const CPropMap *pProps = pRes->pItemsTree->GetPropList( nItemID );
 		if ( !pProps )
 			return;
-		CPropMap::const_iterator iX = pProps->find( "SizeX" );
-		CPropMap::const_iterator iY = pProps->find( "SizeY" );
-		CPropMap::const_iterator iW = pProps->find( "Thickness" );
-		CPropMap::const_iterator iC = pProps->find( "UserColor" );
+		typename CPropMap::const_iterator iX = pProps->find( "SizeX" );
+		typename CPropMap::const_iterator iY = pProps->find( "SizeY" );
+		typename CPropMap::const_iterator iW = pProps->find( "Thickness" );
+		typename CPropMap::const_iterator iC = pProps->find( "UserColor" );
 		if ( pProps->end() == iL || pProps->end() == iW || pProps->end() == iC )
 			return;
 		float fSizeX = iL->second->GetValue();
@@ -1602,7 +1602,7 @@ void CTEditApp::CollectPlacementTree( CPlacement *pRoot, CPlacementCache *pCache
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CTEditApp::ClearPlacementCache( CPlacementCache *pCache )
 {
-	for ( CPlacementCache::iterator it = pCache->begin(); it != pCache->end(); ++it )
+	for ( typename CPlacementCache::iterator it = pCache->begin(); it != pCache->end(); ++it )
 		if ( it->second )
 			theTemplMgr.ReleasePlacement( it->second );
 		pCache->clear();

@@ -5,7 +5,7 @@
 #include "aiMap.h"
 #include "RPGGame.h"
 #include "RPGItemInfo.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataRPG.h"
 #include "wUnitServer.h"
 #include "Transform.h"
 #include "gSceneUtils.h"
@@ -164,7 +164,7 @@ bool CRocketServer::Segment()
 	pWorld->GetAIMap()->Trace( ray, &intersect, NWorld::TS_FRAGMENTED );
 	//
 	float fCollDist = 0;
-	for ( vector<NAI::SInterval>::iterator i = intersect.begin(); i != intersect.end(); ++i )
+	for ( typename vector<NAI::SInterval>::iterator i = intersect.begin(); i != intersect.end(); ++i )
 	{
 		if ( i->enter.fT > 0 && i->enter.fT < fDist )
 		{

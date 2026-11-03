@@ -24,7 +24,7 @@ struct CReceivedDmg
 	CReceivedDmg( int _nDmg = -1, EReceivedDmg _type = RD_UNKNOW ): nDmg(_nDmg), type(_type) {}
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EAttackType
+enum EAttackType : int
 {
 	AT_NORMAL,
 	AT_BLAST_WAVE,
@@ -93,7 +93,7 @@ public:
 	// IAttackable's only virtual (slot 0); arg order proven at PerformThrowingAttackPortion @0x290780.
 	// vDir is the attack trajectory direction -- retail's replacement for CAttackPortion::rTtrajectory,
 	// which retail's CAttackPortion does not have. Return stays int: it IS retail's CReceivedDmg::nDmg
-	// (-1 sentinel included). The `type` half is unread here and not uniform per implementor -- see dossier.
+	// (-1 marker included). The `type` half is unread here and not uniform per implementor -- see dossier.
 	virtual int ProcessAttack( NWorld::IWorld *pWorld, int nUserID, CAttackPortion *pAttack,
 		const CVec3 &vDir, NDb::CRPGArmor *pArmor ) = 0;
 };

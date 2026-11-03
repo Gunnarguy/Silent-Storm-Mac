@@ -7,8 +7,8 @@
 #include "ItemsMgr.h"
 #include "dbDefs.h"
 #include <limits>
-#include "..\Main\BuildingClip.h"
-#include "..\Misc\BasicShare.h"
+#include "../Main/BuildingClip.h"
+#include "../Misc/BasicShare.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
@@ -66,10 +66,10 @@ const SWall* CWallsPlan::GetWall() const
 // 0, если ошибка
 const SWall* CWallsPlan::GetNearestWall( const CVec2 &pt, float fMaxSelectionDist ) const
 {
-  CWallHash::const_iterator iMin = wallHash.end();
+  typename CWallHash::const_iterator iMin = wallHash.end();
   float fMin = 1e10;
 
-  for( CWallHash::const_iterator it = wallHash.begin(); it != wallHash.end(); ++it )
+  for( typename CWallHash::const_iterator it = wallHash.begin(); it != wallHash.end(); ++it )
   {
     const SWall &w = it->second;
 		CVec2 ptDir = GetDirectionVec( &w );
@@ -119,7 +119,7 @@ bool CWallsPlan::DeleteWall( const SWall *pWall )
 {
 	if ( !pWall )
 		return false;
-	CWallHash::iterator it = wallHash.find( SWallKey( pWall->fr.ptPos, pWall->fr.nRotationID ) );
+	typename CWallHash::iterator it = wallHash.find( SWallKey( pWall->fr.ptPos, pWall->fr.nRotationID ) );
 
   if ( wallHash.end() == it )
     return false;
@@ -127,7 +127,7 @@ bool CWallsPlan::DeleteWall( const SWall *pWall )
 	NBuilding::CBuildInfo *pInfo = pBuildInfo->GetValue();
 	if ( !pInfo )
 		return false;
-	vector<NBuilding::SBuildFragment>::iterator i = find_if( pInfo->wallFragments.begin(), pInfo->wallFragments.end(), CFrCompare( pWall->fr ) );
+	typename vector<NBuilding::SBuildFragment>::iterator i = find_if( pInfo->wallFragments.begin(), pInfo->wallFragments.end(), CFrCompare( pWall->fr ) );
 	if ( i != pInfo->wallFragments.end() )
 		pInfo->wallFragments.erase( i );
 	else
@@ -271,7 +271,7 @@ bool CWallsPlan::AddWalls( int nWallModelID, const vector<pair<CTPoint<int>, CTP
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWallsPlan::FillWallFragments( NBuilding::CBuildInfo *pInfo ) const
 {
-	for ( CWallHash::const_iterator it = wallHash.begin(); it != wallHash.end(); ++it )
+	for ( typename CWallHash::const_iterator it = wallHash.begin(); it != wallHash.end(); ++it )
 		pInfo->wallFragments.push_back( it->second.fr );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -283,7 +283,7 @@ int CWallsPlan::GetModelLen( int nModelID )
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nModelID );
 	if ( !pProps )
 		return -1;
-	CPropMap::const_iterator it = pProps->find( "SizeX" );
+	typename CPropMap::const_iterator it = pProps->find( "SizeX" );
 	if ( it == pProps->end() )
 		return -1;
 	int len = it->second->GetValue();

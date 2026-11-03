@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 #include "Transform.h"
-#include "..\Misc\HPTimer.h"
+#include "../Misc/HPTimer.h"
 #include "InterfaceConst.h"
 #include "MapBuild.h"
 #include "wUnitServer.h"
@@ -10,11 +10,11 @@
 #include "RPGStore.h"    // NRPG::CStore -- the serialized vendor stock (CGlobalPlayer tag 3)
 #include "RPGUnitInfo.h"
 #include "wObject.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataAI.h"
-#include "..\DBFormat\DataGeometry.h"
-#include "..\DBFormat\DataSound.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataAI.h"
+#include "../DBFormat/DataGeometry.h"
+#include "../DBFormat/DataSound.h"
 #include "RPGUnitMission.h"
 #include "RPGItemInfo.h"
 #include "RPGAttackMech.h"
@@ -22,7 +22,7 @@
 #include "GSceneUtils.h"
 #include "aiMap.h"
 #include "aiStability.h"
-#include "..\MiscDll\Commands.h"   // REGISTER_VAR_EX (game_eq_on_grenades)
+#include "../MiscDll/Commands.h"   // REGISTER_VAR_EX (game_eq_on_grenades)
 #include "wDebris.h"
 #include "wHintsFunc.h"  // NAI::FindClosePositionOnSurface @0x645b0
 #include "BuildingGrid.h"
@@ -40,29 +40,29 @@
 #include "wAckBase.h"
 #include "wAck.h"
 #include "wTerrain.h"
-#include "..\DBFormat\DataAck.h"
+#include "../DBFormat/DataAck.h"
 #include "wMainMoves.h"
 #include "wMainTrace.h"
-#include "..\DBFormat\DataTerrain.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataTerrain.h"
+#include "../DBFormat/DataRPG.h"
 #include "aiJob.h"
 #include "A5Script.h"
 #include "scriptCallLua.h"
-#include "..\DBFormat\DataScenario.h"
-#include "..\DBFormat\DataMisc.h"			// NDb::CUIHint + NDatabase::GetTable/CDBIterator (AddNextUIHint)
+#include "../DBFormat/DataScenario.h"
+#include "../DBFormat/DataMisc.h"			// NDb::CUIHint + NDatabase::GetTable/CDBIterator (AddNextUIHint)
 #include "scFlowChartItems.h"
 #include "scScenarioTracker.h"
 #include "RPGDiplomacy.h"
 #include "RPGUnit.h"
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 #include "RPGMerc.h"
 #include "wUnitStates.h"
-#include "..\Misc\StrProc.h"
-#include "..\DBFormat\DataCamera.h"
-#include "..\DBFormat\DataScript.h"
+#include "../Misc/StrProc.h"
+#include "../DBFormat/DataCamera.h"
+#include "../DBFormat/DataScript.h"
 #include "wUnitGroup.h"
 #include "wUICommands.h"
-#include "..\Misc\set.h"
+#include "../Misc/set.h"
 #include "aiRoute.h"
 #include "aiReaction.h"			// NAI::CreateUnitReaction -- the map-deploy reaction install (AI-convergence Stage 2)
 #include "aiReactions.h"
@@ -70,8 +70,8 @@
 #include "aiNearestPosition.h"	// NAI::LookWhereToMoveUnit -- FetchDeployPoint's unit-aware free-cell snap
 #include "rpgCheatConstants.h"
 #include "wUnitCommands.h"
-#include "..\DBFormat\DataDifficulty.h"
-#include "..\Misc\EventsBase.h"
+#include "../DBFormat/DataDifficulty.h"
+#include "../Misc/EventsBase.h"
 #include "eventUnit.h"   // NWorld::CEventOnHearEnemy / CEventOnHearAlly / CEventOnStartGame (AI perception events)
 #include "eventPlayer.h"
 #include "eventWorld.h"     // NWorld::CEventOnSegment (thrown per segment for NAI::CAIScriptLogic)
@@ -121,7 +121,7 @@ void CPlayer::SetCheat( int nCheat, bool bOn )
 {
 	vector< CPtr<CUnit> > units;
 	GetUnits( &units );
-	for (vector< CPtr<CUnit> >::iterator i = units.begin(); i != units.end(); ++i)
+	for (typename vector< CPtr<CUnit> >::iterator i = units.begin(); i != units.end(); ++i)
 	{
 		CDynamicCast<CUnitServer> pUS((*i).GetPtr());
 		if (pUS)
@@ -132,7 +132,7 @@ void CPlayer::SetCheat( int nCheat, bool bOn )
 void CPlayer::GetVisible( list< CPtr<CUnit> > *pRes ) const
 {
 	pRes->clear();
-	for ( TUnitList::const_iterator i = visible.begin(); i != visible.end(); ++i )
+	for ( typename TUnitList::const_iterator i = visible.begin(); i != visible.end(); ++i )
 		pRes->push_back( i->GetPtr() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -142,16 +142,16 @@ void CPlayer::GetVisibleObjects( list< CPtr<CObjectBase> > *pRes ) const
 	// temporaryVisibleObjects (+0x38) -- the render/UI consumers see the union of the PERSISTENT
 	// discovered set and this update's temporary-visible set.
 	pRes->clear();
-	for ( TObjectList::const_iterator i = visibleObjects.begin(); i != visibleObjects.end(); ++i )
+	for ( typename TObjectList::const_iterator i = visibleObjects.begin(); i != visibleObjects.end(); ++i )
 		pRes->push_back( i->GetPtr() );
-	for ( TObjectList::const_iterator i = temporaryVisibleObjects.begin(); i != temporaryVisibleObjects.end(); ++i )
+	for ( typename TObjectList::const_iterator i = temporaryVisibleObjects.begin(); i != temporaryVisibleObjects.end(); ++i )
 		pRes->push_back( i->GetPtr() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CPlayer::GetTrappedObjectsList( list< CPtr<CObjectBase> > *pRes ) const
 {
 	pRes->clear();
-	for ( TObjectList::const_iterator i = trappedObjects.begin(); i != trappedObjects.end(); ++i )
+	for ( typename TObjectList::const_iterator i = trappedObjects.begin(); i != trappedObjects.end(); ++i )
 	{
 		CObjectBase *p = *i;
 		if ( !IsValid(p) )
@@ -182,7 +182,7 @@ void CPlayer::GetSounds( vector<IVisObj*> *pRes )
 	for ( int k = 0; k < units.size(); ++k )
 		units[k]->AddSounds( &sounds );
 	FilterSounds( &sounds, visible );
-	for ( list<TPlayer>::iterator i = sounds.begin(); i != sounds.end(); ++i )
+	for ( typename list<TPlayer>::iterator i = sounds.begin(); i != sounds.end(); ++i )
 	{
 		const TPlayer &s = *i;
 		for ( int k = 0; k < s.objects.size(); ++k )
@@ -418,7 +418,7 @@ void CPlayer::UpdateStore()
 void CPlayer::GetUnitsThatCanFight( list< CPtr<CUnitServer> > *pRes ) const
 {
 	pRes->clear();
-	for ( TPlayerUnitSet::const_iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename TPlayerUnitSet::const_iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( (*i)->CanFight() )
 			pRes->push_back( i->GetPtr() );
@@ -429,7 +429,7 @@ bool CPlayer::HasLostFromSightAliveUnits()
 { 
 	if ( !HasAlivePeople() )
 		return false;
-	for ( TPlayerUnitSet::const_iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename TPlayerUnitSet::const_iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( (*i)->HasLostFromSightAliveUnits() )
 			return true;
@@ -925,10 +925,10 @@ void CWorld::CheckInterrupt( SInterruptInfo *info )
 	if ( IsSequence() )
 		return;
 	// detect if interrupts are mutual or not
-	for ( list<SInterruptInfo::SNotice>::iterator i = info->events.begin(); i != info->events.end(); ++i )
+	for ( typename list<SInterruptInfo::SNotice>::iterator i = info->events.begin(); i != info->events.end(); ++i )
 	{
 		SInterruptInfo::SNotice &n = *i;
-		for ( list<SInterruptInfo::SNotice>::iterator k = i; k != info->events.end(); ++k )
+		for ( typename list<SInterruptInfo::SNotice>::iterator k = i; k != info->events.end(); ++k )
 		{
 			if ( k->pWho == n.pWhom && k->pWhom == n.pWho )
 			{
@@ -947,7 +947,7 @@ void CWorld::CheckInterrupt( SInterruptInfo *info )
 	// (+0x154 slot0) while the pWhom key is GetPlayer (+0x14c slot+0x34).
 	list<SInterruptInfo::SNotice> checked;
 	list<SInterruptInfo::SNotice> own;
-	for ( list<SInterruptInfo::SNotice>::iterator i = info->events.begin(); i != info->events.end(); ++i )
+	for ( typename list<SInterruptInfo::SNotice>::iterator i = info->events.begin(); i != info->events.end(); ++i )
 	{
 		if ( pCurrent == 0 )
 		{
@@ -968,7 +968,7 @@ void CWorld::CheckInterrupt( SInterruptInfo *info )
 		CPlayer *pTest = info->events.back().pWho->GetTBSPlayer();
 		list<CUnitServer*> res;
 		CUnitServer *pLast = 0;
-		for ( list<SInterruptInfo::SNotice>::iterator i = checked.begin(); i != checked.end(); ++i )
+		for ( typename list<SInterruptInfo::SNotice>::iterator i = checked.begin(); i != checked.end(); ++i )
 		{
 			pLast = i->pWho;	// unconditional (@0x7686d0) -> ends as checked.back().pWho, the strongest
 			if ( i->pWho->GetTBSPlayer() != pTest )
@@ -980,7 +980,7 @@ void CWorld::CheckInterrupt( SInterruptInfo *info )
 			// only; the interrupt bark stays DB-driven via GetGlobalAck()->OnInterrupt below.)
 		}
 		csSystem << CC_RED << "Interrupt, units:";
-		for ( list<CUnitServer*>::iterator r = res.begin(); r != res.end(); ++r )
+		for ( typename list<CUnitServer*>::iterator r = res.begin(); r != res.end(); ++r )
 		{
 			string szName( "?" );
 			GetUnitName( *r, &szName );
@@ -1055,7 +1055,7 @@ void CWorld::CheckInterrupt( SInterruptInfo *info )
 	// ORIGINAL BUG (confirmed retail @0x768ce0): like the auto-TBS scan, this loop iterates the own
 	// list but reads the FIXED info->events.back().pWho every pass; with the dedup the net effect is
 	// "add events.back()'s spotter's TBS player once when own is non-empty".
-	for ( list<SInterruptInfo::SNotice>::iterator i = own.begin(); i != own.end(); ++i )
+	for ( typename list<SInterruptInfo::SNotice>::iterator i = own.begin(); i != own.end(); ++i )
 	{
 		CPlayer *p = info->events.back().pWho->GetTBSPlayer();
 		if ( find( toCancel.begin(), toCancel.end(), p ) == toCancel.end() )
@@ -1079,7 +1079,7 @@ void CWorld::WillWantTBS( CPlayer *pPlayer )
 		WantTurnBased( pPlayer );   // a human's wish is not delayed
 		return;
 	}
-	for ( vector<SWillWantTBS>::iterator i = willWantTBS.begin(); i != willWantTBS.end(); ++i )
+	for ( typename vector<SWillWantTBS>::iterator i = willWantTBS.begin(); i != willWantTBS.end(); ++i )
 		if ( i->pPlayer.GetPtr() == pPlayer )
 			return;                 // already pending -- do not re-arm
 	SWillWantTBS rec;
@@ -1158,14 +1158,14 @@ void CWorld::UpdateVisible( bool bForce )
 		return;
 	}
 	// retail @0x366c00: every completed visibility refresh derives the global sight multiplier and the
-	// RPG night flag from the world's time-of-day sentinel before asking any unit to update perception.
+	// RPG night flag from the world's time-of-day marker before asking any unit to update perception.
 	float fVisionMultiplier = 1.0f;
 	if ( GetTimeOfDay() == TOD_NIGHT )
 		fVisionMultiplier = 0.666f;   // retail constant 0x3f2a7efa
 	pRPGGame->SetVisionMultiplier( fVisionMultiplier );
 	pRPGGame->SetNight( GetTimeOfDay() == TOD_NIGHT );
 	SInterruptInfo info;
-	for ( list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
 		(*i)->UpdateVisible( &info );
 	vector<CPtr<CPlayer> > players;
 	GetPlayersList( &players );
@@ -1198,21 +1198,21 @@ void CWorld::OnUnitAdded( CUnitServer *pUnit )
 void CWorld::GetAllUnits( vector< CPtr<NWorld::CUnit> > *pUnits )
 {
 	pUnits->clear();
-	for ( list<CObj<CUnitServer> >::const_iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list<CObj<CUnitServer> >::const_iterator i = units.begin(); i != units.end(); ++i )
 		pUnits->push_back( i->GetPtr() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWorld::GetAllUnits( list<CPtr<CUnitServer> > *pRes )
 {
 	pRes->clear();
-	for ( list<CObj<CUnitServer> >::const_iterator k = units.begin(); k != units.end(); ++k )
+	for ( typename list<CObj<CUnitServer> >::const_iterator k = units.begin(); k != units.end(); ++k )
 		pRes->push_back( k->GetPtr() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWorld::GetUnitsNear( const CVec3 &pos, list<CPtr<CUnitServer> > *pRes, float fRadius )
 {
 	pRes->clear();
-	for ( list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		CVec3 ptDest = (*i)->GetPosition().GetCenter();
 		if ( fabs( ptDest - pos ) <  fRadius )
@@ -1223,7 +1223,7 @@ void CWorld::GetUnitsNear( const CVec3 &pos, list<CPtr<CUnitServer> > *pRes, flo
 void CWorld::GetCannons( vector<CCannon*> *pRes )
 {
 	pRes->clear();
-	for ( list< CObj<CObjectServerBase> >::const_iterator i = objects.begin(); i != objects.end(); ++i )
+	for ( typename list< CObj<CObjectServerBase> >::const_iterator i = objects.begin(); i != objects.end(); ++i )
 	{
 		CCannon *pCannon = dynamic_cast<CCannon*>( (*i).GetPtr() );
 		if ( pCannon != 0 )
@@ -1247,7 +1247,7 @@ void CWorld::RemoveMine( IMine *pMine )
 void CWorld::GetMinesNear( const CVec3 &pos, list<CPtr<IMine> > *pRes, float fRadius )
 {
 	pRes->clear();
-	for ( list< CPtr<IMine> >::iterator i = trappedObjects.begin(); i != trappedObjects.end(); )
+	for ( typename list< CPtr<IMine> >::iterator i = trappedObjects.begin(); i != trappedObjects.end(); )
 	{
 		IMine *pMine = *i;
 		if ( IsValid(pMine) )
@@ -1272,7 +1272,7 @@ void CWorld::ClickOfDeath( const CRay &ray, int nMaxFloor )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CUnit* CWorld::GetUnit( const NAI::SUnitPosition &pos )
 {
-	for ( list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( (*i)->GetPosition().pos == pos.pos && !(*i)->IsDead() && !(*i)->IsUnconscious() )
 			return (*i);
@@ -1282,7 +1282,7 @@ CUnit* CWorld::GetUnit( const NAI::SUnitPosition &pos )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CUnit* CWorld::GetUnitInTile( const NAI::SUnitPosition &pos )
 {
-	for ( list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( !(*i)->IsUnconscious() && !(*i)->IsDead() && ( (*i)->GetPosition().GetCP() == pos.GetCP() ) )
 			return (*i);
@@ -1298,7 +1298,7 @@ const CTRect<float>& CWorld::GetMapSafeZone() const
 bool CWorld::IsPersonSlotUsed( int nUnitID, 
 	const ClueToSlot &clueToSlot, int *pPersID, string *pClueName )
 {
-	for ( ClueToSlot::const_iterator i = clueToSlot.begin(); i != clueToSlot.end(); ++i )
+	for ( typename ClueToSlot::const_iterator i = clueToSlot.begin(); i != clueToSlot.end(); ++i )
 		if ( i->second.nUnitID == nUnitID )
 		{
 			CDBPtr<NDb::CDBScenarioClue> pClue = i->first->GetDBClue();
@@ -1323,13 +1323,13 @@ void CWorld::DistributeClues( const SMapInfo &mapInfo,
 	vector<SClueSlot> personSlots;
 	vector<SClueSlot> itemSlots;
 	// place person clues
-	for ( vector<SClueSlot>::const_iterator slot = mapInfo.slots.begin();
+	for ( typename vector<SClueSlot>::const_iterator slot = mapInfo.slots.begin();
 		slot != mapInfo.slots.end(); ++slot )
 		if ( slot->bPersSlot )
 			personSlots.push_back( *slot );
 	int nPersonSlots = personSlots.size();
 	//
-	for ( list< CPtr<NScenario::CScenarioClue> >::const_iterator clue = clues.begin();
+	for ( typename list< CPtr<NScenario::CScenarioClue> >::const_iterator clue = clues.begin();
 		clue != clues.end(); ++clue )
 			if ( !personSlots.empty() && (*clue)->GetDBClue()->clueType == NDb::CT_PERSON &&
 				(*clue)->GetDBClue()->nPersID > 0 )
@@ -1347,13 +1347,13 @@ void CWorld::DistributeClues( const SMapInfo &mapInfo,
 				personSlots.erase( personSlots.begin() + n );
 			}
 	// place item clues
-	for ( vector<SClueSlot>::const_iterator slot = mapInfo.slots.begin();
+	for ( typename vector<SClueSlot>::const_iterator slot = mapInfo.slots.begin();
 		slot != mapInfo.slots.end(); ++slot )
 		if ( !slot->bPersSlot )
 			itemSlots.push_back( *slot );
 	int nItemSlots = itemSlots.size();
 	//
-	for ( list< CPtr<NScenario::CScenarioClue> >::const_iterator clue = clues.begin();
+	for ( typename list< CPtr<NScenario::CScenarioClue> >::const_iterator clue = clues.begin();
 		clue != clues.end(); ++clue )
 			if ( !itemSlots.empty() && (*clue)->GetDBClue()->clueType == NDb::CT_ITEM && 
 				(*clue)->GetDBClue()->nItemID > 0 )
@@ -1370,7 +1370,7 @@ void CWorld::DistributeClues( const SMapInfo &mapInfo,
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWorld::PlaceItemSlotsToMap( const ClueToSlot &clueToSlot )
 {
-	for ( ClueToSlot::const_iterator i = clueToSlot.begin();
+	for ( typename ClueToSlot::const_iterator i = clueToSlot.begin();
 		i != clueToSlot.end(); ++i )
 	{
 		if ( !i->second.bInventorySlot )
@@ -1403,7 +1403,7 @@ void CWorld::PlaceItemSlotsToMap( const ClueToSlot &clueToSlot )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWorld::PlaceItemSlotsToInventory( const ClueToSlot &clueToSlot )
 {
-	for ( ClueToSlot::const_iterator i = clueToSlot.begin();
+	for ( typename ClueToSlot::const_iterator i = clueToSlot.begin();
 		i != clueToSlot.end(); ++i )
 	{
 		if ( i->second.bInventorySlot )
@@ -1454,7 +1454,7 @@ void CWorld::AddWaypoint( CMapWaypoint *pWaypoint )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWorld::LoadWaypoints( const list< CObj<CMapWaypoint> > &_waypoints )
 {
-	for ( list< CObj<CMapWaypoint> >::const_iterator 
+	for ( typename list< CObj<CMapWaypoint> >::const_iterator 
 		i = _waypoints.begin(); i != _waypoints.end(); ++i )
 	{
 		if ( (*i)->bExists )
@@ -1478,7 +1478,7 @@ void CWorld::CreateAIUnits( const SMapInfo &mapInfo, const ClueToSlot &personClu
 	//
 	vector<SMapUnit> unitsToCreate;
 	// build the list of units that need to be created
-	for ( list<SMapUnit>::const_iterator i = mapInfo.units.begin(); i != mapInfo.units.end(); ++i )
+	for ( typename list<SMapUnit>::const_iterator i = mapInfo.units.begin(); i != mapInfo.units.end(); ++i )
 	{
 		int nPersID;
 		string szClueName;
@@ -1507,7 +1507,7 @@ void CWorld::CreateAIUnits( const SMapInfo &mapInfo, const ClueToSlot &personClu
 		}
 	}
 	// create AI Players
-	for ( vector<SMapUnit>::const_iterator i = unitsToCreate.begin(); i != unitsToCreate.end(); ++i )
+	for ( typename vector<SMapUnit>::const_iterator i = unitsToCreate.begin(); i != unitsToCreate.end(); ++i )
 	{
 		if ( !IsValid( GetPlayerByID( i->nScenarioPlayer ) ) )
 		{
@@ -1585,7 +1585,7 @@ void CWorld::UpdateAICommander( NAI::CAICommander *pAICommander )
 	if ( !IsValid( pAICommander ) )
 		return;
 	//
-	for ( list< CObj<CUnitServer> >::iterator u = units.begin(); u != units.end(); ++u )
+	for ( typename list< CObj<CUnitServer> >::iterator u = units.begin(); u != units.end(); ++u )
 		if ( (*u)->CanFight() && (*u)->GetPlayer() == pAICommander->GetPlayer() )
 			pAICommander->OnUnitAdded( u->GetPtr() );
 }
@@ -1593,7 +1593,7 @@ void CWorld::UpdateAICommander( NAI::CAICommander *pAICommander )
 void CWorld::CreateUnitGroups( const SMapInfo &mapInfo, 
 	unordered_map< int, CPtr<CUnitServer> > *pIDToUnit )
 {
-	for ( unordered_map< int, SUnitGroup >::const_iterator 
+	for ( typename unordered_map< int, SUnitGroup >::const_iterator 
 		i = mapInfo.groups.begin(); i != mapInfo.groups.end(); ++i )
 	{
 		CPtr<CUnitGroup> pUnitGroup = GetUnitGroup( i->first );
@@ -1604,7 +1604,7 @@ void CWorld::CreateUnitGroups( const SMapInfo &mapInfo,
 			unitGroups.push_back( pUnitGroup.GetPtr() );
 		}
 		ASSERT( pUnitGroup->GetID() == i->first );
-		for ( vector<int>::const_iterator u = i->second.units.begin(); u != i->second.units.end(); ++u )
+		for ( typename vector<int>::const_iterator u = i->second.units.begin(); u != i->second.units.end(); ++u )
 			pUnitGroup->units.Add( (*pIDToUnit)[ *u ] );
 		//
 		CObj<NAI::CAIRoute> pRoute = new NAI::CAIRoute( this, i->second.route );
@@ -1615,7 +1615,7 @@ void CWorld::CreateUnitGroups( const SMapInfo &mapInfo,
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWorld::CreateObjects( const SMapInfo &mapInfo, CPostWorldCreateInfo *pPostInfo, CVec3 ptDeltaPos, bool bCreateBorder	)
 {
-	for ( list<SMapElement>::const_iterator i = mapInfo.items.begin(); i != mapInfo.items.end(); ++i )
+	for ( typename list<SMapElement>::const_iterator i = mapInfo.items.begin(); i != mapInfo.items.end(); ++i )
 	{
 		if ( bCreateBorder || !i->bBorder  )
 		{
@@ -1628,7 +1628,7 @@ void CWorld::CreateObjects( const SMapInfo &mapInfo, CPostWorldCreateInfo *pPost
 			AddObject( place, pRPGObject, *i, pPostInfo );
 		}
 	}
-	for ( list<SMapRPGElement>::const_iterator i = mapInfo.rpgitems.begin(); i != mapInfo.rpgitems.end(); ++i )
+	for ( typename list<SMapRPGElement>::const_iterator i = mapInfo.rpgitems.begin(); i != mapInfo.rpgitems.end(); ++i )
 	{
 		// retail loop 2 gate @0x7670e6: only the element's base DB item; a dead one skips silently
 		if ( !IsValid( i->pItem ) )
@@ -1679,7 +1679,7 @@ bool CWorld::PlaceTemplate( int nTemplateID, CVec3 ptPos )
 	//
 	CreateObjects( mapInfo, 0, ptPos, false );
 	//
-	for ( list< CObj<CMapWaypoint> >::iterator i = mapInfo.waypoints.begin(); i != mapInfo.waypoints.end(); ++i )
+	for ( typename list< CObj<CMapWaypoint> >::iterator i = mapInfo.waypoints.begin(); i != mapInfo.waypoints.end(); ++i )
 	{
 		(*i)->pos.ptPos = (*i)->pos.ptPos + ptPos;
 		AddWaypoint( *i );
@@ -1692,7 +1692,7 @@ bool CWorld::PlaceTemplate( int nTemplateID, CVec3 ptPos )
 	//
 	if ( IsValid( pScript ) )
 	{
-		for ( list<CDBPtr<NDb::CScript> >::const_iterator i = mapInfo.scripts.begin(); i != mapInfo.scripts.end(); ++i )
+		for ( typename list<CDBPtr<NDb::CScript> >::const_iterator i = mapInfo.scripts.begin(); i != mapInfo.scripts.end(); ++i )
 			pScript->DoString( (*i)->strCode.c_str() );
 	}
 	//
@@ -1750,7 +1750,7 @@ void CWorld::CreateRandom( int nVariantID, const vector<string> &params,
 	//
 	CreateObjects( mapInfo, pPostInfo ? *pPostInfo : 0 );
 	//
-	vector<SMapBuilding>::const_iterator ib;
+	typename vector<SMapBuilding>::const_iterator ib;
 	for ( ib = mapInfo.buildings.begin(); ib != mapInfo.buildings.end(); ++ib )
 	{
 		if ( !bBuildingStability )
@@ -1866,12 +1866,12 @@ void CWorld::RunPostInit( CPostWorldCreateInfo *pPostInfo )
 	{
 		if ( IsValid( pScript ) )
 		{
-			for ( list<CDBPtr<NDb::CScript> >::const_iterator is = pPostInfo->scripts.begin(); is != pPostInfo->scripts.end(); ++is )
+			for ( typename list<CDBPtr<NDb::CScript> >::const_iterator is = pPostInfo->scripts.begin(); is != pPostInfo->scripts.end(); ++is )
 			{
 				int nRet = pScript->DoString( (*is)->strCode.c_str() );
 			}
 		}
-		for ( list<SDoorTrap>::const_iterator it = pPostInfo->traps.begin(); it != pPostInfo->traps.end(); ++it )
+		for ( typename list<SDoorTrap>::const_iterator it = pPostInfo->traps.begin(); it != pPostInfo->traps.end(); ++it )
 		{
 			if ( IsValid( it->pDoor ) )
 				it->pDoor->SetTrap( it->pGrenade, it->nDC );
@@ -1932,7 +1932,7 @@ void CWorld::CreateDefault()
 // finished his turn") and falsely restarted a player turn: every realtime save loaded into turn-based.
 void CWorld::RestoreRuntimeCaches( NRPG::CGlobalGame *_pGlobalGame, bool bZoneReentry )
 {
-	for ( list< CObj<CBuilding> >::iterator i = buildings.begin(); i != buildings.end(); ++i )
+	for ( typename list< CObj<CBuilding> >::iterator i = buildings.begin(); i != buildings.end(); ++i )
 	{
 		if ( bZoneReentry )
 			(*i)->Update(); // retail CreateRestored: resume building simulation on zone entry
@@ -1993,7 +1993,7 @@ bool CWorld::IsLinkedZone() const
 // unit list (otherwise the corpse would duplicate -- once in the save, once in the carrier's arms).
 void CWorld::RemoveCarriedCorpses()
 {
-	for ( list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); )
+	for ( typename list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); )
 	{
 		CUnitServer *pUS = *i;
 		if ( !pUS->CanFight() && IsValid( pUS->GetCorpseCarrier() ) )
@@ -2138,7 +2138,7 @@ IPlayer* CWorld::AddPlayer( const wstring &wsName, NRPG::CGlobalPlayer *pGlobalP
 		{
 			// passage
 			CPtr<IPassageObject> pPassageObject = 0;
-			for ( list< CPtr<IPassageObject> >::iterator j = passageObjects.begin(); j != passageObjects.end(); ++j )
+			for ( typename list< CPtr<IPassageObject> >::iterator j = passageObjects.begin(); j != passageObjects.end(); ++j )
 			{
 				if ( (*j)->GetPassageObjectID() == 
 					pGlobalPlayer->deployData.unitsDeployData[ pGlobalPlayer->mercs[i].GetPtr() ].nPassageObjectID )
@@ -2233,7 +2233,7 @@ void CWorld::RemovePlayer( IPlayer *_pPlayer )
 	}
 	UnregisterPlayer( pPlayer );
 
-	for ( list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); )
+	for ( typename list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); )
 	{
 		if ( IsValid(*i) )
 			++i;
@@ -2249,7 +2249,7 @@ void CWorld::GetActiveUnits( IPlayer *_pPlayer, list<CUnit*> *pRes )
 	CPlayer::CUnitSet units;
 	pPlayer->GetUnits( &units );
 	pRes->clear();
-	for ( CPlayer::CUnitSet::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename CPlayer::CUnitSet::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( IsUnitActive( *i ) )
 			pRes->push_back( *i );
@@ -2324,7 +2324,7 @@ C3DSound* CWorld::MakeAISound( const NDb::SAISound &sound, CDumbUnitServer *_pWh
 	//VisualizeSoundRadius( pWho->GetPosition().GetCP(), fTmpRadius );
 	// EODEBUG}
 
-	for ( list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		CUnitServer *pTarget = *i;
 		if ( !pTarget->CanFight() )
@@ -2381,7 +2381,7 @@ void CWorld::MakeSound( const CVec3 &ptCenter, NDb::CSound *pSound )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWorld::PlaceAllUnits()
 {
-	for ( list<CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list<CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
 		(*i)->PlaceOnPassablePlace();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2432,7 +2432,7 @@ void CWorld::StartFirstSegments()
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// retail @0x361bb0 -- time of day is a single 6(DAY)/5(NIGHT) sentinel in createFlags (or neither = ANYTIME).
+// retail @0x361bb0 -- time of day is a single 6(DAY)/5(NIGHT) marker in createFlags (or neither = ANYTIME).
 ETimeOfDay CWorld::GetTimeOfDay()
 {
 	for ( int i = 0; i < createFlags.size(); ++i )
@@ -2444,19 +2444,19 @@ ETimeOfDay CWorld::GetTimeOfDay()
 	return TOD_ANYTIME;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// retail @0x362b90 -- rewrite the createFlags TOD sentinel (drop any existing day then night, append the new
+// retail @0x362b90 -- rewrite the createFlags TOD marker (drop any existing day then night, append the new
 // one unless ANYTIME), then re-light every live object (so the renderer re-evaluates them for the new TOD)
 // and force an UpdateVisible. The SetTimeOfDay lua binding follows this with a CUICmdSetAmbient recompute.
 void CWorld::SetTimeOfDay( ETimeOfDay tod )
 {
-	for ( vector<int>::iterator it = createFlags.begin(); it != createFlags.end(); ++it )
+	for ( typename vector<int>::iterator it = createFlags.begin(); it != createFlags.end(); ++it )
 		if ( *it == TOD_DAY ) { createFlags.erase( it ); break; }
-	for ( vector<int>::iterator it = createFlags.begin(); it != createFlags.end(); ++it )
+	for ( typename vector<int>::iterator it = createFlags.begin(); it != createFlags.end(); ++it )
 		if ( *it == TOD_NIGHT ) { createFlags.erase( it ); break; }
 	if ( tod != TOD_ANYTIME )
 		createFlags.push_back( (int)tod );
 	//
-	for ( list< CObj<CObjectServerBase> >::iterator i = objects.begin(); i != objects.end(); ++i )
+	for ( typename list< CObj<CObjectServerBase> >::iterator i = objects.begin(); i != objects.end(); ++i )
 		if ( IsValid( *i ) )
 			(*i)->UpdateLight();
 	UpdateVisible();
@@ -2506,7 +2506,7 @@ void CWorld::AddNextUIHint( bool bSilent )
 			continue;
 		// already shown? -> skip
 		bool bAlreadyShown = false;
-		for ( vector< CDBPtr<NDb::CUIHint> >::iterator i = pGlobalGame->hintsSet.begin(); i != pGlobalGame->hintsSet.end(); ++i )
+		for ( typename vector< CDBPtr<NDb::CUIHint> >::iterator i = pGlobalGame->hintsSet.begin(); i != pGlobalGame->hintsSet.end(); ++i )
 			if ( (*i).GetPtr() == pHint ) { bAlreadyShown = true; break; }
 		if ( bAlreadyShown )
 			continue;
@@ -2679,7 +2679,7 @@ void CWorld::Explode( const CVec3 &ptEpicentre, int nPower )
 	//
 	MakeSound( ptEpicentre, NDb::GetSound(63) );
 	//
-	list< CObj<CBuilding> >::const_iterator it;
+	typename list< CObj<CBuilding> >::const_iterator it;
 	for ( it = buildings.begin(); it != buildings.end(); ++it )
 		(*it)->Explode( ptEpicentre, nPower );
 	SSphere sphere;
@@ -2720,7 +2720,7 @@ void CWorld::GenerateDebris( NDb::CDebrisMaterial *pDebrisMaterial, const CVec3 
 // OnAction, CreateRandom) match the retail inlined units loop @0x361a00/@0x361d10/@0x36d0b0.
 void CWorld::CheckStability()
 {
-	list< CObj<CUnitServer> >::const_iterator iu;
+	typename list< CObj<CUnitServer> >::const_iterator iu;
 	for ( iu = units.begin(); iu != units.end(); ++iu )
 	{
 		CUnitServer *pTest = *iu;
@@ -2747,7 +2747,7 @@ void CWorld::Segment()
 		if ( !IsRealTime() )
 			willWantTBS.clear();
 		else
-			for ( vector<SWillWantTBS>::iterator i = willWantTBS.begin(); i != willWantTBS.end(); ++i )
+			for ( typename vector<SWillWantTBS>::iterator i = willWantTBS.begin(); i != willWantTBS.end(); ++i )
 				if ( --i->nTimeLeft < 1 )
 				{
 					CPtr<CPlayer> pPlayer = i->pPlayer;
@@ -2777,7 +2777,7 @@ void CWorld::Segment()
 			}
 		}
 	}
-	for ( list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); )
+	for ( typename list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); )
 	{
 		if ( IsValid(*i) )
 		{
@@ -2788,7 +2788,7 @@ void CWorld::Segment()
 			i = units.erase( i );
 	}
 	CallSegment( &miscObjects );
-	for ( list< CPtr<CObjectServerBase> >::iterator i = segmentObjects.begin(); i != segmentObjects.end(); )
+	for ( typename list< CPtr<CObjectServerBase> >::iterator i = segmentObjects.begin(); i != segmentObjects.end(); )
 	{
 		if ( !IsValid(*i) || (*i)->Segment() )
 			i = segmentObjects.erase( i );
@@ -3053,7 +3053,7 @@ void CWorld::FindCloseGroundItems( CUnit *pU, vector<SItem> *pRes )
 {
 	CVec3 tracePos = pU->GetPosition().GetCenter();
 
-	list< CObj<CDFrozenItem> >::iterator it;
+	typename list< CObj<CDFrozenItem> >::iterator it;
 	for ( it = showFrozenItems.begin(); it != showFrozenItems.end(); ++it )
 	{
 		if ( !(*it)->GetInvItem() )
@@ -3076,7 +3076,7 @@ bool CWorld::IsWinnerPlayer( IPlayer *pPlayer )
 	// side prevents victory. The dev HasEnemies helper counted allies too.
 	vector<CPtr<CPlayer> > playerList;
 	GetPlayersList( &playerList );
-	for ( vector<CPtr<CPlayer> >::const_iterator i = playerList.begin(); i != playerList.end(); ++i )
+	for ( typename vector<CPtr<CPlayer> >::const_iterator i = playerList.begin(); i != playerList.end(); ++i )
 	{
 		CPlayer *pOther = *i;
 		if ( pOther != pPlayer && pOther->HasAlivePeople() &&
@@ -3130,7 +3130,7 @@ void CWorld::AddGrenadeExplosion( const CVec3 &vStartPosition, NDb::CRPGGrenade 
 	// retail tail @0x764739..0x764898: the camera-shake event (gated on game_eq_on_grenades,
 	// amplitude = fDecalRadius) + the UNCONDITIONAL explosion point-camera command
 	// (PR_EXPLOSION; slo-mo when fWaveRadius > 2.99, probability fWaveRadius - 2; 3 s dwell;
-	// nFloor -100 = resolve-current-floor sentinel).
+	// nFloor -100 = resolve-current-floor marker).
 	if ( bEQonGrenades )
 		eventEarthQuakes.push_back( new CEarthQuakeEvent( pRPGGrenade->fDecalRadius, vStartPosition ) );
 	AddUICommand( new CUICmdPointCamera( vStartPosition, PR_EXPLOSION,
@@ -3184,7 +3184,7 @@ CUnitServer* CWorld::GetUnitServer( string szName )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CUnitServer *CWorld::GetUnitServer( NRPG::IUnitMissionInfo *pUnitMission )
 {
-	for ( list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
 		if ( (*i)->GetUnitRPG() == pUnitMission )
 			return *i;
 	//
@@ -3193,7 +3193,7 @@ CUnitServer *CWorld::GetUnitServer( NRPG::IUnitMissionInfo *pUnitMission )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CUnitServer *CWorld::GetUnitServer( NRPG::CUnit *pRPGUnit )
 {
-	for ( list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
 		if ( (*i)->GetUnitRPG()->GetRPGUnit() == pRPGUnit )
 			return *i;
 	//
@@ -3202,7 +3202,7 @@ CUnitServer *CWorld::GetUnitServer( NRPG::CUnit *pRPGUnit )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CUnitServer *CWorld::GetUnitServerByPersID( int nPersID ) const
 {
-	for ( list< CObj<CUnitServer> >::const_iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CObj<CUnitServer> >::const_iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( (*i)->GetUnitRPG()->GetRPGPersID() == nPersID )
 			return (*i).GetPtr();
@@ -3228,12 +3228,12 @@ bool CWorld::CanUsePassageZone( int nPassageZoneID, bool bForced,
 	// Retail v1.1 CanUsePassageZone 0x767bb9..0x767c19: scripted exits
 	// assign the first passage without CanPass/proximity checks; normal exits
 	// still require every conscious living unit to reach a passage.
-	for ( list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CObj<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( (*i)->CanFight() && (*i)->GetPlayer() == pPlayer )
 		{
 			bool bCanUnitPass = false;
-			for (	list< CPtr<IPassageObject> >::iterator j = passageObjects.begin(); j != passageObjects.end(); ++j )
+			for (	typename list< CPtr<IPassageObject> >::iterator j = passageObjects.begin(); j != passageObjects.end(); ++j )
 				if ( bForced || (*j)->CanPass( *i ) )
 				{
 					bCanUnitPass = true;
@@ -3273,7 +3273,7 @@ bool CWorld::UsePassageObject( CUnitServer *pUS, int nPassageZoneID, bool bForce
 	// find which template we transition to
 	vector<int> templatesIDs;
 	pZone->GetTemplatesIDs( &templatesIDs );
-	for ( vector<int>::iterator i = templatesIDs.begin();	i != templatesIDs.end(); ++i )
+	for ( typename vector<int>::iterator i = templatesIDs.begin();	i != templatesIDs.end(); ++i )
 	{
 		if ( *i != GetGlobalGame()->nCurrentTemplateID )
 		{
@@ -3285,7 +3285,7 @@ bool CWorld::UsePassageObject( CUnitServer *pUS, int nPassageZoneID, bool bForce
 			if ( !BuildMap( nVariantID, strParams, 0, &info, -1, seed ) )
 				continue;
 			//
-			for ( list<SMapElement>::const_iterator j = info.items.begin(); j != info.items.end(); ++j )
+			for ( typename list<SMapElement>::const_iterator j = info.items.begin(); j != info.items.end(); ++j )
 			{
 				if ( IsValid( (*j).pObject->pPassage ) && (*j).nPassageZoneID == nPassageZoneID )
 				{
@@ -3294,7 +3294,7 @@ bool CWorld::UsePassageObject( CUnitServer *pUS, int nPassageZoneID, bool bForce
 					deployData.bPassage = true;
 					deployData.nPassageZoneID = nPassageZoneID;
 					//
-					unordered_map< CPtr<CUnitServer>, CPtr<IPassageObject>, SPtrHash >::iterator u;
+					typename unordered_map< CPtr<CUnitServer>, CPtr<IPassageObject>, SPtrHash >::iterator u;
 					for ( u = passagesForUnits.begin(); u != passagesForUnits.end(); ++u )
 						deployData.unitsDeployData[ u->first->GetUnitRPG()->GetRPGUnit() ].nPassageObjectID =
 							u->second->GetPassageObjectID();
@@ -3318,17 +3318,17 @@ void CWorld::CheckSpot( const vector< CPtr<CPlayer> > &players )
 {
 	bool bUpdate = false;
 	//
-	for ( list< CObj<CUnitServer> >::iterator u = units.begin(); u != units.end(); ++u )
+	for ( typename list< CObj<CUnitServer> >::iterator u = units.begin(); u != units.end(); ++u )
 		if ( (*u)->GetUnitRPG()->IsHiding() )
 		{
-			for ( vector< CPtr<CPlayer> >::const_iterator i = players.begin(); i != players.end(); ++i )
+			for ( typename vector< CPtr<CPlayer> >::const_iterator i = players.begin(); i != players.end(); ++i )
 			{
 				if ( (*i) == (*u)->GetPlayer() )
 					continue;
 				//
 				vector< CPtr<CUnit> > enemies;
 				(*i)->GetUnits( &enemies );
-				for ( vector< CPtr<CUnit> >::iterator e = enemies.begin(); e != enemies.end(); ++e )
+				for ( typename vector< CPtr<CUnit> >::iterator e = enemies.begin(); e != enemies.end(); ++e )
 				{
 					CDynamicCast<CUnitServer> pEnemyUS( e->GetPtr() );
 					if ( IsValid( pEnemyUS ) && pEnemyUS->GetDiplomacyState( (*u) ) == NDb::DS_ENEMY &&
@@ -3544,7 +3544,7 @@ bool CWorld::IsTBSRealTimeModePossible() const
 			if ( !IsValid( pWatcher ) || !pWatcher->CanFight() )
 				continue;
 			const list<CPtr<CUnitServer> > &seen = pWatcher->GetTBSVisible();
-			for ( list<CPtr<CUnitServer> >::const_iterator i = seen.begin(); i != seen.end(); ++i )
+			for ( typename list<CPtr<CUnitServer> >::const_iterator i = seen.begin(); i != seen.end(); ++i )
 			{
 				CUnitServer *pUnit = *i;
 				if ( !IsValid( pUnit ) || !pUnit->CanFight() )
@@ -3566,7 +3566,7 @@ bool CWorld::IsTBSRealTimeModePossible() const
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWorld::OnAction( bool bStartAction )
 {
-	for ( list<CObj<CUnitServer> >::iterator u = units.begin(); u != units.end(); ++u )
+	for ( typename list<CObj<CUnitServer> >::iterator u = units.begin(); u != units.end(); ++u )
 	{
 		CUnitServer *pUS = *u;
 		if ( pUS->GetState() != CUnit::ST_HEALER )
@@ -3581,7 +3581,7 @@ void CWorld::GetPassageObjects( int nPassageZoneID, list< CPtr<IPassageObject> >
 {
 	pPassageObjects->clear();
 	// find the passage objects of this passage zone
-	for (list< CObj<CObjectServerBase> >::iterator i = objects.begin(); i != objects.end(); ++i)
+	for (typename list< CObj<CObjectServerBase> >::iterator i = objects.begin(); i != objects.end(); ++i)
 	{
 		CDynamicCast<IPassageObject> pPassage(*i);
 		if (pPassage)
@@ -3639,7 +3639,7 @@ void CWorld::InitPlayerCorpseCarrying( CPlayer *pPlayer )
 	//
 	vector< CPtr<CUnit> > units;
 	pPlayer->GetUnits( &units );
-	for ( vector< CPtr<CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CPtr<CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		CDynamicCast<CUnitServer> pUS(*i);
 		if (pUS)
@@ -3676,7 +3676,7 @@ CPlayer *CWorld::GetPlayerByID( int nScenarioPlayerID, int nIndex )
 	// nIndex defaults to 0 so the single-arg callers get the first match (the dev predecessor behavior).
 	vector< CPtr<CPlayer> > players;
 	GetPlayersList( &players );
-	for ( vector< CPtr<CPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
+	for ( typename vector< CPtr<CPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
 		if ( (*i)->GetScenarioPlayerID() == nScenarioPlayerID )
 		{
 			if ( nIndex == 0 )
@@ -3832,7 +3832,7 @@ static bool GetNameFromHash( const unordered_map< string, CPtr<CObjectBase> > &h
 	if ( pName == 0 || pObject == 0 )
 		return false;
 	//
-	for ( unordered_map< string, CPtr<CObjectBase> >::const_iterator i = hash.begin(); i != hash.end(); ++i )
+	for ( typename unordered_map< string, CPtr<CObjectBase> >::const_iterator i = hash.begin(); i != hash.end(); ++i )
 	{
 		if ( i->second == pObject )
 		{
@@ -3923,7 +3923,7 @@ void CWorld::RemoveUnitFromAI( CUnitServer *pUS )
 {
 	vector<CPtr<CPlayer> > players;
 	GetPlayersList( &players );
-	for ( vector<CPtr<CPlayer> >::const_iterator i = players.begin(); i != players.end(); ++i )
+	for ( typename vector<CPtr<CPlayer> >::const_iterator i = players.begin(); i != players.end(); ++i )
 	{
 		CDynamicCast<NAI::CAICommander> pCommander((*i)->GetCommander());
 		if (pCommander)

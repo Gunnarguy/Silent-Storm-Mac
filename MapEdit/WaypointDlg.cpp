@@ -4,9 +4,9 @@
 #include "stdafx.h"
 #include "mapedit.h"
 #include "WaypointDlg.h"
-#include "..\Main\aiWaypoint.h"
-#include "..\Main\aiPosition.h"
-#include "..\Misc\BasicShare.h"
+#include "../Main/aiWaypoint.h"
+#include "../Main/aiPosition.h"
+#include "../Misc/BasicShare.h"
 #include "dbDefs.h"
 #include "ItemsMgr.h"
 #include "MESerialize.h"
@@ -19,7 +19,7 @@ static char THIS_FILE[] = __FILE__;
 
 extern CBasicShare<int, NAI::CWaypointLoader> shareWaypoints;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EParam
+enum EParam : int
 {
 	P_CMDTYPE = 0,
 	P_TIME,
@@ -444,7 +444,7 @@ void CWaypointDlg::SetWaypoint( int _nWaypointID )
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nWaypointID );
 	if ( !pProps )
 		return;
-	CPropMap::const_iterator i = pProps->find( "NameID" );
+	typename CPropMap::const_iterator i = pProps->find( "NameID" );
 	if ( i == pProps->end() )
 		return;
 	//szWaypoint = string( "\\" ) + pTree->pItemsTree->GetItemPath( nWaypointID );;

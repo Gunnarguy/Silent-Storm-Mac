@@ -158,7 +158,7 @@ void CAnimItemsDlg::SelectModel( const string &szEffector, CButton *pBtn )
 	if ( !pTree )
 		return;
 	int nModelID = -1;
-	vector<pair<string, int> >::iterator it = vAnimItems.begin();
+	typename vector<pair<string, int> >::iterator it = vAnimItems.begin();
 	for ( ; it != vAnimItems.end(); ++it )
 		if ( it->first == szEffector )
 		{

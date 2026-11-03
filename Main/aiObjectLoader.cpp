@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "aiObjectLoader.h"
 #include "MemObject.h"
-#include "..\Misc\BasicShare.h"
+#include "../Misc/BasicShare.h"
 #include "aiObject.h"
 #include "GFileSkin.h"
 #include "BSPTree.h"
@@ -72,7 +72,7 @@ void CLoadGeometryInfo::Recalc()
 		}
 		else
 		{
-			for ( CStoredPieceMap::const_iterator i = pieces.begin(); i != pieces.end(); ++i )
+			for ( typename CStoredPieceMap::const_iterator i = pieces.begin(); i != pieces.end(); ++i )
 			{
 				pValue->AddPiece( i->first, i->second.verts, i->second.tris, i->second.fVolume, i->second.juncs, true, i->second.precalc );
 			}
@@ -98,10 +98,10 @@ void CLoadTwoBSPTrees::Recalc()
 		file->Add( 4, &pValue->treesClosed );
 		// release re-inits each loaded sphere's bound from ptMin/ptMax
 		for ( unsigned int s = 0; s < pValue->treesOpen.size(); ++s )
-			for ( CPrecalcPieces::iterator it = pValue->treesOpen[s].begin(); it != pValue->treesOpen[s].end(); ++it )
+			for ( typename CPrecalcPieces::iterator it = pValue->treesOpen[s].begin(); it != pValue->treesOpen[s].end(); ++it )
 				it->second->bound.BoxInit( it->second->ptMin, it->second->ptMax );
 		for ( unsigned int s = 0; s < pValue->treesClosed.size(); ++s )
-			for ( CPrecalcPieces::iterator it = pValue->treesClosed[s].begin(); it != pValue->treesClosed[s].end(); ++it )
+			for ( typename CPrecalcPieces::iterator it = pValue->treesClosed[s].begin(); it != pValue->treesClosed[s].end(); ++it )
 				it->second->bound.BoxInit( it->second->ptMin, it->second->ptMax );
 	}
 	catch(...)
@@ -166,12 +166,23 @@ void CFileSkinPointsLoad::Recalc()
 {
 	pValue = new CFileSkinPoints;
 
-	NGScene::CResourceOpener file( "AIGeometries", GetKey() );
 	CBodypartsStoredHash data;
-	file->Add( 4, &data );
-	file->Add( 6, &pValue->spheres );
+	try
+	{
+		NGScene::CResourceOpener file( "AIGeometries", GetKey() );
+		file->Add( 4, &data );
+		file->Add( 6, &pValue->spheres );
+	}
+	catch ( SFileIOError &e )
+	{
+		// macOS port: an AIGeometries archive can lack skin points for some objects; keep an empty
+		// skin (the object has no AI collision shell) instead of taking the process down.
+		fprintf( stderr, "[skinpoints-fail] %d: %s\n", GetKey(), e.szError.c_str() );
+		data.clear();
+		pValue->spheres.clear();
+	}
 	pValue->massCenter = CalcMassCenter( pValue->spheres );
-	for ( CBodypartsStoredHash::const_iterator i = data.begin(); i != data.end(); ++i )
+	for ( typename CBodypartsStoredHash::const_iterator i = data.begin(); i != data.end(); ++i )
 	{
 		const SStoredSkin &src = i->second;
 		CFileSkinPoints::SBodypart &r = pValue->parts[i->first];
@@ -189,7 +200,7 @@ void CSkinner::Recalc()
 	if ( !IsValid( pValue ) )
 	{
 		pValue = new CGeometryInfo;
-		for ( CFileSkinPoints::CBodypartsHash::const_iterator i = src.parts.begin(); i != src.parts.end(); ++i )
+		for ( typename CFileSkinPoints::CBodypartsHash::const_iterator i = src.parts.begin(); i != src.parts.end(); ++i )
 		{
 			CGeometryInfo::SPiece &dst = pValue->pieces[i->first];
 			const CFileSkinPoints::SBodypart &src = i->second;
@@ -202,7 +213,7 @@ void CSkinner::Recalc()
 	typedef CVec3 SVertex;
 	using NGScene::SVertexWeight;
 	
-	for ( CFileSkinPoints::CBodypartsHash::const_iterator i = src.parts.begin(); i != src.parts.end(); ++i )
+	for ( typename CFileSkinPoints::CBodypartsHash::const_iterator i = src.parts.begin(); i != src.parts.end(); ++i )
 	{
 		CGeometryInfo::SPiece &dst = pValue->pieces[i->first];
 		const CFileSkinPoints::SBodypart &src = i->second;

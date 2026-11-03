@@ -4,8 +4,8 @@
 #include "aiUnit.h"
 #include "aiPosition.h"
 
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataMap.h"   // NDb::DS_ALLY -- retail aura diplomacy gate
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataMap.h"   // NDb::DS_ALLY -- retail aura diplomacy gate
 
 #include "RPGGame.h"
 #include "RPGUnit.h"
@@ -14,7 +14,7 @@
 #include "RPGItemInfo.h"
 #include "RPGUnitMission.h"
 
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 
 #include "math.h"
 
@@ -23,7 +23,7 @@
 #include "rpgGlobal.h"   // CGlobalGame::pDifficulty -- the called-shots gate (bHeadshotShouldKill)
 #include "wMain.h"       // NWorld::CWorld::GetAIMap -- SelectTargetHLs @0x2b49e0
 #include "aiMap.h"       // NAI::IAIMap::GetAccessibleUnitHL / GetHull -- SelectTargetHLs @0x2b49e0
-#include "..\Misc\RandomGen.h"   // SRand -- the SelectTargetHLs HL_ANY roll @0x2b4a7b
+#include "../Misc/RandomGen.h"   // SRand -- the SelectTargetHLs HL_ANY roll @0x2b4a7b
 //
 #include "RPGToHit.h"
 #include "RPGBullet.h"
@@ -457,7 +457,7 @@ void GetAuraAdd( float *pToHit, float *pEvasion, CUnitServer *pUnit )
 	list<CPtr<CUnitServer> > units;
 	pWorld->GetUnitsNear( pUnit->GetPosition().GetCP(), &units, 3.125f );
 	bool bSamePlayer = false;
-	for ( list<CPtr<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list<CPtr<CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		CUnitServer *pOther = *i;
 		if ( !IsValid( pOther ) || pOther == pUnit )

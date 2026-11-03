@@ -7,9 +7,9 @@
 #include "RPGItemSet.h" // CRAP
 #include "wUnitAttack.h"
 #include "wObject.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\misc\RandomGen.h"
-#include "..\MiscDll\LogStream.h"
+#include "../DBFormat/DataRPG.h"
+#include "../misc/RandomGen.h"
+#include "../MiscDll/LogStream.h"
 #include "wAckBase.h"
 #include "RPGCritical.h"
 #include "time.h"
@@ -56,7 +56,7 @@ bool CUnitState::IsCriticalsFailCommand( CCmd *pCmd, EUnitCommandResult *pResult
 		return true;
 	//
 	const list<NDb::ECritical> &criticals = GetCriticalsBan().GetCommandBans( pUS, pCmd );
-	for ( list<NDb::ECritical>::const_iterator i = criticals.begin(); i != criticals.end(); ++i )
+	for ( typename list<NDb::ECritical>::const_iterator i = criticals.begin(); i != criticals.end(); ++i )
 		if ( pUS->GetUnitRPG()->HasCritical( *i ) )
 		{
 			// Retail v1.2 0x7cb133..0x7cb149: PK-type command bans
@@ -893,7 +893,7 @@ void CUnitStateUnconscious::OnStateStarted()
 	//
 	vector< CPtr<CPlayer> > players;
 	pUS->GetWorld()->GetPlayersList( &players );
-	for ( vector< CPtr<CPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
+	for ( typename vector< CPtr<CPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
 		(*i)->OnUnitDied( pUS );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////

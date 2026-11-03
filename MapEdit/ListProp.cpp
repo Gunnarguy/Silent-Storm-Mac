@@ -138,9 +138,9 @@ void CInstancesList::Copy( CListProp *_pSrc )
 		{
 			if ( pSrcProps->size() > 0 )
 			{
-				for ( CPropMap::const_iterator it = pSrcProps->begin(); it != pSrcProps->end(); ++it )
+				for ( typename CPropMap::const_iterator it = pSrcProps->begin(); it != pSrcProps->end(); ++it )
 				{
-					CPropMap::const_iterator itd = pDstProps->find( it->first );
+					typename CPropMap::const_iterator itd = pDstProps->find( it->first );
 					if ( itd == pDstProps->end() )
 						continue;
 					itd->second->SetValue( it->second->GetValue(), false ); // не записываем в базу каждое св-во в отдельности

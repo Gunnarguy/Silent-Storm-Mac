@@ -42,7 +42,7 @@ LRESULT CPropView::OnChangeProp( WPARAM wParam, LPARAM lParam )
 {
 /*
    string szName = m_OIDlg.m_wndOI.GetPropertyName( wParam );
-   CPropMap::const_iterator it = pPropMap->find( szName );
+   typename CPropMap::const_iterator it = pPropMap->find( szName );
    if ( it == pPropMap->end() )
      return TRUE;
    it->second->SetValue( m_OIDlg.m_wndOI.GetPropertyValue( wParam ) );

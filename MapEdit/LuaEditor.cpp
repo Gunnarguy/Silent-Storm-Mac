@@ -5,8 +5,8 @@
 #include "resource.h"
 #include "LuaEditor.h"
 
-#include "..\Scintilla\SString.h"
-#include "..\Scintilla\SciLexer.h"
+#include "../Scintilla/SString.h"
+#include "../Scintilla/SciLexer.h"
 //#include "MainFrame.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -315,7 +315,7 @@ void CLuaEditor::AddFunctionNames( const char *pList )
 void CLuaEditor::SetAutoComplete( const vector<string> &vszKeywords )
 {
 	string sz;
-	for ( vector<string>::const_iterator i = vszKeywords.begin(); i != vszKeywords.end(); ++i )
+	for ( typename vector<string>::const_iterator i = vszKeywords.begin(); i != vszKeywords.end(); ++i )
 		sz += *i + " ";
 	//
 	szAutoComplete = sz;

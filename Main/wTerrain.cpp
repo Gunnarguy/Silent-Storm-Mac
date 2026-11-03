@@ -6,14 +6,14 @@
 #include "wTerrain.h"
 #include "PolyUtils.h"
 #include "Transform.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
 #include "GSceneUtils.h"
 #include "GGrass.h"
 #include "GGeometry.h"
 #include "TerrainInfo.h"
 #include "MapBuild.h"
-#include "..\Misc\RandomGen.h"
+#include "../Misc/RandomGen.h"
 #include "wTSFlags.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NTerrain
@@ -136,12 +136,12 @@ int TessellatePoly( CTerrainPart *pValue, int nIndex, const vector<CVec2> &vPoly
 	while( poly.size() > 2 )	
 	{
 		bool bRemoved = false;
-		list<STessPoint>::iterator iPrev, iPrev2;
+		typename list<STessPoint>::iterator iPrev, iPrev2;
 		iPrev = poly.end();
 		iPrev--;
 		iPrev2 = iPrev;
 		iPrev2--;
-		for ( list<STessPoint>::iterator i = poly.begin(); i != poly.end(); iPrev2 = iPrev, iPrev = i, ++i )
+		for ( typename list<STessPoint>::iterator i = poly.begin(); i != poly.end(); iPrev2 = iPrev, iPrev = i, ++i )
 		{
 			const STessPoint &prev = *iPrev2;
 			const STessPoint &temp = *iPrev;
@@ -185,12 +185,12 @@ int TessellatePoly( CTerrainPart *pValue, int nIndex, const vector<CVec2> &vPoly
 		}
 		if ( bRemoved )
 		{
-			list<STessPoint>::iterator iPrev, iPrev2;
+			typename list<STessPoint>::iterator iPrev, iPrev2;
 			iPrev = poly.end();
 			iPrev--;
 			iPrev2 = iPrev;
 			iPrev2--;
-			for ( list<STessPoint>::iterator i = poly.begin(); i != poly.end(); iPrev2 = iPrev, iPrev = i, ++i )
+			for ( typename list<STessPoint>::iterator i = poly.begin(); i != poly.end(); iPrev2 = iPrev, iPrev = i, ++i )
 			{
 				STessPoint &temp = *iPrev;
 				const STessPoint &prev = *iPrev2;
@@ -219,7 +219,7 @@ int TessellatePoly( CTerrainPart *pValue, int nIndex, const vector<CVec2> &vPoly
 			DebugTrace( "%.2f %.2f\n", vPolygon[nTemp].x, vPolygon[nTemp].y );
 
 		DebugTrace( " after tess:\n" );
-		for ( list<STessPoint>::iterator i = poly.begin(); i != poly.end(); ++i )
+		for ( typename list<STessPoint>::iterator i = poly.begin(); i != poly.end(); ++i )
 			DebugTrace( "%.2f %.2f\n", i->vPoint.x, i->vPoint.y );
 	}
 	ASSERT( poly.size() <= 2 );
@@ -350,7 +350,7 @@ void CPartBuilder::Recalc()
 	}
 
 	TPolygonsList clippedPolygonsList;
-	for( TPolygonsList::const_iterator iTempPoly = polygonsList.begin(); iTempPoly != polygonsList.end(); iTempPoly++ )
+	for( typename TPolygonsList::const_iterator iTempPoly = polygonsList.begin(); iTempPoly != polygonsList.end(); iTempPoly++ )
 	{
 		TPolygonsList tempList;
 		tempList.push_back( *iTempPoly );
@@ -362,7 +362,7 @@ void CPartBuilder::Recalc()
 	}
 
 	int nIndex = 0;
-	for ( TPolygonsList::const_iterator iTempPoly = clippedPolygonsList.begin(); iTempPoly != clippedPolygonsList.end(); iTempPoly++ )
+	for ( typename TPolygonsList::const_iterator iTempPoly = clippedPolygonsList.begin(); iTempPoly != clippedPolygonsList.end(); iTempPoly++ )
 		nIndex += TessellatePoly( pValue, nIndex, *iTempPoly, sHole.nHeight, sGroup.sRegion, sInfo );
 
 	MergePoints( pValue );
@@ -390,10 +390,10 @@ public:
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CHoleWallBuilder::InsertPoint( list<CVec2> *pList, const CVec2 &vPoint )
 {
-	list<CVec2>::iterator iPoint = pList->begin();
+	typename list<CVec2>::iterator iPoint = pList->begin();
 	for ( int nTemp = 0; nTemp < pList->size() - 1; nTemp++ )
 	{
-		list<CVec2>::iterator iNextPoint = iPoint;
+		typename list<CVec2>::iterator iNextPoint = iPoint;
 		iNextPoint++;
 
 		const CVec2 &vInsLineBeg = *iPoint;
@@ -401,7 +401,7 @@ void CHoleWallBuilder::InsertPoint( list<CVec2> *pList, const CVec2 &vPoint )
 		
 		if ( IsPointInRect( vPoint, vInsLineBeg, vInsLineEnd ) )
 		{
-			list<CVec2>::iterator iNext = iPoint;
+			typename list<CVec2>::iterator iNext = iPoint;
 			iNext++;
 			pList->insert( iNext, vPoint );
 			break;
@@ -423,7 +423,7 @@ void CHoleWallBuilder::Recalc()
 
 	int nIndex = 0;
 	/*
-	for ( TPolygonsList::iterator iPolygon = sHole.polygonsList.begin(); iPolygon != sHole.polygonsList.end(); iPolygon++ )
+	for ( typename TPolygonsList::iterator iPolygon = sHole.polygonsList.begin(); iPolygon != sHole.polygonsList.end(); iPolygon++ )
 	{
 		int nIndex = 0;
 		const vector<CVec2> &polyPoints = *iPolygon;
@@ -461,7 +461,7 @@ void CHoleWallBuilder::Recalc()
 					InsertPoint( &listPoints, vTemp );
 			}
 
-			for ( list<CVec2>::iterator iPoint = listPoints.begin(); iPoint != listPoints.end(); iPoint++ )
+			for ( typename list<CVec2>::iterator iPoint = listPoints.begin(); iPoint != listPoints.end(); iPoint++ )
 			{
 				pValue->verts.push_back( CVec3( iPoint->x, iPoint->y, GetHeight( iPoint->x, iPoint->y, sInfo ) + sHole.nHeightMin ) );
 				pValue->verts.push_back( CVec3( iPoint->x, iPoint->y, GetHeight( iPoint->x, iPoint->y, sInfo ) + sHole.nHeightMax ) );
@@ -673,7 +673,7 @@ void CBuilder::BuildHolesList( const STerrainInfo &sInfo, vector<SGroupInfo> *pG
 		sourcePolygonsList.push_back( vRegion );
 		zeroLevelPolygonsList.push_back( vRegion );
 
-		for ( list<SMapHole>::iterator iTempGroupHole = holesList.begin(); iTempGroupHole != holesList.end(); iTempGroupHole++ )
+		for ( typename list<SMapHole>::iterator iTempGroupHole = holesList.begin(); iTempGroupHole != holesList.end(); iTempGroupHole++ )
 		{
 			TPolygonsList intPolygonsList, subPolygonsList;
 			ClipPolygon( iTempGroupHole->polygonsList, sourcePolygonsList, &intPolygonsList, 0 );
@@ -701,7 +701,7 @@ void CBuilder::BuildPartsList( const vector<SGroupInfo> &groupInfoSet )
 		if ( !sGroupInfo.holesList.empty() )
 		{
 			//sGroup.sGroup = sGroupInfo.sGroup;
-			for ( list<SMapHole>::const_iterator iTempHole = sGroupInfo.holesList.begin(); iTempHole != sGroupInfo.holesList.end(); iTempHole++ )
+			for ( typename list<SMapHole>::const_iterator iTempHole = sGroupInfo.holesList.begin(); iTempHole != sGroupInfo.holesList.end(); iTempHole++ )
 			{
 				if ( !iTempHole->bVisible )
 					continue;
@@ -727,7 +727,7 @@ void CBuilder::BuildPartsList( const vector<SGroupInfo> &groupInfoSet )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CBuilder::BuildHoleWallsList( const STerrainInfo &sInfo )
 {
-	for ( list<SMapWall>::iterator iTempWall = wallsList.begin(); iTempWall != wallsList.end(); iTempWall++ )
+	for ( typename list<SMapWall>::iterator iTempWall = wallsList.begin(); iTempWall != wallsList.end(); iTempWall++ )
 	{
 		SPart &sPart = *value.wallsList.insert( value.wallsList.end(), SPart());
 		sPart.nFloor = 0;
@@ -843,13 +843,13 @@ public:
 		if ( !bVisible )
 			return;
 		int nMask = TS_PASS_BLOCKER|TS_TERRAINS|TS_VISION|TS_FRAGMENTED|TS_COVER|TS_WEAPON_BLOCKER|TS_ITEM_BLOCKER;
-		for ( vector<SGroupUpdate>::const_iterator iTemp =	groups.begin(); iTemp != groups.end(); iTemp++ )
+		for ( typename vector<SGroupUpdate>::const_iterator iTemp =	groups.begin(); iTemp != groups.end(); iTemp++ )
 		{
 			const NTerrain::SPartsGroup &sGroup = iTemp->group;
-			for ( list<NTerrain::SPart>::const_iterator iTempPart = sGroup.partsList.begin(); iTempPart != sGroup.partsList.end(); iTempPart++ )
+			for ( typename list<NTerrain::SPart>::const_iterator iTempPart = sGroup.partsList.begin(); iTempPart != sGroup.partsList.end(); iTempPart++ )
 				pVisitor->AddTerrainPart( iTempPart->pPart, NRPG::GetTerrainArmor(), iTempPart->nFloor, nMask );
 		}
-		for ( vector<STexturedPart>::const_iterator iTempPart = parts.begin(); iTempPart != parts.end(); iTempPart++ )
+		for ( typename vector<STexturedPart>::const_iterator iTempPart = parts.begin(); iTempPart != parts.end(); iTempPart++ )
 			pVisitor->AddTerrainPart( iTempPart->part.pPart, NRPG::GetTerrainArmor(), iTempPart->part.nFloor, nMask );
 	}
 
@@ -861,7 +861,7 @@ public:
 		{
 			const NTerrain::SPartsGroup &sGroup = groups[k].group;
 			list<CObj<CPtrFuncBase<CTerrainPart> > > partsList;
-			for ( list<NTerrain::SPart>::const_iterator iTempPart = sGroup.partsList.begin(); iTempPart != sGroup.partsList.end(); iTempPart++ )
+			for ( typename list<NTerrain::SPart>::const_iterator iTempPart = sGroup.partsList.begin(); iTempPart != sGroup.partsList.end(); iTempPart++ )
 				partsList.push_back( iTempPart->pPart );
 
 			pVisitor->AddTerrainParts( sGroup.sGroup.sSeed, sGroup.sGroup.sRegion, partsList, pInfo, pInfo->GetRegionTexture( sGroup.sGroup.sRegion ), k | (nRegionID<<16) );
@@ -886,7 +886,7 @@ public:
 			if ( groups[i].pUpdate.Refresh() )
 			{
 				bNeedUpdate = true;
-				for ( list<NTerrain::SPart>::iterator it = groups[i].group.partsList.begin(); it != groups[i].group.partsList.end(); ++it )
+				for ( typename list<NTerrain::SPart>::iterator it = groups[i].group.partsList.begin(); it != groups[i].group.partsList.end(); ++it )
 					it->pPart->Updated();
 			}
 		}
@@ -910,21 +910,21 @@ CTerrain::CTerrain( CSyncSrc<IVisObj> *pShow, CTerrainInfoHolder *pTerrainInfo, 
 	const NTerrain::STerrainGeometry &sGeometry = pTerrainBuilder->GetValue();
 
 	int nRegionID = 0;
-	for ( list<NTerrain::SPartsGroup>::const_iterator iTemp = sGeometry.groupsList.begin(); iTemp != sGeometry.groupsList.end(); iTemp++ )
+	for ( typename list<NTerrain::SPartsGroup>::const_iterator iTemp = sGeometry.groupsList.begin(); iTemp != sGeometry.groupsList.end(); iTemp++ )
 	{
 		vector<NTerrain::SPartsGroup> groups( 1, *iTemp );
 		CTerrainRegion *pr = new CTerrainRegion( pShow, pTerrainInfo, ++nRegionID );
 		pr->AddGroups( groups );
 		regions.push_back( pr );
 	}
-	for ( list<NTerrain::SPart>::const_iterator iTempPart = sGeometry.wallsList.begin(); iTempPart != sGeometry.wallsList.end(); iTempPart++ )
+	for ( typename list<NTerrain::SPart>::const_iterator iTempPart = sGeometry.wallsList.begin(); iTempPart != sGeometry.wallsList.end(); iTempPart++ )
 	{
 		vector<STexturedPart> parts( 1, STexturedPart( *iTempPart, NDb::GetTexture( 2 ) ) );
 		CTerrainRegion *pr = new CTerrainRegion( pShow, pTerrainInfo, ++nRegionID );
 		pr->AddParts( parts );
 		regions.push_back( pr );
 	}
-	for ( list<NTerrain::SPart>::const_iterator iTempPart = sGeometry.terrainWallsList.begin(); iTempPart != sGeometry.terrainWallsList.end(); iTempPart++ )
+	for ( typename list<NTerrain::SPart>::const_iterator iTempPart = sGeometry.terrainWallsList.begin(); iTempPart != sGeometry.terrainWallsList.end(); iTempPart++ )
 	{
 		vector<STexturedPart> parts( 1, STexturedPart( *iTempPart, NDb::GetTexture( 3693 ) ) );
 		CTerrainRegion *pr= new CTerrainRegion( pShow, pTerrainInfo, ++nRegionID );

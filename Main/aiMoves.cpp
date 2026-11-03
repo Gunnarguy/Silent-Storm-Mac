@@ -112,7 +112,7 @@ ETransitionType GetTransitionType( const IPathNetwork *_pNet, const SPathPlace &
 {
 	// Release (GetTransitionType @0x77df0) early-outs when either endpoint is a "final" place
 	// (SPathPlace::nFinal, bit 0x200) BEFORE any layer access. A final place carries no grid cell --
-	// its nX/nY/nLayer are the -1 sentinel from the default ctor -- so indexing layers[GetLayer()]
+	// its nX/nY/nLayer are the -1 marker from the default ctor -- so indexing layers[GetLayer()]
 	// (GetLayer()==0xff) reads past the vector and dereferences a garbage CNodesLayer::pGroup => crash
 	// (observed in combat pathfinding: pSrcL->pGroup == 0x390036). Two final endpoints at the same
 	// cell/pose are TT_SAME, or TT_TURN when only the facing differs; otherwise there is no transition.
@@ -169,8 +169,8 @@ ETransitionType GetTransitionType( const IPathNetwork *_pNet, const SPathPlace &
 		pLayer = layers[s.GetLayer()];
 		SetOnBaseLayer( pNet, &d );
 		pDstLayer = layers[d.GetLayer()];
-		CNodesLayer::CTransitionsHash::const_iterator k = pLayer->transitions.find( s );
-		CNodesLayer::CTransitionsHash::const_iterator kDst = pDstLayer->transitions.find( d );
+		typename CNodesLayer::CTransitionsHash::const_iterator k = pLayer->transitions.find( s );
+		typename CNodesLayer::CTransitionsHash::const_iterator kDst = pDstLayer->transitions.find( d );
 		if ( k != pLayer->transitions.end() )
 		{
 			//ASSERT( kDst != pDstLayer->transitions.end() );
@@ -178,7 +178,7 @@ ETransitionType GetTransitionType( const IPathNetwork *_pNet, const SPathPlace &
 			if ( kDst != pDstLayer->transitions.end() )
 			{
 				const CNodesLayer::STransitionSet &dstSet = kDst->second;
-				for ( list<CNodesLayer::SLink>::const_iterator l = trSet.links.begin(); l != trSet.links.end(); ++l )
+				for ( typename list<CNodesLayer::SLink>::const_iterator l = trSet.links.begin(); l != trSet.links.end(); ++l )
 				{
 					if ( l->dst == d || IsSame( pNet, d, l->dst ) )//l->dst == d )
 						return TT_INTERGRID;
@@ -186,7 +186,7 @@ ETransitionType GetTransitionType( const IPathNetwork *_pNet, const SPathPlace &
 			}
 			else
 			{
-				for ( list<CNodesLayer::SLink>::const_iterator l = trSet.links.begin(); l != trSet.links.end(); ++l )
+				for ( typename list<CNodesLayer::SLink>::const_iterator l = trSet.links.begin(); l != trSet.links.end(); ++l )
 				{
 					if ( l->dst == d )
 						return TT_INTERGRID;
@@ -585,7 +585,7 @@ void GetNonStandartMoves(
 					}
 				}
 				SPathPlace search( src.GetX(), src.GetY(), src.GetLayer() );
-				CNodesLayer::CLadderHash::iterator where = pLayer->ladderEntrances.find( search );
+				typename CNodesLayer::CLadderHash::iterator where = pLayer->ladderEntrances.find( search );
 				if ( where != pLayer->ladderEntrances.end() ) // there is a ladder
 				{
 					if ( where->second.bUpper )
@@ -621,7 +621,7 @@ void GetNonStandartMoves(
 		if ( src.GetPose() == CM_STAND && !bMoveOnly )
 		{
 				SPathPlace search( src.GetX(), src.GetY(), src.GetLayer() );
-				CNodesLayer::CLadderHash::iterator where = pLayer->ladderEntrances.find( search );
+				typename CNodesLayer::CLadderHash::iterator where = pLayer->ladderEntrances.find( search );
 				if ( where != pLayer->ladderEntrances.end() ) // there is a ladder
 				{
 					if ( !where->second.bUpper )
@@ -815,13 +815,13 @@ void GetNonStandartMoves(
 			if ( ( t.nFlags & TF_HAS_INTERGRID ) == 0 )
 			{
 #ifdef _DEBUG
-			CNodesLayer::CTransitionsHash::const_iterator mustBeEnd = pLayer->transitions.find( search );
+			typename CNodesLayer::CTransitionsHash::const_iterator mustBeEnd = pLayer->transitions.find( search );
 			ASSERT( mustBeEnd == pLayer->transitions.end() );
 #endif
 				*pMovesCount = pResPos;
 				return;
 			}
-			CNodesLayer::CTransitionsHash::const_iterator k = pLayer->transitions.find( search );
+			typename CNodesLayer::CTransitionsHash::const_iterator k = pLayer->transitions.find( search );
 			if ( k == pLayer->transitions.end() )
 			{
 				ASSERT(0);
@@ -829,7 +829,7 @@ void GetNonStandartMoves(
 			else
 			{
 				const CNodesLayer::STransitionSet &trSet = k->second;
-				for ( list<CNodesLayer::SLink>::const_iterator l = trSet.links.begin(); l != trSet.links.end(); ++l )
+				for ( typename list<CNodesLayer::SLink>::const_iterator l = trSet.links.begin(); l != trSet.links.end(); ++l )
 				{
 					const SPathPlace &dst = l->dst;
 					CNodesLayer *pLayer1 = layers[ dst.GetLayer() ];

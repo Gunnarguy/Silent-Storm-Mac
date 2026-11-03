@@ -102,7 +102,7 @@ void CAINormalReaction::Update()
 	// Assassin): a merely SUSPECTED enemy (pPossibleEnemy -- lost from sight / heard / shot from
 	// concealment) is worth hunting when there is no live enemy at all, or when the suspect is closer
 	// than a THIRD of the live enemy's distance (@0x47f3xx: dist(me,enemy) * 0.33333 <= dist(me,suspect)
-	// -> prefer the enemy). A unit whose own place is the invalid sentinel (top two place bits set,
+	// -> prefer the enemy). A unit whose own place is the invalid marker (top two place bits set,
 	// the same 0xC0000000 test as aiDefenceReaction's IsValidPlace) never hunts.
 	IAIUnit *pPossible = ( us != 0 ) ? us->pPossibleEnemy.GetPtr() : 0;
 	bool bCheckPossible = IsValid( pPossible );

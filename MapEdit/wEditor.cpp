@@ -1,31 +1,31 @@
 #include "StdAfx.h"
 #include "wEditor.h"
-#include "..\Main\aiMap.h"
-#include "..\Main\BuildingGrid.h"
-#include "..\Main\BuildingInfo.h"
-#include "..\Misc\BasicShare.h"
-#include "..\Main\Transform.h"
-#include "..\Main\MemObject.h"
+#include "../Main/aiMap.h"
+#include "../Main/BuildingGrid.h"
+#include "../Main/BuildingInfo.h"
+#include "../Misc/BasicShare.h"
+#include "../Main/Transform.h"
+#include "../Main/MemObject.h"
 #include "IWysiwyg.h"
 #include "WysiwygSpotSel.h"
 #include "WysiwygSubTemplateSel.h"
-#include "..\Main\MakeBuilding.h"
-#include "..\Main\Grid.h"
-#include "..\Main\wBuilding.h"
-#include "..\Main\wTerrain.h"
-#include "..\DBFormat\DataGeometry.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataObject.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataTerrain.h"
-#include "..\Main\MELayers.h"
+#include "../Main/MakeBuilding.h"
+#include "../Main/Grid.h"
+#include "../Main/wBuilding.h"
+#include "../Main/wTerrain.h"
+#include "../DBFormat/DataGeometry.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataObject.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataTerrain.h"
+#include "../Main/MELayers.h"
 #include "MEParams.h"
 #include "MEUserSettings.h"
-#include "..\Main\aiWaypoint.h"
-#include "..\Main\MapBuild.h"
-#include "..\Main\MapBuildTerrain.h"
-#include "..\Main\aiGrid.h"
+#include "../Main/aiWaypoint.h"
+#include "../Main/MapBuild.h"
+#include "../Main/MapBuildTerrain.h"
+#include "../Main/aiGrid.h"
 
 const float WALL_HEIGHT = 2.5f;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -609,13 +609,13 @@ void CEditorWorld::AddFragments( const vector<NBuilding::SBuildFragment> &frags 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class T> void UpdateObjects( const T &objs )
 {
-	for ( T::const_iterator i = objs.begin(); i != objs.end(); ++i )
+	for ( typename T::const_iterator i = objs.begin(); i != objs.end(); ++i )
 		(*i)->bindGlobal.Update();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class T> void UpdateBuildings( const T &objs )
 {
-	for ( T::const_iterator i = objs.begin(); i != objs.end(); ++i )
+	for ( typename T::const_iterator i = objs.begin(); i != objs.end(); ++i )
 		(*i)->Update();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -630,7 +630,7 @@ void CEditorWorld::UpdateAll()
 {
 	vector<int> layers;
 	GetUserSettings().GetVisibleLayers( &layers );
-	for ( list<CObj<CBuilding> >::const_iterator i = buildings.begin(); i != buildings.end(); ++i )
+	for ( typename list<CObj<CBuilding> >::const_iterator i = buildings.begin(); i != buildings.end(); ++i )
 		(*i)->GetInfo().pGrid->SetVisibleLayers( layers );
 	UpdateBuildings( buildings );
 	NWorld::UpdateObjects( spots );
@@ -643,7 +643,7 @@ void CEditorWorld::UpdateAll()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CEditorWorld::UpdateAllBuildingParts()
 {
-	for ( list<CObj<CBuilding> >::const_iterator i = buildings.begin(); i != buildings.end(); ++i )
+	for ( typename list<CObj<CBuilding> >::const_iterator i = buildings.begin(); i != buildings.end(); ++i )
 		(*i)->UpdateAllParts();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -746,7 +746,7 @@ void CEditorWorld::UpdateTerrainSpots( const vector<NBuilding::SProjectedSpot> &
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CEditorWorld::UpdateSubTemplates()
 {
-	for ( list<CObj<IEditorSubTemplate> >::iterator i = subtemplates.begin(); i != subtemplates.end(); )
+	for ( typename list<CObj<IEditorSubTemplate> >::iterator i = subtemplates.begin(); i != subtemplates.end(); )
 	{
 		if ( !IsValid( (*i)->GetDBRect() ) )
 		{
@@ -761,7 +761,7 @@ void CEditorWorld::UpdateSubTemplates()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CEditorWorld::UpdateSubTemplate( int nUserID )
 {
-	for ( list<CObj<IEditorSubTemplate> >::iterator i = subtemplates.begin(); i != subtemplates.end(); ++i )
+	for ( typename list<CObj<IEditorSubTemplate> >::iterator i = subtemplates.begin(); i != subtemplates.end(); ++i )
 	{
 		if ( (*i)->GetUserID() == nUserID )
 		{
@@ -882,7 +882,7 @@ void CEditorWorld::AddWaypoints()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CEditorWorld::UpdateObjects()
 {
-	for ( list<CObj<IEditorObject> >::iterator i = iobjects.begin(); i != iobjects.end(); )
+	for ( typename list<CObj<IEditorObject> >::iterator i = iobjects.begin(); i != iobjects.end(); )
 	{
 		if ( !IsValid( (*i)->GetDBElement() ) )
 		{
@@ -951,14 +951,14 @@ void CEditorWorld::UpdateCutFloor()
 	NWorld::UpdateObjects( frozen );
 	UpdateSubTemplates();
 	const int nCutFloor = pBuildingGrid->GetCutFloor();
-	for ( list<CObj<IEditorObject> >::iterator i = iobjects.begin(); i != iobjects.end(); ++i )
+	for ( typename list<CObj<IEditorObject> >::iterator i = iobjects.begin(); i != iobjects.end(); ++i )
 		(*i)->UpdateCutFloor( nCutFloor );
 	pAIMap->Sync();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CEditorWorld::UpdateUnit( int nDBUnitID )
 {
-	for ( list<CObj<IEditorUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list<CObj<IEditorUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		NDb::CUnit *pU = (*i)->GetDBUnit();
 		if ( IsValid( pU ) && pU->GetRecordID() == nDBUnitID )
@@ -998,7 +998,7 @@ static inline bool IsExplosion( NDb::CFinalElement *p )
 void CEditorWorld::UpdateExplosions()
 {
 	pBuildingGrid->Reset();
-	for ( list<CObj<IEditorObject> >::iterator i = iobjects.begin(); i != iobjects.end(); ++i )
+	for ( typename list<CObj<IEditorObject> >::iterator i = iobjects.begin(); i != iobjects.end(); ++i )
 	{
 		NDb::CFinalElement *pF = (*i)->GetDBElement();
 		if ( !IsExplosion( pF ) )
@@ -1014,7 +1014,7 @@ void CEditorWorld::UpdateExplosions()
 void CEditorWorld::UpdateObject( int nDBObjectID )
 {
 	int nCutFloor = pBuildingGrid->GetCutFloor();
-	for ( list<CObj<IEditorObject> >::iterator i = iobjects.begin(); i != iobjects.end(); )
+	for ( typename list<CObj<IEditorObject> >::iterator i = iobjects.begin(); i != iobjects.end(); )
 	{
 		NDb::CFinalElement *pF = (*i)->GetDBElement();
 		if ( !IsValid( pF ) )
@@ -1051,7 +1051,7 @@ void CEditorWorld::UpdateObject( int nDBObjectID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CEditorWorld::OpenObject( int nDBObjectID )
 {
-	for ( list<CObj<IEditorObject> >::iterator i = iobjects.begin(); i != iobjects.end(); ++i )
+	for ( typename list<CObj<IEditorObject> >::iterator i = iobjects.begin(); i != iobjects.end(); ++i )
 	{
 		NDb::CFinalElement *pF = (*i)->GetDBElement();
 		if ( IsValid( pF ) && pF->GetRecordID() == nDBObjectID )
@@ -1089,7 +1089,7 @@ void CEditorWorld::ShowInfo( bool bShow )
 		return;
 	bShowInfo = bShow;
 	//
-	for ( list<CObj<IEditorSubTemplate> >::iterator i = subtemplates.begin(); i != subtemplates.end(); ++i )
+	for ( typename list<CObj<IEditorSubTemplate> >::iterator i = subtemplates.begin(); i != subtemplates.end(); ++i )
 		if ( IsValid( *i ) )
 			(*i)->ShowInfo( bShow );
 	//

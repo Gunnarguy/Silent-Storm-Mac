@@ -12,11 +12,11 @@
 #include "rpgUnitMission.h"
 #include "rpgCritical.h"
 #include "rpgGame.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataFormat.h"		// NDb::CTRndModel::CreateModel (UnitHoldItem)
-#include "..\DBFormat\DataMap.h"			// NDb::EDiplomacyState / DS_ENEMY (KillEmAll diplomacy gate)
-#include "..\Misc\RandomGen.h"			// SRand (UnitHoldItem)
-#include "..\MiscDll\LogStream.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataFormat.h"		// NDb::CTRndModel::CreateModel (UnitHoldItem)
+#include "../DBFormat/DataMap.h"			// NDb::EDiplomacyState / DS_ENEMY (KillEmAll diplomacy gate)
+#include "../Misc/RandomGen.h"			// SRand (UnitHoldItem)
+#include "../MiscDll/LogStream.h"
 #include "wAckBase.h"
 #include "wUnitGroup.h"
 #include "aiRoute.h"
@@ -337,7 +337,7 @@ BEGIN_SCRIPT_COMMAND( UnitGetVisible, "u" )
 	CDynamicCast<NWorld::CUnitServer> pUS(luaParams[0].p);
 	if (pUS)
 	{
-		for ( list< CPtr<NWorld::CUnitServer> >::const_iterator 
+		for ( typename list< CPtr<NWorld::CUnitServer> >::const_iterator 
 			i = pUS->GetTBSVisible().begin(); i != pUS->GetTBSVisible().end(); ++i )
 				pGroup->units.Add( i->GetPtr() );
 	}
@@ -923,7 +923,7 @@ BEGIN_SCRIPT_COMMAND( KillEmAll, "" )
 		return 0;
 	vector< CPtr<NWorld::CUnit> > units;
 	pScript->pWorld->GetAllUnits( &units );
-	for ( vector< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		CDynamicCast<NWorld::CUnitServer> pUS( *i );
 		if ( IsValid( pUS ) && pUS->CanFight() && IsValid( pUS->GetPlayer() ) &&

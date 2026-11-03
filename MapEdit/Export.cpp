@@ -5,14 +5,14 @@
 #include "Export.h"
 #include "ItemsMgr.h"
 #include "dbDefs.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataSound.h"
-#include "..\Main\GGeometry.h"
-#include "..\Main\GObjectInfo.h"
-#include "..\Main\GTexture.h"
-#include "..\Main\GfxBuffers.h"
-#include "..\Main\GParticleFormat.h"
-#include "..\Main\mmpformat.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataSound.h"
+#include "../Main/GGeometry.h"
+#include "../Main/GObjectInfo.h"
+#include "../Main/GTexture.h"
+#include "../Main/GfxBuffers.h"
+#include "../Main/GParticleFormat.h"
+#include "../Main/mmpformat.h"
 
 #include <process.h>
 
@@ -36,7 +36,7 @@ string GetExportDstDir()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 string MakeDoubleSlash( string str )
 {
-  for ( string::iterator it = str.begin(); it != str.end(); ++it )
+  for ( typename string::iterator it = str.begin(); it != str.end(); ++it )
     if ( *it == '\\' )
     {
       int l = 1;
@@ -55,7 +55,7 @@ string MakeDoubleSlash( string str )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 string MakeOneSlash( string str )
 {
-  for ( string::iterator it = str.begin(); it != str.end(); ++it )
+  for ( typename string::iterator it = str.begin(); it != str.end(); ++it )
     if ( *it == '\\' )
     {
       if ( ++it == str.end() )
@@ -113,13 +113,13 @@ void SortBySrcName( CItemsMgr *pItems, vector<int> *pnItemIDs )
 		const CPropMap* pProps = pItems->GetPropList( (*pnItemIDs)[i] );
 		if ( !pProps )
 			continue;
-		CPropMap::const_iterator it = pProps->find( "SrcName" );
+		typename CPropMap::const_iterator it = pProps->find( "SrcName" );
 		if ( pProps->end() == it )
 			return;
 		srcnamemap[(string)it->second->GetValue()].push_back( (*pnItemIDs)[i] );
 	}
 	pnItemIDs->clear();
-	for ( unordered_map<string, vector<int> >::const_iterator it = srcnamemap.begin(); it != srcnamemap.end(); ++it )
+	for ( typename unordered_map<string, vector<int> >::const_iterator it = srcnamemap.begin(); it != srcnamemap.end(); ++it )
 		pnItemIDs->insert( pnItemIDs->end(), it->second.begin(), it->second.end() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -192,7 +192,7 @@ static bool MkGeomExportCmd( int nID, CItemsMgr *pItems, char *pszCmdBuf, int nS
     return false;
 	const char *pName = pItems->GetItemName( nID );
 	string szItemName = pName ? pName : "";
-  CPropMap::const_iterator itSN = pProps->find( "SrcName" );
+  typename CPropMap::const_iterator itSN = pProps->find( "SrcName" );
   if ( itSN == pProps->end() )
     return false;
 
@@ -215,7 +215,7 @@ static bool MkGeomExportCmd( int nID, CItemsMgr *pItems, char *pszCmdBuf, int nS
 		nOffset += _snprintf( pszCmdBuf + nOffset, nSize, "sysFile -del \"%s\\%d\";\n", szGeomDir.c_str(), (i << 16) + nID );
 	}
   // Model
-  CPropMap::const_iterator itRJ = pProps->find( "RootJoint" );
+  typename CPropMap::const_iterator itRJ = pProps->find( "RootJoint" );
   if ( itRJ == pProps->end() )
     return false;
   string szRootJoint = itRJ->second->GetValue();
@@ -244,7 +244,7 @@ static bool MkAIGeomExportCmd( int nID, CItemsMgr *pItems, char *pszCmdBuf, int 
     return false;
 	const char *pName = pItems->GetItemName( nID );
 	string szItemName = pName ? pName : "";
-  CPropMap::const_iterator itSN = pProps->find( "SrcName" );
+  typename CPropMap::const_iterator itSN = pProps->find( "SrcName" );
   if ( itSN == pProps->end() )
     return false;
   
@@ -259,7 +259,7 @@ static bool MkAIGeomExportCmd( int nID, CItemsMgr *pItems, char *pszCmdBuf, int 
     return false;
   
   // AI Model
-  CPropMap::const_iterator itRJ = pProps->find( "RootJoint" );
+  typename CPropMap::const_iterator itRJ = pProps->find( "RootJoint" );
   if ( itRJ == pProps->end() )
     return false;
   string szRootJoint = itRJ->second->GetValue();  
@@ -352,8 +352,8 @@ static bool MkSkeletonExportCmd( int nID, CItemsMgr *pItems, char *pszCmdBuf, in
   const CPropMap *pProps = pItems->GetPropList( nID );
   if ( !pProps )
     return false;
-  CPropMap::const_iterator itSN = pProps->find( "SrcName" );
-	CPropMap::const_iterator itMSR = pProps->find( "MSRFormat" );
+  typename CPropMap::const_iterator itSN = pProps->find( "SrcName" );
+	typename CPropMap::const_iterator itMSR = pProps->find( "MSRFormat" );
   if ( itSN == pProps->end() || itMSR == pProps->end() )
     return false;
   
@@ -367,7 +367,7 @@ static bool MkSkeletonExportCmd( int nID, CItemsMgr *pItems, char *pszCmdBuf, in
   if ( !CheckSrcDst( szSrc, szDst, bForceExport ) )
     return false;
   
-  CPropMap::const_iterator itRJ = pProps->find( "RootJoint" );
+  typename CPropMap::const_iterator itRJ = pProps->find( "RootJoint" );
   if ( itRJ == pProps->end() )
     return false;
   string szRootJoint = itRJ->second->GetValue();
@@ -386,15 +386,15 @@ static bool MkAnimationExportCmd( int nID, CItemsMgr *pItems, char *pszCmdBuf, i
   const CPropMap *pProps = pItems->GetPropList( nID );
   if ( !pProps )
     return false;
-  CPropMap::const_iterator itSN  = pProps->find( "SrcName" );
-	CPropMap::const_iterator itPers  = pProps->find( "PersName" );
-  CPropMap::const_iterator itSN2  = pProps->find( "SrcName2" );
-	CPropMap::const_iterator itPers2  = pProps->find( "PersName2" );
-	CPropMap::const_iterator itFPS = pProps->find( "FPS" );
-	CPropMap::const_iterator itStart = pProps->find( "StartFrame" );
-	CPropMap::const_iterator itEnd   = pProps->find( "EndFrame" );
-	CPropMap::const_iterator itAllFr = pProps->find( "DefaultFrames" );
-	CPropMap::const_iterator e = pProps->end();
+  typename CPropMap::const_iterator itSN  = pProps->find( "SrcName" );
+	typename CPropMap::const_iterator itPers  = pProps->find( "PersName" );
+  typename CPropMap::const_iterator itSN2  = pProps->find( "SrcName2" );
+	typename CPropMap::const_iterator itPers2  = pProps->find( "PersName2" );
+	typename CPropMap::const_iterator itFPS = pProps->find( "FPS" );
+	typename CPropMap::const_iterator itStart = pProps->find( "StartFrame" );
+	typename CPropMap::const_iterator itEnd   = pProps->find( "EndFrame" );
+	typename CPropMap::const_iterator itAllFr = pProps->find( "DefaultFrames" );
+	typename CPropMap::const_iterator e = pProps->end();
   if ( e == itSN || e == itFPS || itPers == e || e == itStart || e == itEnd || e == itAllFr )
     return false;
   
@@ -412,7 +412,7 @@ static bool MkAnimationExportCmd( int nID, CItemsMgr *pItems, char *pszCmdBuf, i
     return false;
   
   // откапываем скелет для анимации
-  CPropMap::const_iterator itSk = pProps->find( "SkeletonID" );
+  typename CPropMap::const_iterator itSk = pProps->find( "SkeletonID" );
   if ( itSk == pProps->end() )
     return false;
   int nSkeletonID = itSk->second->GetValue();
@@ -422,14 +422,14 @@ static bool MkAnimationExportCmd( int nID, CItemsMgr *pItems, char *pszCmdBuf, i
   //
   const CPropMap *pSkProps = pSkeletons->pItemsTree->GetPropList( nSkeletonID );
   //
-  CPropMap::const_iterator itSkSN = pSkProps->find( "SrcName" );
-	CPropMap::const_iterator itSkMSR = pSkProps->find( "MSRFormat" );
+  typename CPropMap::const_iterator itSkSN = pSkProps->find( "SrcName" );
+	typename CPropMap::const_iterator itSkMSR = pSkProps->find( "MSRFormat" );
   if ( itSkSN == pSkProps->end() || itSkMSR == pSkProps->end() )
     return false;
   string szSkeletSrc = MakeDoubleSlash( GetExportSrcDir() + "Models\\\\" + (string)itSkSN->second->GetValue() );
 	bool bMSR = itSkMSR->second->GetValue();
   //
-  CPropMap::const_iterator itSkRJ = pSkProps->find( "RootJoint" );
+  typename CPropMap::const_iterator itSkRJ = pSkProps->find( "RootJoint" );
   if ( itSkRJ == pSkProps->end() )
     return false;
   string szRootJoint = itSkRJ->second->GetValue();  
@@ -456,8 +456,8 @@ static bool MkParticlesExportCmd( int nID, CItemsMgr *pItems, char *pszCmdBuf, i
   const CPropMap *pProps = pItems->GetPropList( nID );
   if ( !pProps )
     return false;
-  CPropMap::const_iterator itSN = pProps->find( "SrcName" );
-	CPropMap::const_iterator itEP = pProps->find( "ExportPrefix" );
+  typename CPropMap::const_iterator itSN = pProps->find( "SrcName" );
+	typename CPropMap::const_iterator itEP = pProps->find( "ExportPrefix" );
   if ( itSN == pProps->end() || itEP == pProps->end() )
     return false;
 	
@@ -487,8 +487,8 @@ static bool MkLightExportCmd( int nID, CItemsMgr *pItems, char *pszCmdBuf, int n
   const CPropMap *pProps = pItems->GetPropList( nID );
   if ( !pProps )
     return false;
-  CPropMap::const_iterator itSN = pProps->find( "SrcName" );
-	CPropMap::const_iterator itNode = pProps->find( "SelectNode" );
+  typename CPropMap::const_iterator itSN = pProps->find( "SrcName" );
+	typename CPropMap::const_iterator itNode = pProps->find( "SelectNode" );
   if ( itSN == pProps->end() || itNode == pProps->end() )
     return false;
 	
@@ -528,13 +528,13 @@ void GeometryUpdateDBData( CItemsMgr *pItems, const vector<int> &nItemIDs )
 		const CPropMap *pProps = pItems->GetPropList( nItemIDs[i] );
 		if ( !pProps )
 			continue;
-		CPropMap::const_iterator ix = pProps->find( "SizeX" );
-		CPropMap::const_iterator iy = pProps->find( "SizeY" );
-		CPropMap::const_iterator iz = pProps->find( "SizeZ" );
-		CPropMap::const_iterator icx = pProps->find( "CenterX" );
-		CPropMap::const_iterator icy = pProps->find( "CenterY" );
-		CPropMap::const_iterator icz = pProps->find( "CenterZ" );
-		CPropMap::const_iterator e = pProps->end();
+		typename CPropMap::const_iterator ix = pProps->find( "SizeX" );
+		typename CPropMap::const_iterator iy = pProps->find( "SizeY" );
+		typename CPropMap::const_iterator iz = pProps->find( "SizeZ" );
+		typename CPropMap::const_iterator icx = pProps->find( "CenterX" );
+		typename CPropMap::const_iterator icy = pProps->find( "CenterY" );
+		typename CPropMap::const_iterator icz = pProps->find( "CenterZ" );
+		typename CPropMap::const_iterator e = pProps->end();
 		if ( e == ix || e == iy || e == iz || e == icx || e == icy || e == icz )
 			break;
 		
@@ -626,13 +626,13 @@ void ParticlesUpdateDBData( CItemsMgr *pItems, const vector<int> &nItemIDs )
 		SBound bound;
 		pInfo->CalcBound( &bound );
 		const CPropMap *pProps = pItems->GetPropList( nItemIDs[i] );
-		CPropMap::const_iterator ixc = pProps->find( "CenterX" );
-		CPropMap::const_iterator iyc = pProps->find( "CenterY" );
-		CPropMap::const_iterator izc = pProps->find( "CenterZ" );
-		CPropMap::const_iterator ixh = pProps->find( "HalfBoxX" );
-		CPropMap::const_iterator iyh = pProps->find( "HalfBoxY" );
-		CPropMap::const_iterator izh = pProps->find( "HalfBoxZ" );
-		CPropMap::const_iterator e = pProps->end();
+		typename CPropMap::const_iterator ixc = pProps->find( "CenterX" );
+		typename CPropMap::const_iterator iyc = pProps->find( "CenterY" );
+		typename CPropMap::const_iterator izc = pProps->find( "CenterZ" );
+		typename CPropMap::const_iterator ixh = pProps->find( "HalfBoxX" );
+		typename CPropMap::const_iterator iyh = pProps->find( "HalfBoxY" );
+		typename CPropMap::const_iterator izh = pProps->find( "HalfBoxZ" );
+		typename CPropMap::const_iterator e = pProps->end();
 		
 		if ( e == ixc || e == iyc || e == izc || e == ixh || e == iyh || e == izh )
 			return;
@@ -665,14 +665,14 @@ void ExportTextures( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport 
     const CPropMap *pProps = pItems->GetPropList( nItemIDs[i] );
     if ( !pProps )
       continue;
-    CPropMap::const_iterator itSrc = pProps->find( "SrcName" );
-    CPropMap::const_iterator itFmt = pProps->find( "Format" );
-		CPropMap::const_iterator itType = pProps->find( "Type" );
-		CPropMap::const_iterator itMip = pProps->find( "NMips" );
-		CPropMap::const_iterator itMSize = pProps->find( "MappingSize" );
-		CPropMap::const_iterator itAddr = pProps->find( "AddrType" );
-		CPropMap::const_iterator itGain = pProps->find( "BumpGain" );
-		CPropMap::const_iterator end = pProps->end();
+    typename CPropMap::const_iterator itSrc = pProps->find( "SrcName" );
+    typename CPropMap::const_iterator itFmt = pProps->find( "Format" );
+		typename CPropMap::const_iterator itType = pProps->find( "Type" );
+		typename CPropMap::const_iterator itMip = pProps->find( "NMips" );
+		typename CPropMap::const_iterator itMSize = pProps->find( "MappingSize" );
+		typename CPropMap::const_iterator itAddr = pProps->find( "AddrType" );
+		typename CPropMap::const_iterator itGain = pProps->find( "BumpGain" );
+		typename CPropMap::const_iterator end = pProps->end();
     if ( itSrc == end || itFmt == end || itType == end || itMip == end || itMSize == end || itAddr == end || itGain == end )
       return;
     string szSrc = MakeOneSlash( GetExportSrcDir() + "Textures\\" + (string)itSrc->second->GetValue() );
@@ -728,10 +728,10 @@ void TextureUpdateDBData( CItemsMgr *pItems, const vector<int> &nItemIDs )
 		const CPropMap *pProps = pItems->GetPropList( nItemIDs[i] );
 		if ( !pProps )
 			continue;
-		CPropMap::const_iterator ix = pProps->find( "Width" );
-		CPropMap::const_iterator iy = pProps->find( "Height" );
-		CPropMap::const_iterator ic = pProps->find( "AverageColor" );
-		CPropMap::const_iterator e = pProps->end();
+		typename CPropMap::const_iterator ix = pProps->find( "Width" );
+		typename CPropMap::const_iterator iy = pProps->find( "Height" );
+		typename CPropMap::const_iterator ic = pProps->find( "AverageColor" );
+		typename CPropMap::const_iterator e = pProps->end();
 		if ( e == ix || e == iy || e == ic )
 			break;
 		//
@@ -771,15 +771,15 @@ void ExportFonts( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport )
     const CPropMap *pProps = pItems->GetPropList( nItemIDs[i] );
     if ( !pProps )
       continue;
-    CPropMap::const_iterator itTex = pProps->find( "TextureID" );
-    CPropMap::const_iterator itH   = pProps->find( "Height" );
-    CPropMap::const_iterator itW   = pProps->find( "Thickness" );
-    CPropMap::const_iterator itIt  = pProps->find( "Italic" );
-    CPropMap::const_iterator itAa  = pProps->find( "Antialiased" );
-    CPropMap::const_iterator itPt  = pProps->find( "Pitch" );
-    CPropMap::const_iterator itChr = pProps->find( "Charset" );
-    CPropMap::const_iterator itFc  = pProps->find( "FaceName" );
-    CPropMap::const_iterator ie = pProps->end();
+    typename CPropMap::const_iterator itTex = pProps->find( "TextureID" );
+    typename CPropMap::const_iterator itH   = pProps->find( "Height" );
+    typename CPropMap::const_iterator itW   = pProps->find( "Thickness" );
+    typename CPropMap::const_iterator itIt  = pProps->find( "Italic" );
+    typename CPropMap::const_iterator itAa  = pProps->find( "Antialiased" );
+    typename CPropMap::const_iterator itPt  = pProps->find( "Pitch" );
+    typename CPropMap::const_iterator itChr = pProps->find( "Charset" );
+    typename CPropMap::const_iterator itFc  = pProps->find( "FaceName" );
+    typename CPropMap::const_iterator ie = pProps->end();
     if ( itTex == ie || itH  == ie || itW == ie || itIt == ie ||
          itAa  == ie || itPt == ie || itChr == ie || itFc == ie )
       continue;
@@ -790,7 +790,7 @@ void ExportFonts( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport )
     const CPropMap *pTexProps = pTexs->pItemsTree->GetPropList( itTex->second->GetValue() );
     if ( !pTexProps )
       continue;
-    CPropMap::const_iterator itSrc = pTexProps->find( "SrcName" );
+    typename CPropMap::const_iterator itSrc = pTexProps->find( "SrcName" );
     if ( itSrc == pTexProps->end() )
       continue;
     
@@ -848,7 +848,7 @@ void ExportSounds( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport )
     const CPropMap *pProps = pItems->GetPropList( nItemIDs[i] );
     if ( !pProps )
       continue;
-    CPropMap::const_iterator iSrc = pProps->find( "SrcName" );
+    typename CPropMap::const_iterator iSrc = pProps->find( "SrcName" );
 		if ( pProps->end() == iSrc )
 			break;
 		const string szSrc = iSrc->second->GetValue();
@@ -879,7 +879,7 @@ void ExportHeads( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport )
 		const CPropMap *pProps = pItems->GetPropList( nID );
 		if ( !pProps )
 			continue;
-		CPropMap::const_iterator isrc = pProps->find( "SrcName" );
+		typename CPropMap::const_iterator isrc = pProps->find( "SrcName" );
 		if ( isrc == pProps->end() )
 			continue;
 		//
@@ -903,7 +903,7 @@ void ExportHeads( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport )
 		{
 			string szMatID = IToA( k );
 			string szMat = "Material" + szMatID;
-			CPropMap::const_iterator im = pProps->find( szMat );
+			typename CPropMap::const_iterator im = pProps->find( szMat );
 			if ( im == pProps->end() )
 				continue;
 			if ( pMaterials->IsExist( im->second->GetValue() ) )
@@ -973,7 +973,7 @@ void ExportHeads( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport )
 			pMaterials->SetItemProps( nMatID, pMatProps );
 			pMaterials->ReleasePropList( pMatProps );
 			//
-			CPropMap::const_iterator imaterial = pProps->find( szMat );
+			typename CPropMap::const_iterator imaterial = pProps->find( szMat );
 			if ( imaterial != pProps->end() )
 				imaterial->second->SetValue( nMatID );
 		}
@@ -993,7 +993,7 @@ void ExportHeadSeqs( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport 
 		const CPropMap *pProps = pItems->GetPropList( nID );
 		if ( !pProps )
 			continue;
-		CPropMap::const_iterator isrc = pProps->find( "SrcName" );
+		typename CPropMap::const_iterator isrc = pProps->find( "SrcName" );
 		if ( isrc == pProps->end() )
 			continue;
 		//
@@ -1014,7 +1014,7 @@ void ExportAckInfos( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport 
 		const CPropMap *pProps = pItems->GetPropList( nID );
 		if ( !pProps )
 			continue;
-		CPropMap::const_iterator ihs = pProps->find( "HeadSequenceID" );
+		typename CPropMap::const_iterator ihs = pProps->find( "HeadSequenceID" );
 		if ( ihs == pProps->end() )
 			continue;
 		const CPropMap *pSeqProps = pSeqs->GetPropList( ihs->second->GetValue() );
@@ -1026,7 +1026,7 @@ void ExportAckInfos( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport 
 				return;
 			ihs->second->SetValue( nSID );
 		}
-		CPropMap::const_iterator isrc = pSeqProps->find( "SrcName" );
+		typename CPropMap::const_iterator isrc = pSeqProps->find( "SrcName" );
 		if ( isrc != pSeqProps->end() )
 		{
 			isrc->second->SetValue( string( "Heads\\MMS\\" ) + pItems->GetItemName( nID ) + ".mms" );

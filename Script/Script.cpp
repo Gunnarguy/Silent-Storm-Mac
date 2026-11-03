@@ -22,7 +22,7 @@
 #include "lstate.h"
 #endif
 
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NScript
 {
@@ -598,7 +598,7 @@ string Script::GetStateAsText()
 	sprintf( buf, "Threads number = %zu \n", m_state->threads.size() );
 	str+=buf;
 	size_t nThreadIndex = 0;
-	for ( CThreads::iterator i = m_state->threads.begin(); i != m_state->threads.end(); ++i, ++nThreadIndex )
+	for ( typename CThreads::iterator i = m_state->threads.begin(); i != m_state->threads.end(); ++i, ++nThreadIndex )
 	{
 		CLuaThread &tred = **i;
 		sprintf( buf, "Thread #%zu: stacksize %d", nThreadIndex, tred.top );

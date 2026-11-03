@@ -4,12 +4,12 @@
 #include "DG.h"
 #include "wTSFlags.h"
 #include "aiVoxelRender.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataRPG.h"
 #include "aiMap.h"
 #include "grid.h"
 #include "TerrainInfo.h"
-#include "..\Misc\2darray.h"
-#include "..\Misc\HPTimer.h"
+#include "../Misc/2darray.h"
+#include "../Misc/HPTimer.h"
 
 const int N_HALFSIZE = 64;
 
@@ -464,7 +464,7 @@ bool CVisionTracker::IsCubeVisible( const CVec3 &vFrom, const CVec3 &ptTarget, c
 	float fDistance = fabs( ptDif );
 	if ( fDistance >= N_SIGHTDISTANCE )
 		return false;
-	CVisionHash::iterator i = visionCache.find( q );
+	typename CVisionHash::iterator i = visionCache.find( q );
 	if ( i != visionCache.end() )
 		return i->second;
 	//CObj<CVisionCube> pCube = GetCube( ptFrom );
@@ -524,7 +524,7 @@ bool CVisionTracker::IsCubeVisible( const CVec3 &vFrom, const CVec3 &ptTarget, c
 	q.vWhat = ptTarget;
 	q.fRange = fEff;
 	q.fCosFOV = fCosHalfFOV;
-	CVisionHash::iterator i = visionCache.find( q );
+	typename CVisionHash::iterator i = visionCache.find( q );
 	if ( i != visionCache.end() )
 		return i->second;
 	int nCount = 0;
@@ -624,7 +624,7 @@ bool CVisionTracker::IsPointVisible( const CVec3 &ptFrom, const CVec3 &ptTarget,
 	q.vWhat = ptTarget;
 	q.fRange = fEff;
 	q.fCosFOV = fCosHalfFOV;
-	CVisionHash::iterator i = pointVisionCache.find( q );
+	typename CVisionHash::iterator i = pointVisionCache.find( q );
 	if ( i != pointVisionCache.end() )
 		return i->second;
 	// ONE voxel ray: distance = the ACTUAL point separation, budget denominator = the EFFECTIVE

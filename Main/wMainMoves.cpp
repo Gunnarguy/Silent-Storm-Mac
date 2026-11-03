@@ -69,7 +69,7 @@ void SelectFindPathUnits( CUnit *pWho, list<CObjectBase*> *pRes )
 	pWho->GetPlayer()->GetVisible( &visible );
 	visible.remove( pWho );
 	list<CObjectBase*> &vis = *pRes;
-	for ( list<CPtr<CUnit> >::iterator i = visible.begin(); i != visible.end(); ++i )
+	for ( typename list<CPtr<CUnit> >::iterator i = visible.begin(); i != visible.end(); ++i )
 	{
 		CUnitServer *pUS = dynamic_cast<CUnitServer*>( i->GetPtr() ); 
 		ASSERT( pUS );
@@ -84,7 +84,7 @@ void SelectFindPathUnits( CUnit *pWho, list<CObjectBase*> *pRes )
 
 	list<CPtr<CObjectBase> > traps;
 	pWho->GetPlayer()->GetTrappedObjectsList( &traps );
-	for ( list<CPtr<CObjectBase> >::iterator i = traps.begin(); i != traps.end(); ++i )
+	for ( typename list<CPtr<CObjectBase> >::iterator i = traps.begin(); i != traps.end(); ++i )
 		vis.push_back( *i );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -5,7 +5,7 @@
 static unordered_map<int, CObj<IObjectBrowser> > browsers;
 IObjectBrowser* GetBrowser( EObjectBrowser nID )
 {
-	unordered_map<int, CObj<IObjectBrowser> >::const_iterator i = browsers.find( nID );
+	typename unordered_map<int, CObj<IObjectBrowser> >::const_iterator i = browsers.find( nID );
 	if ( i != browsers.end() )
 		return i->second;
 	return 0;

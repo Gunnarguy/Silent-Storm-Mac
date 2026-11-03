@@ -21,12 +21,12 @@
 #include "iIntroScreen.h"
 #include "iCommonUI.h"
 #include "iDesktopWindow.h"
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataLight.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\FileIO\BasicChunk1.h"   // START_REGISTER / FINISH_REGISTER (the ui_followcamera cvar)
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataLight.h"
+#include "../DBFormat/DataMap.h"
+#include "../FileIO/BasicChunk1.h"   // START_REGISTER / FINISH_REGISTER (the ui_followcamera cvar)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // NGame::CMissionBase -- the retail mission base class bodies (release iBase.obj; serialization-
 // convergence W4.2 structural split; see iMission.h for the class banner and the tag table).
@@ -67,7 +67,7 @@ bool CMissionBase::ExecWorldSoundCommand( NWorld::CUICmd *pCmd )
 		return false;
 	if ( IsValid( pSound->pChannel ) )
 	{
-		for ( list<CObj<CObjectBase> >::iterator i = soundsList.begin(); i != soundsList.end(); ++i )
+		for ( typename list<CObj<CObjectBase> >::iterator i = soundsList.begin(); i != soundsList.end(); ++i )
 			if ( *i == pSound->pChannel )
 			{
 				soundsList.erase( i );
@@ -575,7 +575,7 @@ void CMissionBase::SetLightMode( int _nLightMode )
 // retail CMissionBase::RenderFrame @0x1a19f0 (was the dev CMission::RenderFrame -- the body only
 // touches base members, so it lands here per the retail placement; CMission no longer overrides it).
 // Param 2 is the ADVANCE flag (retail PDB: (int,bool,ICamera*,bool)) -- the old dev `const STime&`
-// was a mis-decode. Interface rendering uses GetUITime(); sound now follows the Sentinels fix below.
+// was a mis-decode. Interface rendering uses GetUITime(); sound now follows the fix below.
 void CMissionBase::RenderFrame( int nMode, bool bAdvanceTime, ICamera *pCamera, bool bShowUnits )
 {
 	if ( nMode & N_RENDERMODE_3D )
@@ -584,8 +584,8 @@ void CMissionBase::RenderFrame( int nMode, bool bAdvanceTime, ICamera *pCamera, 
 		pCamera->GetTransform( &ts, pScene->GetScreenRect() );
 
 		// ORIGINAL RETAIL BUG FIXED: v1.2 0x5a2613 passes raw GetTime(), which omits
-		// fast-forwarded enemy turns. Sentinels 0x497fb1 calls GetGameTime (0x49aca0)
-		// instead, keeping playback on the epoch used to stamp world sound events.
+		// fast-forwarded enemy turns. GetGameTime is used instead, keeping playback
+		// on the epoch used to stamp world sound events.
 		// The mixer must also consume the full delta (RWSound.cpp), not clamp it once.
 		pRender->UpdateSound( bAdvanceTime, &ts, GetGameTime() );
 

@@ -1,11 +1,11 @@
 #include "StdAfx.h"
 //
-#include "..\MiscDll\Commands.h"
-#include "..\Misc\RandomGen.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/Commands.h"
+#include "../Misc/RandomGen.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/LogStream.h"
 //
-#include "..\DBFormat\DataScenario.h"
+#include "../DBFormat/DataScenario.h"
 //
 #include "scFlowChartItems.h"
 #include "scFlowChart.h"
@@ -46,7 +46,7 @@ void CScenarioFlowChartBase::ClearItems()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int CScenarioFlowChartBase::GetTemplateIDByVariantID( int nVariantID )
 {
-	for ( vector< CObj<CScenarioZone> >::iterator i = zones.begin(); i != zones.end(); ++i )
+	for ( typename vector< CObj<CScenarioZone> >::iterator i = zones.begin(); i != zones.end(); ++i )
 	{
 		int nRes = (*i)->GetTemplateIDByVariantID( nVariantID );
 		if ( nRes > 0 )
@@ -58,7 +58,7 @@ int CScenarioFlowChartBase::GetTemplateIDByVariantID( int nVariantID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CScenarioZone* CScenarioFlowChartBase::GetZoneByTemplateID( int nTemplateID )
 {
-	for ( vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
+	for ( typename vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
 	{
 		vector<int> &templatesIDs = (*zone)->GetDBZone()->templatesIDs;
 		if ( find( templatesIDs.begin(), templatesIDs.end(), nTemplateID ) != templatesIDs.end() )
@@ -74,7 +74,7 @@ CScenarioObjective* CScenarioFlowChartBase::GetObjectiveByDBObjective( NDb::CDBS
 	if ( !IsValid( pDBObjective ) )
 		return 0;
 	//
-	for ( vector< CObj<CScenarioObjective> >::iterator objective = objectives.begin(); 
+	for ( typename vector< CObj<CScenarioObjective> >::iterator objective = objectives.begin(); 
 		objective != objectives.end(); ++objective )
 		if ( (*objective)->GetDBObjective() == pDBObjective )	
 			return *objective;
@@ -86,7 +86,7 @@ CScenarioZone *CScenarioFlowChartBase::GetZoneByName( string _szName )
 {
 	string szName = _szName;
 	NStr::ToUpper( szName );
-	for ( vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
+	for ( typename vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
 	{
 		string szZoneName = (*zone)->GetDBZone()->sSmallDescription;
 		NStr::ToUpper( szZoneName );
@@ -103,7 +103,7 @@ CScenarioZone *CScenarioFlowChartBase::GetZoneByDBZone( NDb::CDBScenarioZone *pD
 	if ( !IsValid( pDBZone ) )
 		return 0;
 	//
-	for ( vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
+	for ( typename vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
 		if ( (*zone)->GetDBZone() == pDBZone )
 			return *zone;
 	//
@@ -114,7 +114,7 @@ CScenarioClue *CScenarioFlowChartBase::GetClueByName( string _szName )
 {
 	string szName = _szName;
 	NStr::ToUpper( szName );
-	for ( vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
+	for ( typename vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
 	{
 		string szClueName = (*clue)->GetDBClue()->sSmallDescription;
 		NStr::ToUpper( szClueName );
@@ -130,7 +130,7 @@ CScenarioClue *CScenarioFlowChartBase::GetClueByItemID( int nItemID )
 	// retail @0x2d6e60: a hash-map lookup, NOT a linear clues scan -- pers-carried clues
 	// (nPersID != 0) live only in persClues and are never returned from here; the stored
 	// pointer is returned without a liveness check, exactly like retail
-	unordered_map< int, CPtr<CScenarioClue> >::iterator pos = itemClues.find( nItemID );
+	typename unordered_map< int, CPtr<CScenarioClue> >::iterator pos = itemClues.find( nItemID );
 	if ( pos == itemClues.end() )
 		return 0;
 	return pos->second;
@@ -139,7 +139,7 @@ CScenarioClue *CScenarioFlowChartBase::GetClueByItemID( int nItemID )
 CScenarioClue *CScenarioFlowChartBase::GetClueByPersID( int nPersID )
 {
 	// retail @0x2d6ea0: hash-map lookup in persClues (see GetClueByItemID)
-	unordered_map< int, CPtr<CScenarioClue> >::iterator pos = persClues.find( nPersID );
+	typename unordered_map< int, CPtr<CScenarioClue> >::iterator pos = persClues.find( nPersID );
 	if ( pos == persClues.end() )
 		return 0;
 	return pos->second;
@@ -151,7 +151,7 @@ CScenarioClue *CScenarioFlowChartBase::GetClueByDBClue( NDb::CDBScenarioClue *pD
 	if ( !IsValid( pDBClue ) )
 		return 0;
 	//
-	for ( vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
+	for ( typename vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
 		if ( (*clue)->GetDBClue() == pDBClue )
 			return *clue;
 	//
@@ -174,7 +174,7 @@ void CScenarioFlowChartBase::PlaceClue( CScenarioClue *pClue )
 	//
 	vector< CPtr<CScenarioZone> > possibleZones;
 	CDBPtr<NDb::CDBScenarioClue> pDBClue = pClue->GetDBClue();
-	for ( vector< CPtr<NDb::CDBScenarioZone> >::iterator dbZone = pDBClue->zonesToPlace.begin(); 
+	for ( typename vector< CPtr<NDb::CDBScenarioZone> >::iterator dbZone = pDBClue->zonesToPlace.begin(); 
 		dbZone != pDBClue->zonesToPlace.end(); ++dbZone )
 	{
 		if ( IsValid( *dbZone ) )
@@ -206,7 +206,7 @@ void CScenarioFlowChartBase::PlaceObjective( CScenarioObjective *pObjective )
 	ASSERT( IsValid( pObjective ) );
 	ASSERT( !pObjective->IsPlaced() );
 	//
-	for ( vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
+	for ( typename vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
 	{
 		vector< CPtr<NDb::CDBScenarioObjective> > &objectives = (*clue)->GetDBClue()->objectives;
 		if ( find( objectives.begin(), objectives.end(), pObjective->GetDBObjective() ) !=
@@ -219,7 +219,7 @@ void CScenarioFlowChartBase::PlaceObjective( CScenarioObjective *pObjective )
 		{
 			(*clue)->PlaceObjective( pObjective );
 			//
-			for ( vector< CPtr<CScenarioClue> >::const_iterator childClue = pObjective->GetClues().begin();
+			for ( typename vector< CPtr<CScenarioClue> >::const_iterator childClue = pObjective->GetClues().begin();
 				childClue != pObjective->GetClues().end(); ++childClue )
 			{
 				(*childClue)->SetPlaced();
@@ -238,7 +238,7 @@ void CScenarioFlowChartBase::SetupLinks( CScenarioObjective *pObjective )
 		// place the pointers to the zones to open
 		pObjective->ClearZones();
 		vector< CPtr<NDb::CDBScenarioZone> > &zonesToOpen = pObjective->GetDBObjective()->zonesToOpen;
-		for ( vector< CPtr<NDb::CDBScenarioZone> >::iterator zone = zonesToOpen.begin();
+		for ( typename vector< CPtr<NDb::CDBScenarioZone> >::iterator zone = zonesToOpen.begin();
 			zone != zonesToOpen.end(); ++zone )
 		{
 			if ( IsValid( *zone ) )
@@ -254,7 +254,7 @@ void CScenarioFlowChartBase::SetupLinks( CScenarioObjective *pObjective )
 		// place the pointers to the zones to block
 		pObjective->ClearZonesToBlock();
 		vector< CPtr<NDb::CDBScenarioZone> > &zonesToBlock = pObjective->GetDBObjective()->zonesToBlock;
-		for ( vector< CPtr<NDb::CDBScenarioZone> >::iterator zone = zonesToBlock.begin();
+		for ( typename vector< CPtr<NDb::CDBScenarioZone> >::iterator zone = zonesToBlock.begin();
 			zone != zonesToBlock.end(); ++zone )
 		{
 			if ( IsValid( *zone ) )
@@ -281,7 +281,7 @@ void CScenarioFlowChartBase::Generate()
 	}
 	// place the clues
 	vector< CPtr<CScenarioClue> > cluesToPlace;
-	for ( vector< CObj<CScenarioClue> >::const_iterator i = clues.begin(); i != clues.end(); ++i )
+	for ( typename vector< CObj<CScenarioClue> >::const_iterator i = clues.begin(); i != clues.end(); ++i )
 		cluesToPlace.push_back( (*i).GetPtr() );
 	while ( !cluesToPlace.empty() )
 	{
@@ -292,16 +292,16 @@ void CScenarioFlowChartBase::Generate()
 		cluesToPlace.erase( cluesToPlace.begin() + n );
 	}
 	// place the objectives
-	for ( vector< CObj<CScenarioObjective> >::iterator objective = objectives.begin(); 
+	for ( typename vector< CObj<CScenarioObjective> >::iterator objective = objectives.begin(); 
 		objective != objectives.end(); ++objective )
 			PlaceObjective( *objective );
 	// place the objectives for composite clues
-	for ( vector< CObj<CScenarioObjective> >::iterator objective = objectives.begin(); 
+	for ( typename vector< CObj<CScenarioObjective> >::iterator objective = objectives.begin(); 
 		objective != objectives.end(); ++objective )
 			if ( !(*objective)->IsPlaced() )
 				PlaceObjective( *objective );
 	//
-	for ( vector< CObj<CScenarioObjective> >::iterator objective = objectives.begin(); 
+	for ( typename vector< CObj<CScenarioObjective> >::iterator objective = objectives.begin(); 
 		objective != objectives.end(); ++objective )
 			SetupLinks( *objective );
 }
@@ -427,7 +427,7 @@ void CScenarioFlowChartBase::Footer( fstream &file, string szFileName )
 void CScenarioFlowChartBase::DrawZones( fstream &file, 
 	const list< CPtr<CScenarioZone> > &availableZones )
 {
-	for ( vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
+	for ( typename vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
 	{
 		bool bAvailable = ( find( availableZones.begin(), 
 			availableZones.end(), (*zone).GetPtr() ) != availableZones.end() );
@@ -438,7 +438,7 @@ void CScenarioFlowChartBase::DrawZones( fstream &file,
 void CScenarioFlowChartBase::DrawClues( fstream &file, 
 	const list< CPtr<CScenarioClue> > &availableClues )
 {
-	for ( vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
+	for ( typename vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
 		if ( (*clue)->IsPlaced() )
 		{
 			bool bAvailable = ( find( availableClues.begin(), 
@@ -449,13 +449,13 @@ void CScenarioFlowChartBase::DrawClues( fstream &file,
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenarioFlowChartBase::DrawZonesRelationships( fstream &file )
 {
-	for ( vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
+	for ( typename vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
 		(*zone)->DrawRelationship( file );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenarioFlowChartBase::DrawCluesRelationships( fstream &file )
 {
-	for ( vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
+	for ( typename vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
 		if ( (*clue)->IsPlaced() )
 			(*clue)->DrawRelationship( file );
 }
@@ -480,7 +480,7 @@ void CScenarioFlowChartBase::GetClues( vector< CPtr<CScenarioClue> > *pClues )
 		return;
 	//
 	pClues->clear();
-	for ( vector< CObj<CScenarioClue> >::iterator i = clues.begin(); i != clues.end(); ++i )
+	for ( typename vector< CObj<CScenarioClue> >::iterator i = clues.begin(); i != clues.end(); ++i )
 		pClues->push_back( (*i).GetPtr() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -491,7 +491,7 @@ void CScenarioFlowChartBase::GetObjectives( vector< CPtr<CScenarioObjective> > *
 		return;
 	//
 	pObjectives->clear();
-	for ( vector< CObj<CScenarioObjective> >::iterator i = objectives.begin(); 
+	for ( typename vector< CObj<CScenarioObjective> >::iterator i = objectives.begin(); 
 		i != objectives.end(); ++i )
 			pObjectives->push_back( (*i).GetPtr() );
 }
@@ -503,7 +503,7 @@ void CScenarioFlowChartBase::GetZones( vector< CPtr<CScenarioZone> > *pZones )
 		return;
 	//
 	pZones->clear();
-	for ( vector< CObj<CScenarioZone> >::iterator i = zones.begin(); i != zones.end(); ++i )
+	for ( typename vector< CObj<CScenarioZone> >::iterator i = zones.begin(); i != zones.end(); ++i )
 		pZones->push_back( (*i).GetPtr() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -577,7 +577,7 @@ void CScenarioFlowChart::RemoveIncorrectClues()
 	while ( true )
 	{
 		vector< CPtr<CScenarioClue> > cluesToErase;
-		for ( vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
+		for ( typename vector< CObj<CScenarioClue> >::iterator clue = clues.begin(); clue != clues.end(); ++clue )
 		if ( (*clue)->IsPlaced() )
 		{
 			list< CPtr<CScenarioClue> > parentClues;
@@ -586,7 +586,7 @@ void CScenarioFlowChart::RemoveIncorrectClues()
 				cluesToErase.push_back( (*clue).GetPtr() );
 		} 
 		//
-		for ( vector< CPtr<CScenarioClue> >::iterator clue = cluesToErase.begin(); clue != cluesToErase.end(); ++clue )
+		for ( typename vector< CPtr<CScenarioClue> >::iterator clue = cluesToErase.begin(); clue != cluesToErase.end(); ++clue )
 		{
 			(*clue)->SetPlaced( false );
 			OutputDebugString( "[SCENARIO TRACKER] Incorrect clue was removed: " );
@@ -601,7 +601,7 @@ void CScenarioFlowChart::RemoveIncorrectClues()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenarioFlowChart::InitDifficulties()
 {
-	for ( vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
+	for ( typename vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
 	{
 		list< CPtr<CScenarioZone> > childZones;
 		list<SScenarioFlowChartPassage> passages;
@@ -622,12 +622,12 @@ void CScenarioFlowChart::SetPathDifficulty( const list< CPtr<CScenarioZone> > &p
 	if ( bCheckBegin )
 		fBegin = path.front()->GetDifficulty();
 	else
-		fBegin = max( 1, fEnd - path.size() + 1 );
+		fBegin = s2max( 1, fEnd - path.size() + 1 );
 	float fStep = ( fEnd - fBegin ) / ( path.size() - 1 );
 	float fCurrent = fBegin;
-	for ( list< CPtr<CScenarioZone> >::const_iterator zone = path.begin(); zone != path.end(); ++zone )
+	for ( typename list< CPtr<CScenarioZone> >::const_iterator zone = path.begin(); zone != path.end(); ++zone )
 	{
-		(*zone)->SetDifficulty( max( 1, fCurrent ) );
+		(*zone)->SetDifficulty( s2max( 1, fCurrent ) );
 		fCurrent += fStep;
 	}
 	//
@@ -636,7 +636,7 @@ void CScenarioFlowChart::SetPathDifficulty( const list< CPtr<CScenarioZone> > &p
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CScenarioFlowChart::GetEdgeForDifCalculation( CScenarioZone **ppBegin, CScenarioZone **ppEnd )
 {
-	for ( vector< CObj<CScenarioZone> >::const_iterator zone = zones.begin(); 
+	for ( typename vector< CObj<CScenarioZone> >::const_iterator zone = zones.begin(); 
 		zone != zones.end(); ++zone )
 	{
 		if ( (*zone)->IsDifCalculated() )
@@ -645,7 +645,7 @@ bool CScenarioFlowChart::GetEdgeForDifCalculation( CScenarioZone **ppBegin, CSce
 			list<SScenarioFlowChartPassage> passages;
 			GetPathFinder()->GetChildZones( 0, *zone, &passages );
 			GetPathFinder()->GetZonesFromPassages( passages, &childZones );
-			for ( list< CPtr<CScenarioZone> >::iterator child = childZones.begin();
+			for ( typename list< CPtr<CScenarioZone> >::iterator child = childZones.begin();
 				child != childZones.end(); ++child )
 			{
 				if ( !(*child)->IsDifCalculated() )
@@ -670,7 +670,7 @@ void CScenarioFlowChart::CalculateDifficulties()
 	if ( IsValid( pPath ) )
 		SetPathDifficulty( pPath->GetZones()->GetItems(), true );
 	//
-	for ( vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
+	for ( typename vector< CObj<CScenarioZone> >::iterator zone = zones.begin(); zone != zones.end(); ++zone )
 		if ( (*zone)->IsInitial() )
 		{
 			pPath = GetPathFinder()->FindPath( *zone );
@@ -718,10 +718,10 @@ void CScenarioFlowChart::GetZonesWhichCanBeOpened( CScenarioClue *pClue,
 		return;
 	//
 	pZones->clear();
-	for ( vector< CPtr<CScenarioObjective> >::
+	for ( typename vector< CPtr<CScenarioObjective> >::
 		const_iterator i = pClue->GetObjectives().begin(); i != pClue->GetObjectives().end(); ++i )
 	{
-		for ( vector< CPtr<CScenarioZone> >::
+		for ( typename vector< CPtr<CScenarioZone> >::
 			const_iterator j = (*i)->GetZones().begin(); j != (*i)->GetZones().end(); ++j )
 			if ( find( pZones->begin(), pZones->end(), *j ) == pZones->end() )
 				pZones->push_back( *j );
@@ -744,7 +744,7 @@ void CScenarioFlowChartItemsList<T>::UpdateSignature()
 		signature.resize( nMaxSize / 32 + 1 );
 		for ( int i = 0; i < signature.size(); ++i )
 			signature[i] = 0;
-		for (	list< CPtr<T> >::iterator i = items.begin(); i != items.end(); ++i )
+		for (	typename list< CPtr<T> >::iterator i = items.begin(); i != items.end(); ++i )
 			signature[ (*i)->GetInnerID() / 32 ] |= ( 1 << ( (*i)->GetInnerID() % 32 ) );
 		bUpdateSignature = false;
 	}
@@ -789,7 +789,7 @@ void CScenarioFlowChartItemsList<T>::Erase( T *pItem )
 	//
 	if ( IsContainItem( pItem ) )
 	{
-		list< CPtr<T> >::iterator i = find( items.begin(), items.end(), pItem );
+		typename list< CPtr<T> >::iterator i = find( items.begin(), items.end(), pItem );
 		if ( i != items.end() )
 		{
 			items.erase( i );
@@ -956,7 +956,7 @@ void CScenarioFlowChartState::UpdateClues( CScenarioZone *pZone )
 	if ( !IsValid( pZone ) )
 		return;
 	//
-	for ( vector< CPtr<CScenarioClue> >::const_iterator i = pZone->GetClues().begin();
+	for ( typename vector< CPtr<CScenarioClue> >::const_iterator i = pZone->GetClues().begin();
 		i != pZone->GetClues().end(); ++i )
 	{
 		if ( !pClues->IsContainItem( *i ) )
@@ -973,11 +973,11 @@ void CScenarioFlowChartState::UpdateClues( CScenarioClue *pClue )
 	if ( !IsValid( pClue ) )
 		return;
 	//
-	for ( vector< CPtr<CScenarioObjective> >::const_iterator i = pClue->GetObjectives().begin();
+	for ( typename vector< CPtr<CScenarioObjective> >::const_iterator i = pClue->GetObjectives().begin();
 		i != pClue->GetObjectives().end(); ++i )
 	{
 		const CPtr<CScenarioObjective> &pObj = *i;
-		for ( vector< CPtr<CScenarioClue> >::const_iterator o = pObj->GetClues().begin();
+		for ( typename vector< CPtr<CScenarioClue> >::const_iterator o = pObj->GetClues().begin();
 			o != pObj->GetClues().end(); ++o )
 		{
 			if ( !pClues->IsContainItem( *o ) && CanUnlockClue( *o ) )
@@ -994,7 +994,7 @@ bool CScenarioFlowChartState::CanUnlockClue( CScenarioClue *pClue )
 	list< CPtr<CScenarioClue> > parentClues;
 	GetPathFinder()->GetParentClues( pClue, &parentClues );
 	int nUnLocked = 0;
-	for ( list< CPtr<CScenarioClue> >::iterator i = parentClues.begin(); i != parentClues.end(); ++i )
+	for ( typename list< CPtr<CScenarioClue> >::iterator i = parentClues.begin(); i != parentClues.end(); ++i )
 		if ( !IsClueLocked( *i ) )
 			++nUnLocked;
 	//
@@ -1011,7 +1011,7 @@ bool CScenarioFlowChartState::IsBranchingZone( CScenarioZone *pZone )
 	list<SScenarioFlowChartPassage> passages;
 	GetPathFinder()->GetChildZones( 0, pZone, &passages );
 	GetPathFinder()->GetZonesFromPassages( passages, &childZones );
-	for ( list< CPtr<CScenarioZone> >::iterator i = childZones.begin(); i != childZones.end(); ++i )
+	for ( typename list< CPtr<CScenarioZone> >::iterator i = childZones.begin(); i != childZones.end(); ++i )
 		if ( !pZones->IsContainItem( *i ) )
 			return true;
 	//
@@ -1021,14 +1021,14 @@ bool CScenarioFlowChartState::IsBranchingZone( CScenarioZone *pZone )
 void CScenarioFlowChartState::UpdateBranchingZones()
 {
 	list< CPtr<CScenarioZone> > zonesToErase;
-	for ( list< CPtr<CScenarioZone> >::const_iterator i = pBranchingZones->GetItems().begin();
+	for ( typename list< CPtr<CScenarioZone> >::const_iterator i = pBranchingZones->GetItems().begin();
 		i != pBranchingZones->GetItems().end(); ++i )
 	{
 		if ( !IsBranchingZone( *i ) )
 			zonesToErase.push_back( *i );
 	}
 	//
-	for ( list< CPtr<CScenarioZone> >::iterator i = zonesToErase.begin(); i != zonesToErase.end(); ++i )
+	for ( typename list< CPtr<CScenarioZone> >::iterator i = zonesToErase.begin(); i != zonesToErase.end(); ++i )
 		pBranchingZones->Erase( *i );
 	//
 	zonesToErase.clear();
@@ -1059,7 +1059,7 @@ bool CScenarioFlowChartState::IsClueLocked( CScenarioClue *pClue )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenarioFlowChartState::OutputDebugInfo()
 {
-	for ( list< CPtr<CScenarioZone> >::const_iterator i = GetZones()->GetItems().begin();
+	for ( typename list< CPtr<CScenarioZone> >::const_iterator i = GetZones()->GetItems().begin();
 		i != GetZones()->GetItems().end(); ++i )
 	{
 		OutputDebugString( "  " );
@@ -1089,7 +1089,7 @@ void CScenarioFlowChartState::GetNextStates( list< CPtr<CScenarioFlowChartState>
 			pCurState = this;
 		GetPathFinder()->GetChildZones( pCurState, pFront, &passages );
 		GetPathFinder()->GetZonesFromPassages( passages, &childZones );
-		for ( list< CPtr<CScenarioZone> >::iterator z = childZones.begin(); z != childZones.end(); ++z )
+		for ( typename list< CPtr<CScenarioZone> >::iterator z = childZones.begin(); z != childZones.end(); ++z )
 			if ( !IsContain( *z ) )
 			{
 				CPtr<CScenarioFlowChartState> pNextState = new CScenarioFlowChartState( this );
@@ -1126,17 +1126,17 @@ bool CScenarioFlowChartState::IsZoneLocked( CScenarioZone *pZone )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenarioFlowChartState::UsePassage( const SScenarioFlowChartPassage &passage )
 {
-	for ( list< CPtr<CScenarioClue> >::const_iterator i = passage.clues.begin();
+	for ( typename list< CPtr<CScenarioClue> >::const_iterator i = passage.clues.begin();
 		i != passage.clues.end(); ++i )
 	{
 		if ( !pUsedClues->IsContainItem( *i ) )
 			pUsedClues->Push( *i );
 	}
 	//
-	for ( list< CPtr<CScenarioObjective> >::const_iterator i = passage.objectives.begin();
+	for ( typename list< CPtr<CScenarioObjective> >::const_iterator i = passage.objectives.begin();
 		i != passage.objectives.end(); ++i )
 	{
-		for ( vector< CPtr<CScenarioZone> >::const_iterator z = (*i)->GetZonesToBlock().begin();
+		for ( typename vector< CPtr<CScenarioZone> >::const_iterator z = (*i)->GetZonesToBlock().begin();
 			z != (*i)->GetZonesToBlock().end(); ++z )
 		{
 			LockZone( *z );
@@ -1147,27 +1147,27 @@ void CScenarioFlowChartState::UsePassage( const SScenarioFlowChartPassage &passa
 void CScenarioFlowChartState::MarkDistance()
 {
 	int n = 0;
-	for ( list< CPtr<CScenarioZone> >::const_iterator i = pZones->GetItems().begin();
+	for ( typename list< CPtr<CScenarioZone> >::const_iterator i = pZones->GetItems().begin();
 		i != pZones->GetItems().end(); ++i )
 			(*i)->SetDistance( n++ );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenarioFlowChartState::MarkAsShortestPath()
 {
-	for ( list< CPtr<CScenarioZone> >::const_iterator i = pZones->GetItems().begin();
+	for ( typename list< CPtr<CScenarioZone> >::const_iterator i = pZones->GetItems().begin();
 		i != pZones->GetItems().end(); ++i )
 			(*i)->SetInShortestPath( true );
-	for ( list< CPtr<CScenarioClue> >::const_iterator i = pClues->GetItems().begin();
+	for ( typename list< CPtr<CScenarioClue> >::const_iterator i = pClues->GetItems().begin();
 		i != pClues->GetItems().end(); ++i )
 			(*i)->SetInShortestPath( true );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenarioFlowChartState::MarkAsAccessible()
 {
-	for ( list< CPtr<CScenarioZone> >::const_iterator i = pZones->GetItems().begin();
+	for ( typename list< CPtr<CScenarioZone> >::const_iterator i = pZones->GetItems().begin();
 		i != pZones->GetItems().end(); ++i )
 			(*i)->SetInaccessible( false );
-	for ( list< CPtr<CScenarioClue> >::const_iterator i = pClues->GetItems().begin();
+	for ( typename list< CPtr<CScenarioClue> >::const_iterator i = pClues->GetItems().begin();
 		i != pClues->GetItems().end(); ++i )
 			(*i)->SetInaccessible( false );
 }
@@ -1188,7 +1188,7 @@ bool CScenarioFlowChartPathFinder::IsStatePassed( CScenarioFlowChartState *pStat
 		return true;
 	//
 	list< CObj<CScenarioFlowChartState> > &states = passedStates[ pState->GetHashKey() ];
-	for ( list< CObj<CScenarioFlowChartState> >::iterator i = states.begin(); i != states.end(); ++i )
+	for ( typename list< CObj<CScenarioFlowChartState> >::iterator i = states.begin(); i != states.end(); ++i )
 		if ( (*i)->IsContainState( pState ) )
 			return true;
 	//
@@ -1235,11 +1235,11 @@ void CScenarioFlowChartPathFinder::FindPathA( CScenarioZone *pFrom,
 	while ( !bPathFound && !states.empty() )
 	{
 		list< CObj<CScenarioFlowChartState> > nextStates;
-		for ( list< CObj<CScenarioFlowChartState> >::iterator i = states.begin(); i != states.end(); ++i )
+		for ( typename list< CObj<CScenarioFlowChartState> >::iterator i = states.begin(); i != states.end(); ++i )
 		{
 			list< CPtr<CScenarioFlowChartState> > thisStateNextStates;
 			(*i)->GetNextStates( &thisStateNextStates, IsFinal, bUseLocks );
-			for ( list< CPtr<CScenarioFlowChartState> >::iterator s = thisStateNextStates.begin();
+			for ( typename list< CPtr<CScenarioFlowChartState> >::iterator s = thisStateNextStates.begin();
 				s != thisStateNextStates.end(); ++s )
 					if ( !IsStatePassed( *s ) )
 					{
@@ -1313,10 +1313,10 @@ CScenarioFlowChartState* CScenarioFlowChartPathFinder::
 	bool ( CScenarioFlowChartPathFinder::* Compare )( CScenarioFlowChartState *, CScenarioFlowChartState * ) )
 {
 	CObj<CScenarioFlowChartState> pBestState = 0;
-	for ( unordered_map< int, list< CObj<CScenarioFlowChartState> > >::const_iterator i = states.begin();
+	for ( typename unordered_map< int, list< CObj<CScenarioFlowChartState> > >::const_iterator i = states.begin();
 		i != states.end(); ++i )
 	{
-		for ( list< CObj<CScenarioFlowChartState> >::const_iterator j = i->second.begin();
+		for ( typename list< CObj<CScenarioFlowChartState> >::const_iterator j = i->second.begin();
 			j != i->second.end(); ++j )
 		{
 			if ( (this->*Compare)( *j, pBestState ) )
@@ -1342,7 +1342,7 @@ void CScenarioFlowChartPathFinder::GetZonesFromPassages(
 		return;
 	//
 	pZones->clear();
-	for ( list<SScenarioFlowChartPassage>::const_iterator i = passages.begin(); i!= passages.end(); ++i )
+	for ( typename list<SScenarioFlowChartPassage>::const_iterator i = passages.begin(); i!= passages.end(); ++i )
 	{
 		if ( find( pZones->begin(), pZones->end(), (*i).pTo ) == pZones->end() )
 			pZones->push_back( (*i).pTo );
@@ -1356,7 +1356,7 @@ SScenarioFlowChartPassage CScenarioFlowChartPathFinder::GetPassageForZone(
 	if ( !IsValid( pZone ) )
 		return SScenarioFlowChartPassage( 0, 0 );
 	//
-	for ( list<SScenarioFlowChartPassage>::const_iterator i = passages.begin(); i != passages.end(); ++i )
+	for ( typename list<SScenarioFlowChartPassage>::const_iterator i = passages.begin(); i != passages.end(); ++i )
 		if ( (*i).pTo == pZone )
 			return *i;
 	//
@@ -1375,7 +1375,7 @@ void CScenarioFlowChartPathFinder::GetChildZones( CScenarioFlowChartState *pStat
 		return;
 	//
 	pPassages->clear();
-	for (	vector< CPtr<CScenarioZone> >::const_iterator i = pObjective->GetZones().begin();
+	for (	typename vector< CPtr<CScenarioZone> >::const_iterator i = pObjective->GetZones().begin();
 		i != pObjective->GetZones().end(); ++i )
 	{
 		if ( ( !IsValid( pState ) || !pState->IsContain( *i ) ) &&
@@ -1383,12 +1383,12 @@ void CScenarioFlowChartPathFinder::GetChildZones( CScenarioFlowChartState *pStat
 				pPassages->push_back( SScenarioFlowChartPassage( 0, *i ) + pObjective );
 	}
 	//
-	for (	vector< CPtr<CScenarioClue> >::const_iterator i = pObjective->GetClues().begin();
+	for (	typename vector< CPtr<CScenarioClue> >::const_iterator i = pObjective->GetClues().begin();
 		i != pObjective->GetClues().end(); ++i )
 	{
 		list<SScenarioFlowChartPassage> passages;
 		GetChildZones( pState, *i, &passages );
-		for ( list<SScenarioFlowChartPassage>::iterator p = passages.begin(); p != passages.end(); ++p )
+		for ( typename list<SScenarioFlowChartPassage>::iterator p = passages.begin(); p != passages.end(); ++p )
 			pPassages->push_back( *p + pObjective );
 	}
 }
@@ -1406,12 +1406,12 @@ void CScenarioFlowChartPathFinder::GetChildZones( CScenarioFlowChartState *pStat
 			return;
 	//
 	pPassages->clear();
-	for (	vector< CPtr<CScenarioObjective> >::const_iterator i = pClue->GetObjectives().begin();
+	for (	typename vector< CPtr<CScenarioObjective> >::const_iterator i = pClue->GetObjectives().begin();
 		i != pClue->GetObjectives().end(); ++i )
 	{
 		list<SScenarioFlowChartPassage> passages;
 		GetChildZones( pState, *i, &passages );
-		for ( list<SScenarioFlowChartPassage>::iterator p = passages.begin(); p != passages.end(); ++p )
+		for ( typename list<SScenarioFlowChartPassage>::iterator p = passages.begin(); p != passages.end(); ++p )
 			pPassages->push_back( *p + pClue );
 	}
 }
@@ -1428,12 +1428,12 @@ void CScenarioFlowChartPathFinder::GetChildZones( CScenarioFlowChartState *pStat
 		return;
 	//
 	pPassages->clear();
-	for (	vector< CPtr<CScenarioClue> >::const_iterator i = pZone->GetClues().begin();
+	for (	typename vector< CPtr<CScenarioClue> >::const_iterator i = pZone->GetClues().begin();
 		i != pZone->GetClues().end(); ++i )
 	{
 		list<SScenarioFlowChartPassage> passages;
 		GetChildZones( pState, *i, &passages );
-		for ( list<SScenarioFlowChartPassage>::iterator p = passages.begin(); p != passages.end(); ++p )
+		for ( typename list<SScenarioFlowChartPassage>::iterator p = passages.begin(); p != passages.end(); ++p )
 		{
 			SScenarioFlowChartPassage passage = *p;
 			passage.pFrom = pZone;
@@ -1446,7 +1446,7 @@ void CScenarioFlowChartPathFinder::CalculateMinParentToOpen()
 {
 	vector< CPtr<CScenarioClue> > clues;
 	pFlowChart->GetClues( &clues );
-	for ( vector< CPtr<CScenarioClue> >::iterator i = clues.begin(); i != clues.end(); ++i )
+	for ( typename vector< CPtr<CScenarioClue> >::iterator i = clues.begin(); i != clues.end(); ++i )
 	{
 		int nMinParentToOpen = 0;
 		if ( (*i)->GetDBClue()->nMinParentToOpen >= 0 )
@@ -1481,14 +1481,14 @@ void CScenarioFlowChartPathFinder::
 	//
 	pClues->clear();
 	vector< CPtr<CScenarioObjective> > parentObjectives;
-	for ( vector< CPtr<CScenarioObjective> >::const_iterator 
+	for ( typename vector< CPtr<CScenarioObjective> >::const_iterator 
 		i = pClue->GetParentObjectives().begin(); i != pClue->GetParentObjectives().end(); ++i )
 	{
 		if ( find( (*i)->GetClues().begin(), (*i)->GetClues().end(), pClue ) != (*i)->GetClues().end() )
 			parentObjectives.push_back( (*i).GetPtr() );
 	}
 	//
-	for ( vector< CPtr<CScenarioObjective> >::
+	for ( typename vector< CPtr<CScenarioObjective> >::
 		iterator i = parentObjectives.begin(); i != parentObjectives.end(); ++i )
 	{
 		CPtr<CScenarioClue> pParent = (*i)->GetParentClue();
@@ -1510,17 +1510,17 @@ void CScenarioFlowChartPathFinder::
 	vector< CPtr<CScenarioObjective> > objectives;
 	GetFlowChart()->GetObjectives( &objectives );
 	vector< CPtr<CScenarioObjective> > parentObjectives;
-	for ( vector< CPtr<CScenarioObjective> >::
+	for ( typename vector< CPtr<CScenarioObjective> >::
 		const_iterator i = objectives.begin(); i != objectives.end(); ++i )
 	{
 		if ( find( (*i)->GetClues().begin(), (*i)->GetClues().end(), pClue ) != (*i)->GetClues().end() )
 			parentObjectives.push_back( (*i).GetPtr() );
 	}
 	//
-	for ( vector< CPtr<CScenarioObjective> >::
+	for ( typename vector< CPtr<CScenarioObjective> >::
 		const_iterator i = parentObjectives.begin(); i != parentObjectives.end(); ++i )
 	{
-		for ( vector< CPtr<CScenarioClue> >::const_iterator 
+		for ( typename vector< CPtr<CScenarioClue> >::const_iterator 
 			j = (*i)->GetPossibleParentClues().begin(); j != (*i)->GetPossibleParentClues().end(); ++j )
 		{
 			if ( find( pClues->begin(), pClues->end(), *j ) == pClues->end() )
@@ -1531,10 +1531,10 @@ void CScenarioFlowChartPathFinder::
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenarioFlowChartPathFinder::MarkAsAccessible()
 {
-	for ( unordered_map< int, list< CObj<CScenarioFlowChartState> > >::iterator i = passedStates.begin();
+	for ( typename unordered_map< int, list< CObj<CScenarioFlowChartState> > >::iterator i = passedStates.begin();
 		i != passedStates.end(); ++i )
 	{
-		for ( list< CObj<CScenarioFlowChartState> >::iterator j = i->second.begin();
+		for ( typename list< CObj<CScenarioFlowChartState> >::iterator j = i->second.begin();
 			j != i->second.end(); ++j )
 				(*j)->MarkAsAccessible();
 	}

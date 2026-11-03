@@ -35,7 +35,7 @@ namespace NRPG
 // armor-piercing ("AP left") profile at a given distance along the ray.
 struct SCoverInterval
 {
-	float fEnter;	// distance where this interval begins (sentinel -1e30 before the muzzle)
+	float fEnter;	// distance where this interval begins (marker -1e30 before the muzzle)
 	float fK;		// AP left after crossing everything up to fEnter
 
 	SCoverInterval() {}

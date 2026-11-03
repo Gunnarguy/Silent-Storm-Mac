@@ -43,18 +43,18 @@
 #include "G2DView.h"
 #include "GSceneUtils.h"
 #include "RectLayout.h"
-#include "..\Misc\StrProc.h"			// NStr::ToAscii
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"		// NDb::GetUITexture
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"			// NStr::ToAscii
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"		// NDb::GetUITexture
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"					// NUI::SPoint/SRect + NUI::CWindow/CText/CImage/CModel/CButton/CInterface, NUI::GetDBString
-#include "..\MiscDll\LogStream.h"		// csScript, CC_RED, endl
+#include "../MiscDll/LogStream.h"		// csScript, CC_RED, endl
 //
 #include "A5Script.h"					// NScript::CScript, GetScript, Script (lua stack)
 #include "scriptCommon.h"				// luaPrepareData, BEGIN_SCRIPT_COMMAND, SLuaParams
 #include "scriptPtr.h"					// tagLuaWindow (lua.h), luaGetPtr
 #include "scriptUI.h"
-#include "..\Script\lstate.h"
+#include "../Script/lstate.h"
 //
 #include <math.h>
 #include <stdlib.h>
@@ -516,13 +516,13 @@ END_SCRIPT_COMMAND
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // NScript::luaGetUITime @0x2f49b0 -- push the interface's UI millisecond clock (CInterface::sLastTime,
 // retail @+0xb8, refreshed each Step). Pushed UNSIGNED-widened: retail's `if(n<0) n+=2^32` is the
-// int->unsigned fixup the compiler emits for (double)(unsigned long); reproduced by casting the DWORD
-// clock through unsigned long into the double PushNumber takes. Roots at the script interface, which
+// int->unsigned fixup the compiler emits for (double)(DWORD); reproduced by casting the DWORD
+// clock through DWORD into the double PushNumber takes. Roots at the script interface, which
 // CMission wires to its HUD; before that context exists it deliberately returns 0.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 BEGIN_SCRIPT_COMMAND( GetUITime, "" );
 	NUI::CInterface *pIface = pScript->GetScriptInterface();
-	unsigned long nTime = IsValid( pIface ) ? (unsigned long)pIface->GetLastTime() : 0;
+	DWORD nTime = IsValid( pIface ) ? (DWORD)pIface->GetLastTime() : 0;
 	pScript->PushNumber( (double)nTime );
 	return 1;
 END_SCRIPT_COMMAND

@@ -7,8 +7,8 @@
 #include "dbDefs.h"
 #include "afxwin.h"
 #include "OIDlg.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\Misc\StrProc.h"
+#include "../DBFormat/DataFormat.h"
+#include "../Misc/StrProc.h"
 
 static const char szCF_NAME[] = "A5_PARTICLE_INSTANCE";
 static int CF_PINSTANCE = 0;
@@ -355,7 +355,7 @@ string PropsToStr( const string &szUserName, const CPropMap *pProps )
 	}
 	string sz = "UserName=";
 	sz += szUserName + '\n';
-	for ( CPropMap::const_iterator i = pProps->begin(); i != pProps->end(); ++i )
+	for ( typename CPropMap::const_iterator i = pProps->begin(); i != pProps->end(); ++i )
 	{
 		sz += i->first;
 		sz += '=';
@@ -427,7 +427,7 @@ string StrToProps( const CPropMap *pProps, const string &szStr )
 			szName = str[1];
 			continue;
 		}
-		CPropMap::const_iterator it = pProps->find( str[0] );
+		typename CPropMap::const_iterator it = pProps->find( str[0] );
 		if ( it != pProps->end() )
 			it->second->SetValue( str[1], false );
 	}

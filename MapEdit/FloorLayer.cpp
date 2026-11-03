@@ -7,10 +7,10 @@
 #include "dbDefs.h"
 #include "ItemsMgr.h"
 #include "Floor.h"
-#include "..\Main\DiscretePos.h"
+#include "../Main/DiscretePos.h"
 #include "iWysiwyg.h"
 #include "MEUserSettings.h"
-#include "..\Input\Bind.h"
+#include "../Input/Bind.h"
 
 const int ERASE_BRUSH = 3;
 const int ERASE_MODEL_ID = -10;
@@ -115,7 +115,7 @@ void CFloorsLayer::Paint( ITemplateView *pView, float fBrightness, bool bGrayed 
 	pFloor->Update();
 	const CFloorPlan::CCellInfo *pInfo = pFloor->GetFloor();
 	//
-	for ( CFloorPlan::CCellInfo::const_iterator it = pInfo->begin(); it != pInfo->end(); ++it )
+	for ( typename CFloorPlan::CCellInfo::const_iterator it = pInfo->begin(); it != pInfo->end(); ++it )
 	{
 		DrawCells( pDC, it->first, it->second, pView );
 	}
@@ -140,7 +140,7 @@ void CFloorsLayer::SetPlacement( CPlacement *pPl )
 // если цвет для данной модели неизвестен, то он читается из базы
 DWORD CFloorsLayer::GetColor( int nFloorModelID ) const
 {
-	unordered_map<int, DWORD>::const_iterator it = colorMap.find( nFloorModelID );
+	typename unordered_map<int, DWORD>::const_iterator it = colorMap.find( nFloorModelID );
 
 	if ( colorMap.end() == it )
 	{
@@ -169,7 +169,7 @@ DWORD CFloorsLayer::GetColor( int nFloorModelID ) const
 			const CPropMap *pProps = pTree->pItemsTree->GetPropList( nFloorModelID );
 			if ( pProps )
 			{
-				CPropMap::const_iterator itc = pProps->find( "UserColor" );
+				typename CPropMap::const_iterator itc = pProps->find( "UserColor" );
 				if ( pProps->end() != itc )
 					cr = itc->second->GetValue();
 				pTree->pItemsTree->ReleasePropList( pProps );
@@ -185,7 +185,7 @@ DWORD CFloorsLayer::GetColor( int nFloorModelID ) const
 // если размер для данной модели неизвестен, то он читается из базы
 CSize CFloorsLayer::GetSize( int nFloorModelID ) const
 {
-	unordered_map<int, CSize>::const_iterator it = sizeMap.find( nFloorModelID );
+	typename unordered_map<int, CSize>::const_iterator it = sizeMap.find( nFloorModelID );
 	
 	if ( sizeMap.end() == it )
 	{
@@ -207,8 +207,8 @@ CSize CFloorsLayer::GetSize( int nFloorModelID ) const
 			const CPropMap *pProps = pTree->pItemsTree->GetPropList( nFloorModelID );
 			if ( pProps )
 			{
-				CPropMap::const_iterator itw = pProps->find( "SizeY" );
-				CPropMap::const_iterator itl = pProps->find( "SizeX" );
+				typename CPropMap::const_iterator itw = pProps->find( "SizeY" );
+				typename CPropMap::const_iterator itl = pProps->find( "SizeX" );
 				if ( pProps->end() != itw && pProps->end() != itl )
 				{
 					int nRotation = SDiscretePos::TURN_0;//itr->second->GetValue();

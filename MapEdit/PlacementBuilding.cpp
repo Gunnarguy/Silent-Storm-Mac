@@ -35,13 +35,13 @@ void MakeBuildingInfo( const CPlacement *pPl, NBuilding::CBuildInfo *pInfo )
 					continue;
 				const float fFloor = FT_FLOOR_INTERMEDIATE == ftype || FT_SOLID_INTERMEDIATE == ftype ? nf + 0.5f : nf;
 				const CFloorPlan::CCellInfo* pcells = pPlan->GetFloor();
-				for ( CFloorPlan::CCellInfo::const_iterator it = pcells->begin(); it != pcells->end(); ++it )
+				for ( typename CFloorPlan::CCellInfo::const_iterator it = pcells->begin(); it != pcells->end(); ++it )
 				{
 					int nModelID = it->first;
 					const CPropMap *pProps = pItems->GetPropList( nModelID );
 					if ( !pProps )
 						continue;
-					CPropMap::const_iterator cit = pProps->find( "SizeZ" );
+					typename CPropMap::const_iterator cit = pProps->find( "SizeZ" );
 					if ( cit == pProps->end() )
 						continue;
 					pInfo->nMinFloor = Min( pInfo->nMinFloor, nf );
@@ -98,7 +98,7 @@ void MakeBuildingInfo( const CPlacement *pPl, NBuilding::CBuildInfo *pInfo )
 		if ( !pRooms )
 			continue;
 		const CFloorPlan::CCellInfo* pcells = pRooms->GetFloor();
-		for ( CFloorPlan::CCellInfo::const_iterator it = pcells->begin(); it != pcells->end(); ++it )
+		for ( typename CFloorPlan::CCellInfo::const_iterator it = pcells->begin(); it != pcells->end(); ++it )
 		{
 			for ( int k = 0; k < it->second.size(); ++k )
 			{

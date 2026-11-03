@@ -52,7 +52,7 @@ void GetNearestPlaces( NWorld::CUnitServer *pServer, const SPathPlace &place, in
 		//  * keep a reached place unless GetPassability says AIP_NOT_PASSABLE or AIP_CANNOT_LAY (locked and
 		//    door places PASS as targets; dev's IsPassable == AIP_YES-only was stricter).
 		NWorld::PrepareAllPaths( pNet, pT, &places, pU, place, nMaxCost, pU, false, /*bNoDynamicLocks*/ true );
-		for ( list<SPathPlace>::iterator it = places.begin(); it != places.end(); ++it )
+		for ( typename list<SPathPlace>::iterator it = places.begin(); it != places.end(); ++it )
 		{
 			unsigned short nP = it->GetPose();
 			if ( nP == 3 || nP == 0 )      // drop the CM_INACTIVE(3) and CM_LAY(0) check-poses
@@ -154,7 +154,7 @@ bool GetCheckPosition( IAIUnit *pUnit, CUnitArea *pArea, const SPosition &pos, S
 	GetNearestPlaces( pUS, pUnit->GetUnitPosition().pos.p, pUnit->GetAP(), RUN, &places, &table );
 	bool bFound = false;
 	int nBest = 0;   // the binary inits 0x100000, dead before first use (the !bFound term guards it)
-	for ( vector<SPathPlace>::iterator it = places.begin(); it != places.end(); ++it )
+	for ( typename vector<SPathPlace>::iterator it = places.begin(); it != places.end(); ++it )
 	{
 		if ( !pArea->IsInArea( *it ) )       // release IsInArea @0x73e30: hash lookup (empty set matches nothing)
 			continue;
@@ -258,7 +258,7 @@ CVec3 GetAvgPos( const vector< CPtr<IAIUnit> > &units, const CVec3 &cp )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // NAI::GetPlacesAtDirection @0xa0800 -- the forward-cone filter over the reachable flood. The binary folds
 // the dot v+q first then u; the empty-cone fallback returns the single farthest in-band place (FIRST on
-// ties), seeded from the 0xfdffffff sentinel via the SPathPlace(int) ctor (nData is private).
+// ties), seeded from the 0xfdffffff marker via the SPathPlace(int) ctor (nData is private).
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void GetPlacesAtDirection( NWorld::CUnitServer *pServer, const SPathPlace &place, CVec3 vDir, int nSpread,
 	float fMinDist, float fMaxDist, int nMaxCost, EPose nPose, vector<SPathPlace> *pRes )
@@ -454,7 +454,7 @@ bool GetRoundUpPlaces( NWorld::CUnitServer *pServer, const SUnitPosition &enemyP
 		mid.q = ( cpOwn.q + cpEnemy.q ) * 0.5f;
 		list< CPtr<NWorld::CUnitServer> > others;
 		pServer->GetWorld()->GetUnitsNear( mid, &others, fDist * 0.5f + 5.0f );
-		for ( list< CPtr<NWorld::CUnitServer> >::iterator it = others.begin(); it != others.end(); ++it )
+		for ( typename list< CPtr<NWorld::CUnitServer> >::iterator it = others.begin(); it != others.end(); ++it )
 		{
 			NWorld::CUnitServer *pOther = it->GetPtr();
 			if ( !IsValid( pOther ) )
@@ -607,7 +607,7 @@ void RouteAddRoundUp( NWorld::CUnitServer *pServer, NWorld::CUnitServer *pEnemy,
 	bool bAvoid = bCheck && pServer->GetWorld()->GetGlobalGame()->pDifficulty->bAICheckCorpses;
 	cmds.push_back( new CTaskCommandLookToPosition( enemyPos.pos.p ) );
 	SPosition stop, flank, attack;
-	stop.p   = SPathPlace( (int)0xfdffffff );                        // the invalid sentinel (nData is private)
+	stop.p   = SPathPlace( (int)0xfdffffff );                        // the invalid marker (nData is private)
 	flank.p  = SPathPlace( (int)0xfdffffff );
 	attack.p = SPathPlace( (int)0xfdffffff );
 	if ( GetRoundUpPlaces( pServer, enemyPos, &stop, &flank, &attack, bAvoid ) )

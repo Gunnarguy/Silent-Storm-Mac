@@ -1,6 +1,9 @@
 #include "StdAfx.h"
 #include "GResource.h"
-#include "..\Misc\Win32Helper.h"
+#include "../Misc/Win32Helper.h"
+#if defined(__APPLE__)
+#include <atomic>
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
 {
@@ -28,6 +31,15 @@ static list<CResourceTracker*>& GetTrackers()
 // scans the list LAST-registered-FIRST so mod content overrides the base game. (This dev source
 // had collapsed the list to a single string -- restored to the release shape for mod support.)
 static vector<string> szDirs;
+#if defined(__APPLE__)
+static bool hdTextureSources = true; // protected by packageWork during resource lookups
+static std::atomic<unsigned> textureSourceGeneration{1};
+unsigned TextureSourceGeneration() { return textureSourceGeneration.load(); }
+static bool SkipResourceDirectory(const string &dir)
+{
+	return !hdTextureSources && (dir == ".\\hd\\" || dir == "hd\\" || dir == "./hd\\");
+}
+#endif
 // release NGScene::AddResourceDir @0x157b30 -- append the dir, enforcing a trailing '\'
 void AddResourceDir( const char *pszName )
 {
@@ -50,12 +62,15 @@ static NWin32Helper::CCriticalSection packageWork;
 // package from EVERY resource dir carrying one, in szDirs order (base first, mod dirs after).
 static vector<CPtr<IFilesPackage> >& GetPackages( const char *pszResName )
 {
-	CPackHash::iterator i = packages.find( pszResName );
+	typename CPackHash::iterator i = packages.find( pszResName );
 	if ( i != packages.end() )
 		return i->second;
 	vector<CPtr<IFilesPackage> > &res = packages[pszResName];
 	for ( int k = 0; k < szDirs.size(); ++k )
 	{
+#if defined(__APPLE__)
+		if (SkipResourceDirectory(szDirs[k])) continue;
+#endif
 		string szFullPath = szDirs[k] + pszResName + ".res";
 		IFilesPackage *pRes;
 		if ( strcmp( pszResName, "LRTextures" ) == 0 )
@@ -64,6 +79,16 @@ static vector<CPtr<IFilesPackage> >& GetPackages( const char *pszResName )
 			pRes = OpenFilesPackage( szFullPath.c_str() );
 		if ( pRes )
 			res.push_back( pRes );
+#if defined(__APPLE__)
+		// macOS port diagnostic: S2_LIST_PACKAGE=<res name> prints every file id and size of that package
+		if ( pRes && getenv( "S2_LIST_PACKAGE" ) && ( !strcmp( getenv( "S2_LIST_PACKAGE" ), pszResName ) || !strcmp( getenv( "S2_LIST_PACKAGE" ), "all" ) ) )
+		{
+			vector< pair<FILE_ID, unsigned int> > files;
+			ListPackageFiles( pRes, &files );
+			for ( int i = 0; i < (int)files.size(); ++i )
+				fprintf( stderr, "[package] %s %d %u\n", szFullPath.c_str(), (int)files[i].first, files[i].second );
+		}
+#endif
 	}
 #ifndef _MAPEDIT
 	ASSERT( !res.empty() );
@@ -91,7 +116,7 @@ void CloseAllResources()
 	NWin32Helper::CCriticalSectionLock l( packageWork );
 	packages.clear();
 	list<CResourceTracker*> &t = GetTrackers();
-	for ( list<CResourceTracker*>::iterator i = t.begin(); i != t.end(); ++i )
+	for ( typename list<CResourceTracker*>::iterator i = t.begin(); i != t.end(); ++i )
 		(*i)->Clear();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -115,6 +140,9 @@ inline string GetFileResourceName( const char *pszResName, FILE_ID nFileID )
 	}
 	for ( int i = (int)szDirs.size() - 1; i > 0; --i )
 	{
+#if defined(__APPLE__)
+		if (SkipResourceDirectory(szDirs[i])) continue;
+#endif
 		sprintf( szBuf, "%s%s\\%d", szDirs[i].c_str(), pszResName, nFileID );
 		HANDLE h = CreateFile( szBuf, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0 );
 		if ( h != INVALID_HANDLE_VALUE )
@@ -175,7 +203,13 @@ CResourceFileOpener::CResourceFileOpener( const char *pszResName, int nID )
 	else if ( DoesPackageFileExist( pszResName, nID ) )
 		pf = new CPackageResource( GetPackage( pszResName, nID ), nID );
 	else
+	{
+#if defined(__APPLE__)
+		static const bool bLogMiss = getenv( "S2_LOG_RESOURCES" ) != 0;   // macOS port diagnostic
+		if ( bLogMiss ) fprintf( stderr, "[resource-miss] %s %d\n", pszResName, nID );
+#endif
 		pf = new CFileResource( pszResName, nID );
+	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CResourceFileOpener::CResourceFileOpener( const char *pszResName, const SPartKey &key )
@@ -189,7 +223,13 @@ CResourceFileOpener::CResourceFileOpener( const char *pszResName, const SPartKey
 	else if ( DoesPackageFileExist( pszResName, nID ) )
 		pf = new CPackageResource( GetPackage( pszResName, nID ), nID );
 	else
+	{
+#if defined(__APPLE__)
+		static const bool bLogMiss = getenv( "S2_LOG_RESOURCES" ) != 0;   // macOS port diagnostic
+		if ( bLogMiss ) fprintf( stderr, "[resource-miss] %s %d\n", pszResName, nID );
+#endif
 		pf = new CFileResource( pszResName, nID );
+	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CResourceFileOpener::DoesExist( const char *pszResName, int nID )
@@ -240,7 +280,7 @@ CResourceTracker::~CResourceTracker()
 bool CResourceTracker::DoesExist( const SPartKey &k )
 {
 	bool bRes;
-	CCheckHash::iterator i = check.find( k );
+	typename CCheckHash::iterator i = check.find( k );
 	if ( i == check.end() )
 	{
 		bRes = CResourceFileOpener::DoesExist( szResourceName.c_str(), k );
@@ -319,6 +359,16 @@ static void WaitAllPendingLoad()
 		Sleep(0);
 	}
 }
+#if defined(__APPLE__)
+void SetHDTextureSources(bool enabled)
+{
+	WaitAllPendingLoad();
+	NWin32Helper::CCriticalSectionLock lock(packageWork);
+	hdTextureSources = enabled;
+	packages.clear();
+	++textureSourceGeneration;
+}
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static DWORD WINAPI LoaderThread( void* )
 {

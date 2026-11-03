@@ -5,11 +5,11 @@
 #include "aiMap.h"
 #include "aiCollider.h"
 #include "phCollider.h"
-#include "..\misc\Tools.h"
-#include "..\misc\RandomGen.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
+#include "../misc/Tools.h"
+#include "../misc/RandomGen.h"
+#include "../MiscDll/LogStream.h"
+#include "../misc/StrProc.h"
+#include "../MiscDll/Commands.h"
 #include "wTSFlags.h"
 #include "GSceneUtils.h"
 #include "Bound.h"          // SBoundCalcer/SBound for the BeStopped resting corpse bound (retail @0xea4f0)
@@ -770,9 +770,12 @@ void CParticleSkeleton::Step()
 		// build up velocity; the effector liveness is re-tested per particle, as in retail.
 		if ( IsValid( pEffector ) )
 		{
+			// macOS port: the clamp is per step; scale it with the step length so a finer phtimestep keeps the
+			// same carried speed (identical to retail at the default 0.05 s)
+			const float fMaxTravel = 0.1f * DELTA_T / 0.05f;
 			float fLen = fabs( delta );
-			if ( fLen > 0.1f )
-				delta *= 0.1f / fLen;
+			if ( fLen > fMaxTravel )
+				delta *= fMaxTravel / fLen;
 		}
 		CVec3 future = particles[nP] + delta + gravity * DELTA_T * DELTA_T;
 		last[nP] = particles[nP];
@@ -999,6 +1002,9 @@ void CParticleSkeleton::Step()
 		else
 		{
 			float fStopDelta = (float)(nStep * DELTA_T_DWORD) * F_STOP_DELTA_INCREMENT / 10000.0f;
+			// macOS port: the comparison below is travel per step, so it scales with the step length. Without this a
+			// finer phtimestep freezes a body that is still moving (identical to retail at the default 0.05 s)
+			fStopDelta *= DELTA_T / 0.05f;
 			bStopped = true;
 			for ( int nP = 0; nP < nParticles; ++nP )
 			{

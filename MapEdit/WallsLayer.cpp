@@ -7,8 +7,8 @@
 #include "Placement.h"
 #include "dbDefs.h"
 #include "ItemsMgr.h"
-#include "..\Input\Bind.h"
-#include "..\Main\iMain.h"
+#include "../Input/Bind.h"
+#include "../Main/iMain.h"
 
 // Текущий активный этаж получаем у theApp
 
@@ -385,7 +385,7 @@ bool CWallsLayer::Flip()
 // если цвет для данной модели неизвестен, то он читается из базы
 COLORREF CWallsLayer::GetColor( int nWallModelID, bool bGrayed  ) const
 {
-	unordered_map<int, DWORD>::const_iterator it = colorMap.find( nWallModelID );
+	typename unordered_map<int, DWORD>::const_iterator it = colorMap.find( nWallModelID );
 	COLORREF color;
 
 	if ( colorMap.end() == it )
@@ -402,7 +402,7 @@ COLORREF CWallsLayer::GetColor( int nWallModelID, bool bGrayed  ) const
 			const_cast<CWallsLayer*>(this)->colorMap[nWallModelID] = DEF_WALL_COLOR;
 			return DEF_WALL_COLOR;
 		}
-		CPropMap::const_iterator itc = pProps->find( "UserColor" );
+		typename CPropMap::const_iterator itc = pProps->find( "UserColor" );
 		if ( pProps->end() == itc )
 		{
 			const_cast<CWallsLayer*>(this)->colorMap[nWallModelID] = DEF_WALL_COLOR;

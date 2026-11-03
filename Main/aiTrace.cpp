@@ -146,7 +146,7 @@ void CTracer::TraceEntity( const SConvexHull &e, vector<SInterval::SCrossPoint> 
 			edgeSide[i] = 1e-6f; // same as with points, somebody has to win ;)
 	}
 	// check tris
-	for ( vector<STriangle>::const_iterator i = e.tris.mesh.begin(); i != e.tris.mesh.end(); ++i )
+	for ( typename vector<STriangle>::const_iterator i = e.tris.mesh.begin(); i != e.tris.mesh.end(); ++i )
 	{
 		float f1 = edgeSide[ i->i1 & 0x7fff ] * fTraceSign[ i->i1>>15 ];
 		float f2 = edgeSide[ i->i2 & 0x7fff ] * fTraceSign[ i->i2>>15 ];

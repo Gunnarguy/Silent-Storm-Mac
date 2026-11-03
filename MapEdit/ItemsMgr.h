@@ -184,7 +184,7 @@ public:
 // "-1", если ID не найден
 inline int CItemsMgr::GetFolderIndex( int id ) const 
 {
-  std::unordered_map<int, int>::const_iterator it = foldID2Index.find( id );
+  typename std::unordered_map<int, int>::const_iterator it = foldID2Index.find( id );
   if ( foldID2Index.end() == it )
     return -1;
   return it->second;
@@ -194,7 +194,7 @@ inline int CItemsMgr::GetFolderIndex( int id ) const
 // "-1", если ID не найден
 inline int CItemsMgr::GetItemIndex( int id ) const 
 {
-  std::unordered_map<int, int>::const_iterator it = itemID2Index.find( id );
+  typename std::unordered_map<int, int>::const_iterator it = itemID2Index.find( id );
   if ( itemID2Index.end() == it )
     return -1;
   return it->second;

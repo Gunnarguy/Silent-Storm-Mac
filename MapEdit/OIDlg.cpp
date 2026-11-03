@@ -6,7 +6,7 @@
 #include "OIDlg.h"
 #include "ItemsMgr.h"
 #include "TreeSelItemDlg.h"
-#include "..\DBFormat\DataGeometry.h"
+#include "../DBFormat/DataGeometry.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -97,7 +97,7 @@ BOOL COIDlg::PreTranslateMessage( MSG* pMsg )
   if ( pMsg->message == WM_USER + 1 && pPropMap )
   {
     string szName = m_wndOI.GetPropertyName( pMsg->wParam );
-    CPropMap::const_iterator it = pPropMap->find( szName );
+    typename CPropMap::const_iterator it = pPropMap->find( szName );
     if ( it == pPropMap->end() )
       return true;
 		CProp *pProp = it->second;
@@ -140,7 +140,7 @@ void COIDlg::UpdatePropList()
 	//
 	vector<CPtr<CProp> > vals;
 	{
-		for ( CPropMap::const_iterator it = pPropMap->begin(); it != pPropMap->end(); ++it )
+		for ( typename CPropMap::const_iterator it = pPropMap->begin(); it != pPropMap->end(); ++it )
 			vals.push_back( it->second );
 		sort( vals.begin(), vals.end(), PropCompare );
 	}
@@ -214,7 +214,7 @@ void COIDlg::UpdatePropList()
 		}
 	}
 	// Сворачиваем группы, в которых большое число элементов
-	for ( unordered_map<int, int>::const_iterator it = groups.begin(); it != groups.end(); ++it )
+	for ( typename unordered_map<int, int>::const_iterator it = groups.begin(); it != groups.end(); ++it )
 	{
 		if ( it->first == 0 )
 			continue;
@@ -244,7 +244,7 @@ void COIDlg::UpdateProperty( int nPropID )
   if ( !pPropMap )
     return;
 
-  for ( CPropMap::const_iterator it = pPropMap->begin(); it != pPropMap->end(); ++it )
+  for ( typename CPropMap::const_iterator it = pPropMap->begin(); it != pPropMap->end(); ++it )
   {
     if ( it->second->GetID() == nPropID )
     {

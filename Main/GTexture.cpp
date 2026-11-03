@@ -4,11 +4,15 @@
 #include "GTexture.h"
 #include "GPixelFormat.h"
 #include "mmpFormat.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataTerrain.h"
+#include "../DBFormat/DataInterface.h"
+#include <unordered_set>
+#include <unordered_map>
 #include "SWTexture.h"
-#include "..\Misc\HPTimer.h"
+#include "../Misc/HPTimer.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool bDXTModeOn = true;
@@ -223,9 +227,18 @@ void CFileTexture::Recalc()
 	NDb::CTexture *pTex = NDb::GetTexture( GetKey().nID );
 	if ( !pTex )
 	{
+#if defined(__APPLE__)
+		if ( getenv( "S2_LOG_TEXTURES" ) ) fprintf( stderr, "[texture-fail] %d no database record\n", GetKey().nID );
+#endif
 		CreateChecker();
 		return;
 	}
+#if defined(__APPLE__)
+	// macOS port diagnostics: S2_LOG_TEXTURES=1 lists every texture ID loaded (HD pack testing)
+	static const bool bLogTextures = getenv( "S2_LOG_TEXTURES" ) != 0;
+	if ( bLogTextures )
+		fprintf( stderr, "[texture] %d\n", GetKey().nID );
+#endif
 	NGfx::ETextureUsage eUsage;
 	switch ( pTex->usage )
 	{
@@ -290,6 +303,9 @@ void CFileTexture::Recalc()
 	{
 		file->Seek(0);
 		file->Read( &hdr, sizeof(hdr) );
+#if defined(__APPLE__)
+		if (bLogTextures) fprintf(stderr, "[texture-data] %d %dx%d generation=%u\n", GetKey().nID, hdr.nSizeX, hdr.nSizeY, TextureSourceGeneration());
+#endif
 		int nSkipMip = pTex->usage == NDb::CTexture::TEXTURE_USAGE_2D ? 0 : Clamp( nTextureUseMip, 0, Max( 0, hdr.nNumMipLevels - 1 ) );
 		bool bLoaded;
 		if ( hdr.format == NGfx::CF_A8R8G8B8 && NGfx::Is16BitTextures() )
@@ -305,12 +321,18 @@ void CFileTexture::Recalc()
 		if ( !bLoaded )
 		{
 			ASSERT(0);
+#if defined(__APPLE__)
+			if ( bLogTextures ) fprintf( stderr, "[texture-fail] %d load failed %dx%d mips=%d format=%d\n", GetKey().nID, hdr.nSizeX, hdr.nSizeY, hdr.nNumMipLevels, (int)hdr.format );
+#endif
 			CreateChecker();
 		}
 	}
 	else
 	{
 		ASSERT(0);
+#if defined(__APPLE__)
+		if ( bLogTextures ) fprintf( stderr, "[texture-fail] %d empty file (real id %d)\n", GetKey().nID, GetRealTextureID( pTex ) );
+#endif
 		CreateChecker();
 	}
 	pRequest = 0;
@@ -320,6 +342,15 @@ void CFileTexture::Recalc()
 bool CFileTexture::NeedUpdate()
 {
 	bool bRes = TParent::NeedUpdate();
+#if defined(__APPLE__)
+	if (textureGeneration != TextureSourceGeneration())
+	{
+		textureGeneration = TextureSourceGeneration();
+		pRequest = 0;
+		pValue = 0;
+		bRes = true;
+	}
+#endif
 	return bIsFakeTexture || bRes;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -421,7 +452,88 @@ void CColorTexture::Recalc()
 // CTerrainTextureBlend::NeedUpdate consults -- lives in GTerrainTexture.cpp) + gfx_low_ram (unsaved)
 extern int nTextureUseMip;   // GTerrainTexture.cpp, retail @0x9c60a4
 bool bLowRAM = false; // gfx_low_ram, retail @0x9c60a8; shared with geometry caching
+#if defined(__APPLE__)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// macOS port: "texture_manifest <file>" writes one line per texture record for the HD texture tool
+// (port/tools/texpack): id usage width height dxt bump cube terrain. Usage 0 (2D) textures are drawn with pixel
+// coordinates, cube faces must change together, terrain tiles and masks are composited at a fixed size, and bump
+// maps hold normals -- the tool treats each accordingly.
+static void CmdTextureManifest( const string &szID, const vector<wstring> &paramsSet, void *pContext )
+{
+	string szFile = paramsSet.empty() ? string( "texture_manifest.tsv" ) : NStr::ToAscii( paramsSet[0] );
+	std::unordered_set<int> bump, cube, ui;
+	std::unordered_map<int, int> terrain;   // 1 tile colour texture, 2 tile mask (blend weights, never upscaled by AI)
+	{
+		// interface art is stored as ordinary textures and reached through UI texture records (pixel coordinates)
+		CDBIterator<NDb::CUITexture> it( *NDatabase::GetTable<NDb::CUITexture>() );
+		while ( it.MoveNext() )
+		{
+			NDb::CUITexture *p = it.Get();
+			if ( !p ) continue;
+			for ( int k = 0; k < NDb::UIM_MAX; ++k )
+				if ( IsValid( p->pTextures[k] ) )
+					ui.insert( p->pTextures[k]->GetRecordID() );
+		}
+	}
+	{
+		// Font glyph rectangles use atlas pixel coordinates, just like interface art.
+		CDBIterator<NDb::CTypeface> it( *NDatabase::GetTable<NDb::CTypeface>() );
+		while ( it.MoveNext() )
+			if ( it.Get() && IsValid( it.Get()->pTexture ) )
+				ui.insert( it.Get()->pTexture->GetRecordID() );
+	}
+	{
+		CDBIterator<NDb::CMaterial> it( *NDatabase::GetTable<NDb::CMaterial>() );
+		while ( it.MoveNext() )
+			if ( it.Get() && IsValid( it.Get()->pBump ) )
+				bump.insert( it.Get()->pBump->GetRecordID() );
+	}
+	{
+		CDBIterator<NDb::CCubeTexture> it( *NDatabase::GetTable<NDb::CCubeTexture>() );
+		while ( it.MoveNext() )
+		{
+			NDb::CCubeTexture *p = it.Get();
+			if ( !p ) continue;
+			CPtr<NDb::CTexture> faces[6] = { p->pPositiveX, p->pPositiveY, p->pPositiveZ, p->pNegativeX, p->pNegativeY, p->pNegativeZ };
+			for ( int k = 0; k < 6; ++k )
+				if ( IsValid( faces[k] ) )
+					cube.insert( faces[k]->GetRecordID() );
+		}
+	}
+	{
+		CDBIterator<NDb::CTerrainTile> it( *NDatabase::GetTable<NDb::CTerrainTile>() );
+		while ( it.MoveNext() )
+		{
+			NDb::CTerrainTile *p = it.Get();
+			if ( !p ) continue;
+			if ( IsValid( p->pTexture ) ) terrain[ p->pTexture->GetRecordID() ] = 1;
+			if ( IsValid( p->pBump ) ) { terrain[ p->pBump->GetRecordID() ] = 1; bump.insert( p->pBump->GetRecordID() ); }
+			if ( IsValid( p->pMask ) ) terrain[ p->pMask->GetRecordID() ] = 2;
+		}
+	}
+	FILE *f = fopen( szFile.c_str(), "w" );
+	if ( !f )
+		return;
+	int nCount = 0;
+	CDBIterator<NDb::CTexture> it( *NDatabase::GetTable<NDb::CTexture>() );
+	while ( it.MoveNext() )
+	{
+		NDb::CTexture *p = it.Get();
+		if ( !p ) continue;
+		int nID = p->GetRecordID();
+		int nUsage = ui.find( nID ) != ui.end() ? (int)NDb::CTexture::TEXTURE_USAGE_2D : (int)p->usage;
+		fprintf( f, "%d %d %d %d %d %d %d %d %d\n", nID, nUsage, p->nWidth, p->nHeight, p->bIsDXT ? 1 : 0,
+			bump.find( nID ) != bump.end() ? 1 : 0, cube.find( nID ) != cube.end() ? 1 : 0, terrain.find( nID ) != terrain.end() ? terrain[nID] : 0, ui.find( nID ) != ui.end() ? 1 : 0 );
+		++nCount;
+	}
+	fclose( f );
+	(void)nCount;
+}
+#endif
 START_REGISTER(GTexture)
+#if defined(__APPLE__)
+	REGISTER_CMD( "texture_manifest", CmdTextureManifest )
+#endif
 	REGISTER_VAR_EX( "gfx_texture_usedxt", NGlobal::VarBoolHandler, &bDXTModeOn, 1, true )
 	REGISTER_VAR_EX( "gfx_texture_mip", NGlobal::VarIntHandler, &nTextureUseMip, 0, true )
 	REGISTER_VAR_EX( "gfx_low_ram", NGlobal::VarBoolHandler, &bLowRAM, 0, false )

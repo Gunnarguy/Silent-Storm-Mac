@@ -4,11 +4,11 @@
 #pragma once
 #endif // _MSC_VER > 1000
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "..\ADOImport\BasicDB.h"
+#include "../ADOImport/BasicDB.h"
 #include "DataConst.h"
 namespace NAI
 {
-	enum EHitLocation;
+	enum EHitLocation : int;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NDb
@@ -46,7 +46,7 @@ const int N_HUMAN_BODY_ARMOR = 1;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // SKILLS common set of RPG skills 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum ESkillType
+enum ESkillType : int
 {
 	// weapons skills
 	ST_MELEE = 0,
@@ -131,7 +131,6 @@ public:
 	float fUltimatePresure;
 	float fWeight; // phisical density
 	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CDBRecord*)this); f.Add(2,&nThreshold); f.Add(3,&nVP); f.Add(4,&nDR); f.Add(5,&fDensity); f.Add(6,&fTransparency); f.Add(7,&fUltimateMoment); f.Add(8,&fUltimatePresure); f.Add(9,&fWeight); return 0; }
-
 	virtual void Import();
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -172,7 +171,7 @@ struct SUniformItem
 	ZEND int operator&( CStructureSaver &f ) { f.Add(2,&pUniform); f.Add(3,&pModelActive); f.Add(4,&pModelInactive); return 0; }
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EItemSubType
+enum EItemSubType : int
 {
 	SUBTYPE_NONE = 0,
 	SUBTYPE_HEAVY,
@@ -193,7 +192,7 @@ enum EItemSubType
 	N_SUBTYPES
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum ECameraType
+enum ECameraType : int
 {
 	CAMERA_NORMAL = 0,
 	CAMERA_SLOT,
@@ -338,7 +337,7 @@ public:
 // MACHETE records, dev WT_RLAUNCHER==7 matched retail MACHINE_GUN records, etc. Values now match
 // retail 1:1 (PDB: MACHETE=6, MACHINE_GUN=7, RLAUNCHER=8, MINE_DETECTOR=9, PLAZMAGUN=10,
 // PK_PLAZMAGUN=11, BOSS_PLAZMAGUN=12, TERROR_SHOOTER=13, TERROR_SPECIAL_GUN=14).
-enum EWeaponType
+enum EWeaponType : int
 {
 	WT_DEFAULT,
 	WT_PISTOL,
@@ -357,7 +356,7 @@ enum EWeaponType
 	WT_TERROR_SPECIAL_GUN,
 };
 inline bool IsMeleeWeapon( EWeaponType type ) { return type == WT_DEFAULT || type == WT_KNIFE || type == WT_KATANA; }
-enum EShootMode
+enum EShootMode : int
 {
 	SM_Snap = 0,
 	SM_Aimed,
@@ -432,7 +431,7 @@ public:
 	virtual void Import();
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EItemPlace
+enum EItemPlace : int
 {
 	BELT_L1 = 0,
 	BELT_R1,
@@ -691,7 +690,7 @@ class CRPGPers: public CDBRecord
 {
 	OBJECT_BASIC_METHODS(CRPGPers);
 public:
-	enum ECameraType
+	enum ECameraType : int
 	{
 		CAMERA_FACEGEN,
 		CAMERA_PORTRAIT,
@@ -747,7 +746,7 @@ public:
 	virtual void Import();
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum ECriticalLocation
+enum ECriticalLocation : int
 {
 	CL_HEAD = 0,
 	CL_TORSO,
@@ -757,7 +756,7 @@ enum ECriticalLocation
 	N_CL
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum ECritical
+enum ECritical : int
 {
 	C_DEATH = 0,
 	C_AP_REDUCTION,
@@ -774,7 +773,7 @@ enum ECritical
 	C_PATIENT,
 	C_DEAF,
 	C_BLEEDING,
-	C_UI_VISIBLE_CRITICAL, // Retail sentinel at 15; PK statuses start at 16.
+	C_UI_VISIBLE_CRITICAL, // Retail end marker at 15; PK statuses start at 16.
 	C_PANZERKLEIN_AXIS,
 	C_PANZERKLEIN_ALLIES,
 	C_PANZERKLEIN_TERRORS,

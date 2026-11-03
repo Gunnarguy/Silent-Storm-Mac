@@ -1,12 +1,12 @@
 #include "StdAfx.h"
 #include "GMatShare.h"
 #include "GMaterial.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\Misc\BasicShare.h"
+#include "../DBFormat/DataFormat.h"
+#include "../Misc/BasicShare.h"
 #include "GTexture.h"
 #include "GSceneUtils.h"
 
-#include "..\Misc\RandomGen.h"
+#include "../Misc/RandomGen.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
 {
@@ -91,7 +91,7 @@ IMaterial* CMaterialShare::CreateOccluderMaterial()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 IMaterial* CMaterialShare::CreateMaterial( NDb::CMaterial *pMaterial, int key )
 {
-	CMatHashmap::iterator i = materials.find( key );
+	typename CMatHashmap::iterator i = materials.find( key );
 	if ( i != materials.end() )
 		return i->second;
 	IMaterial *pRes = CreateMaterialFromDBRecord( pMaterial, pSky );
@@ -103,7 +103,7 @@ IMaterial* CMaterialShare::CreateMaterial( NDb::CMaterial *pMaterial, int key )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 IMaterial* CColorMaterialShare::CreateMaterial( const CVec3 &color )
 {
-	CMatHashmap::iterator i = materials.find( color );
+	typename CMatHashmap::iterator i = materials.find( color );
 	if ( i != materials.end() )
 		return i->second;
 	IMaterial *pRes = NGScene::CreateMaterial( color );
@@ -117,7 +117,7 @@ IMaterial* CColorMaterialShare::CreateMaterial( const CVec3 &color )
 IMaterial* CTransparentMaterialShare::CreateMaterial( const CVec4 &cr )
 {
 	CVec4 color( cr.x * cr.w, cr.y * cr.w, cr.z * cr.w, cr.w );
-	CMatHashmap::iterator i = materials.find( color );
+	typename CMatHashmap::iterator i = materials.find( color );
 	if ( i != materials.end() )
 		return i->second;
 	CObj<CPtrFuncBase<NGfx::CTexture> > pTexture = new CColorTexture( color );//shareTextures.Get( 1724 );

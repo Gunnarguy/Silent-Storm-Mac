@@ -6,7 +6,7 @@
 #include "RPGAttackMech.h"
 #include "RPGUnit.h"          // NRPG::CUnit::pDefaultWeapon (FetchInventoryItems @0x55f90)
 //
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataRPG.h"
 //
 #include "aiUnit.h"
 #include "aiWeapon.h"
@@ -15,7 +15,7 @@
 //
 #include "wUnitServer.h"
 #include "wDebris.h"          // NWorld::CDFrozenItem (loot scorers)
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 //
 namespace NAI
 {
@@ -47,7 +47,7 @@ template< class T >
 static void GetItemsOfType( const vector< CObj<IAIInventoryItem> > &items, vector< CObj<T> > *pRes )
 {
 	pRes->clear();
-	for ( vector< CObj<IAIInventoryItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
+	for ( typename vector< CObj<IAIInventoryItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
 	{
 		if ( T *p = CastInventoryItem<T>( i->GetPtr() ) )
 			pRes->push_back( p );
@@ -60,7 +60,7 @@ template< class T >
 static int GetItemsCountOfType( const vector< CObj<IAIInventoryItem> > &items )
 {
 	int nCount = 0;
-	for ( vector< CObj<IAIInventoryItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
+	for ( typename vector< CObj<IAIInventoryItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
 	{
 		if ( CastInventoryItem<T>( i->GetPtr() ) )
 			++nCount;
@@ -78,7 +78,7 @@ static T* GetBestWeaponSimpleT( const vector< CObj<IAIInventoryItem> > &items, I
 	T *pRes = CastInventoryItem<T>( pCurrent );
 	if ( pRes == 0 || !IsValid( pRes ) )
 	{
-		for ( vector< CObj<IAIInventoryItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
+		for ( typename vector< CObj<IAIInventoryItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
 		{
 			if ( T *p = CastInventoryItem<T>( i->GetPtr() ) )
 				return p;
@@ -98,7 +98,7 @@ static T* GetBestMeleeWeaponT( const vector< CObj<T> > &weapons )
 {
 	T *pBest = 0;
 	int nBestScore = -1;
-	for ( vector< CObj<T> >::const_iterator i = weapons.begin(); i != weapons.end(); ++i )
+	for ( typename vector< CObj<T> >::const_iterator i = weapons.begin(); i != weapons.end(); ++i )
 	{
 		NDb::CRPGMeleeWeapon *pDB = (*i)->GetItem()->GetDBMeleeWeapon();
 		if ( !IsValid( pDB ) )
@@ -153,7 +153,7 @@ IAIInventoryItem* CAIInventory::GetAIInventoryItem( NRPG::IInventoryItem *pItem 
 	ASSERT( IsValid( pItem ) );
 	if ( !IsValid( pItem ) )
 		return 0;
-	for ( vector< CObj<IAIInventoryItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
+	for ( typename vector< CObj<IAIInventoryItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
 	{
 		if ( (*i)->GetInventoryItem() == pItem )
 			return i->GetPtr();
@@ -170,7 +170,7 @@ void CAIInventory::GetInventoryItems( list< CPtr<NRPG::IInventoryItem> > *pItems
 	// clip OR that the inventory can equip into the first weapon slot (the CanEquip(0, item)
 	// vtbl+0x1c gate; Jan03 pushed everything, the gate is retail-new).
 	const vector<NRPG::SBackPackItem> &vBackPackItems = pInventory->GetItems();
-	vector<NRPG::SBackPackItem>::const_iterator i;
+	typename vector<NRPG::SBackPackItem>::const_iterator i;
 	for ( i = vBackPackItems.begin(); i != vBackPackItems.end(); ++i )
 	{
 		CPtr<NRPG::IInventoryItem> pItem = (*i).pItem;
@@ -197,7 +197,7 @@ void CAIInventory::FetchInventoryItems()
 {
 	list< CPtr<NRPG::IInventoryItem> > rpgItems;
 	GetInventoryItems( &rpgItems );
-	list< CPtr<NRPG::IInventoryItem> >::iterator i;
+	typename list< CPtr<NRPG::IInventoryItem> >::iterator i;
 	for ( i = rpgItems.begin(); i != rpgItems.end(); ++i )
 	{
 		CDynamicCast<NRPG::CClipItem> pClip( *i );
@@ -245,7 +245,9 @@ IAIInventoryItem* CAIInventory::CreateWeapon( NRPG::IInventoryItem *pItem )
 	{
 		CDynamicCast<NRPG::CFirstAidItem> pFirstAid( pItem );
 		if ( pFirstAid )
+		{
 			return CreateAIFirstAid( pFirstAid );
+		}
 	}
 	return 0;
 }
@@ -358,7 +360,7 @@ CAIFireArmsWeaponBase* CAIInventory::GetSuitableWeapon( CAIFireArmsWeaponClip *p
 	ASSERT( IsValid( pClip ) );
 	if ( !IsValid( pClip ) )
 		return 0;
-	for ( vector< CObj<IAIInventoryItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
+	for ( typename vector< CObj<IAIInventoryItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
 	{
 		CAIFireArmsWeaponBase *pWeapon = CastInventoryItem<CAIFireArmsWeaponBase>( i->GetPtr() );
 		if ( pWeapon && pWeapon->IsSuitableClip( pClip ) )
@@ -378,7 +380,7 @@ CAIFireArmsWeapon* CAIInventory::GetBestFireArms( const NAI::SUnitPosition &pos,
 	*pQuality = -0xFFFF;
 	vector< CObj<CAIFireArmsWeapon> > fireArms;
 	GetItemsOfType( items, &fireArms );
-	for ( vector< CObj<CAIFireArmsWeapon> >::const_iterator i = fireArms.begin(); i != fireArms.end(); ++i  )
+	for ( typename vector< CObj<CAIFireArmsWeapon> >::const_iterator i = fireArms.begin(); i != fireArms.end(); ++i  )
 	{
 		CPtr<NRPG::CWeaponItem> pWeaponItem( (*i)->GetItem() );
 		// Retail v1.1 0x45616c / v1.2 0x4566cc: the AI wrapper can outlive
@@ -471,7 +473,7 @@ CAIFireArmsWeapon* CAIInventory::GetBestWeaponForReload() const
 {
 	vector< CObj<CAIFireArmsWeaponBase> > weapons;
 	GetItemsOfType( items, &weapons );
-	for ( vector< CObj<CAIFireArmsWeaponBase> >::const_iterator i = weapons.begin(); i != weapons.end(); ++i )
+	for ( typename vector< CObj<CAIFireArmsWeaponBase> >::const_iterator i = weapons.begin(); i != weapons.end(); ++i )
 	{
 		if ( NeedsReloadAndCan( i->GetPtr() ) )
 			return static_cast<CAIFireArmsWeapon*>( i->GetPtr() );
@@ -486,7 +488,7 @@ CAIFireArmsWeapon* CAIInventory::GetBestWeaponForSnipe() const
 {
 	vector< CObj<CAIFireArmsWeapon> > fireArms;
 	GetItemsOfType( items, &fireArms );
-	for ( vector< CObj<CAIFireArmsWeapon> >::const_iterator i = fireArms.begin(); i != fireArms.end(); ++i )
+	for ( typename vector< CObj<CAIFireArmsWeapon> >::const_iterator i = fireArms.begin(); i != fireArms.end(); ++i )
 	{
 		CAIFireArmsWeapon *pWeapon = i->GetPtr();
 		if ( !IsValid( pWeapon ) )
@@ -506,7 +508,7 @@ CAIFireArmsWeapon* CAIInventory::GetBestWeaponForSnipe() const
 template<class T>
 static NWorld::CDFrozenItem* LootFindByType( const list< CPtr<NWorld::CDFrozenItem> > &items )
 {
-	for ( list< CPtr<NWorld::CDFrozenItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
+	for ( typename list< CPtr<NWorld::CDFrozenItem> >::const_iterator i = items.begin(); i != items.end(); ++i )
 	{
 		NWorld::CDFrozenItem *pItem = i->GetPtr();
 		if ( !IsValid( pItem ) )
@@ -584,14 +586,14 @@ bool CAIInventory::IsItemNecessary( NWorld::CDFrozenItem *pFrozen, IAIInventoryI
 	{
 		vector< CObj<CAIFireArmsWeapon> > fireArms;
 		GetItemsOfType( items, &fireArms );
-		for ( vector< CObj<CAIFireArmsWeapon> >::const_iterator i = fireArms.begin(); i != fireArms.end(); ++i )
+		for ( typename vector< CObj<CAIFireArmsWeapon> >::const_iterator i = fireArms.begin(); i != fireArms.end(); ++i )
 		{
 			int nHeldType = (int)(*i)->GetItem()->GetDBWeapon()->pAnimWeaponType->type;
 			if ( nHeldType != (int)NDb::WT_RLAUNCHER )
 				heldByType[nHeldType] = i->GetPtr();
 		}
 	}
-	unordered_map< int, CPtr<CAIFireArmsWeapon> >::iterator it;
+	typename unordered_map< int, CPtr<CAIFireArmsWeapon> >::iterator it;
 	switch ( pDB->pAnimWeaponType->type )
 	{
 	case NDb::WT_PISTOL:
@@ -694,7 +696,7 @@ void CAIInventory::DebugOutput() const
 	GetItemsOfType( items, &fireArms );
 	csSystem << "FireArms : " << ( int )fireArms.size();
 	csSystem << "     [  ";
-	vector< CObj<CAIFireArmsWeapon> >::const_iterator i;
+	typename vector< CObj<CAIFireArmsWeapon> >::const_iterator i;
 	for ( i = fireArms.begin(); i != fireArms.end(); ++i )
 		csSystem << "  " << (*i)->GetClipCount();
 	csSystem << "   ]\n";
@@ -703,7 +705,7 @@ void CAIInventory::DebugOutput() const
 	GetItemsOfType( items, &rocketLaunchers );
 	csSystem << "RocketLaunchers : " << ( int )rocketLaunchers.size();
 	csSystem << "     [  ";
-	vector< CObj<CAIRocketLauncherWeapon> >::const_iterator j;
+	typename vector< CObj<CAIRocketLauncherWeapon> >::const_iterator j;
 	for ( j = rocketLaunchers.begin(); j != rocketLaunchers.end(); ++j )
 		csSystem << "  " << (*j)->GetClipCount();
 	csSystem << "   ]\n";

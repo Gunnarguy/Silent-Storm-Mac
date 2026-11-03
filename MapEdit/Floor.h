@@ -1,7 +1,7 @@
 #ifndef __FLOOR_H__
 #define __FLOOR_H__
 
-#include "..\Main\BuildingInfo.h"
+#include "../Main/BuildingInfo.h"
 class CPlacement;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class CFloorPlan : public CObjectBase

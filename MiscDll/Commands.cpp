@@ -1,8 +1,8 @@
 #include "StdAfx.h"
 #include "Commands.h"
-#include "..\Misc\StrProc.h"
+#include "../Misc/StrProc.h"
 #include "LogStream.h"
-#include "..\FileIO\BasicChunk1.h"
+#include "../FileIO/BasicChunk1.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGlobal
 {
@@ -133,12 +133,12 @@ void UnregisterCmd( const string &szID, int nID )
 	CPtr<CRecordsMap> pHold( GetRecordsMap() );
 	TRecordsMap &recordsMap = pHold->recordsMap;
 
-	TRecordsMap::iterator iTemp = recordsMap.find( szID );
+	typename TRecordsMap::iterator iTemp = recordsMap.find( szID );
 	if ( iTemp == recordsMap.end() )
 		return;
 
 	vector<SRecord> &data = iTemp->second.data;
-	for ( vector<SRecord>::iterator i = data.begin(); i != data.end(); ++i )
+	for ( typename vector<SRecord>::iterator i = data.begin(); i != data.end(); ++i )
 	{
 		if ( i->nUniqueID == nID )
 		{
@@ -161,7 +161,7 @@ void GetIDList( vector<string> *pList )
 	pList->resize( recordsMap.size() );
 
 	int nCount = 0;
-	for ( TRecordsMap::const_iterator iTemp = recordsMap.begin(); iTemp != recordsMap.end(); iTemp++ )
+	for ( typename TRecordsMap::const_iterator iTemp = recordsMap.begin(); iTemp != recordsMap.end(); iTemp++ )
 	{
 		(*pList)[nCount] = iTemp->first;
 		nCount++;
@@ -173,7 +173,7 @@ const CValue& GetVar( const string &szID, const CValue &sDefault )
 	CPtr<CRecordsMap> pHold( GetRecordsMap() );
 	TRecordsMap &recordsMap = pHold->recordsMap;
 
-	TRecordsMap::const_iterator iTemp = recordsMap.find( szID );
+	typename TRecordsMap::const_iterator iTemp = recordsMap.find( szID );
 	if ( iTemp == recordsMap.end() )
 		return sDefault;
 
@@ -208,6 +208,16 @@ void ResetVar( const string &szVar )
 	SetVar( szVar, recordsMap[szVar].sDefaultValue );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// macOS port (not in retail): true while at least one handler is registered under szID. Mission-scoped vars such as
+// "godmode" keep their record after the mission ends, so the record alone does not say they are live.
+bool IsRegistered( const string &szID )
+{
+	CPtr<CRecordsMap> pHold( GetRecordsMap() );
+	TRecordsMap &recordsMap = pHold->recordsMap;
+	typename TRecordsMap::const_iterator iTemp = recordsMap.find( szID );
+	return iTemp != recordsMap.end() && !iTemp->second.data.empty();
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void ProcessCommand( const wstring &wsCommandStr )
 {
 	CPtr<CRecordsMap> pHold( GetRecordsMap() );
@@ -222,7 +232,7 @@ void ProcessCommand( const wstring &wsCommandStr )
 	string szCommandName = NStr::ToAscii( *wordsSet.begin() );
 	wordsSet.erase( wordsSet.begin() );
 
-	TRecordsMap::iterator iTemp = recordsMap.find( szCommandName );
+	typename TRecordsMap::iterator iTemp = recordsMap.find( szCommandName );
 	if ( iTemp == recordsMap.end() )
 	{
 		csSystem << CC_RED << "Unknow command name'" << wsCommandStr << "'" << endl;
@@ -263,7 +273,7 @@ void LoadConfig( const string &szFileName )
 
 	vector<string> cmdsSet;
 	NStr::SplitString( (const char*)sStream.GetBuffer(), cmdsSet, '\n' );
-	for ( vector<string>::const_iterator iTemp = cmdsSet.begin(); iTemp != cmdsSet.end(); ++iTemp )
+	for ( typename vector<string>::const_iterator iTemp = cmdsSet.begin(); iTemp != cmdsSet.end(); ++iTemp )
 	{
 		if ( iTemp->empty() )
 			continue;
@@ -296,7 +306,7 @@ void SaveConfig( const string &szFileName )
 	fprintf( pFile, "//============================================================================\n" );
 	// retail @0x3d4cf0 collects the saved records into a vector and sorts by name before writing
 	vector< pair<string, string> > saveRecords;
-	for ( TRecordsMap::iterator iTemp = recordsMap.begin(); iTemp != recordsMap.end(); iTemp++ )
+	for ( typename TRecordsMap::iterator iTemp = recordsMap.begin(); iTemp != recordsMap.end(); iTemp++ )
 	{
 		if ( !iTemp->second.bSave )
 			continue;
@@ -304,7 +314,7 @@ void SaveConfig( const string &szFileName )
 		saveRecords.push_back( pair<string, string>( iTemp->first, NStr::ToAscii( iTemp->second.sValue.GetString() ) ) );
 	}
 	sort( saveRecords.begin(), saveRecords.end() );
-	for ( vector< pair<string, string> >::const_iterator iTemp = saveRecords.begin(); iTemp != saveRecords.end(); ++iTemp )
+	for ( typename vector< pair<string, string> >::const_iterator iTemp = saveRecords.begin(); iTemp != saveRecords.end(); ++iTemp )
 		fprintf( pFile, "setvar %s = %s\n", iTemp->first.c_str(), iTemp->second.c_str() );
 
 	fclose( pFile );

@@ -3,6 +3,10 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
+#include <type_traits>
+// windows.h min/max were macros: mixed argument types compared after the usual arithmetic conversions
+template<class A, class B> inline typename std::common_type<A, B>::type s2min( const A &a, const B &b ) { return b < a ? b : a; }
+template<class A, class B> inline typename std::common_type<A, B>::type s2max( const A &a, const B &b ) { return a < b ? b : a; }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class CStructureSaver;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -96,14 +100,14 @@ public:
 		classname* Duplicate() const { return dynamic_cast<classname*>(MakeCopy()); }    \
 protected:                                                                           \
 		CObjectBase* MakeCopy() const { return new classname(*this); }                   \
-		virtual void DestroyContents() { classname::~classname(); int nHoldRefs = nRefData, nHoldObjs = nObjData; ::new(this) classname; nRefData += nHoldRefs; nObjData += nHoldObjs; }\
+		virtual void DestroyContents() { int *pnRefs = &this->nRefData, *pnObjs = &this->nObjData; /* taken BEFORE the destructor: a class with a virtual base reaches them through the vptr, which ~classname unwinds (MSVC tolerated it, Clang reads garbage) */ this->classname::~classname(); int nHoldRefs = *pnRefs, nHoldObjs = *pnObjs; ::new(this) classname; *pnRefs += nHoldRefs; *pnObjs += nHoldObjs; }\
 		virtual ~classname() {}                                                          \
 	private:
 #define OBJECT_NOCOPY_METHODS(classname)                                             \
 	public:                                                                            \
 		static CObjectBase* New##classname() { return new classname(); }                 \
 	protected:                                                                         \
-		virtual void DestroyContents() { classname::~classname(); int nHoldRefs = nRefData, nHoldObjs = nObjData; ::new(this) classname; nRefData += nHoldRefs; nObjData += nHoldObjs; }\
+		virtual void DestroyContents() { int *pnRefs = &this->nRefData, *pnObjs = &this->nObjData; /* taken BEFORE the destructor: a class with a virtual base reaches them through the vptr, which ~classname unwinds (MSVC tolerated it, Clang reads garbage) */ this->classname::~classname(); int nHoldRefs = *pnRefs, nHoldObjs = *pnObjs; ::new(this) classname; *pnRefs += nHoldRefs; *pnObjs += nHoldObjs; }\
 	private:
 #define BASIC_REGISTER_CLASS(classname) \
 template<> CObjectBase* CastToObjectBaseImpl<classname >( classname *p, void* ) { return p; }  \
@@ -136,12 +140,12 @@ public:
 	inline CPtrBase( const CPtrBase &a ): ptr( a.ptr ) { AddRef( ptr ); }
 	inline ~CPtrBase() { Release( ptr ); }
 	//
-	inline void Set( TUserObj *_ptr ) { SetObject( _ptr ); }
+	inline void Set( TUserObj *_ptr ) { this->SetObject( _ptr ); }
 	inline TUserObj* Extract() { TUserObj *pRes = ptr; DecRef(ptr); ptr = 0; return pRes; }
 	//
 	// assignment operators
-	inline CPtrBase& operator=( TUserObj *_ptr ) { Set( _ptr ); return *this; }
-	inline CPtrBase& operator=( const CPtrBase &a ) { Set( a.ptr ); return *this; }
+	inline CPtrBase& operator=( TUserObj *_ptr ) { this->Set( _ptr ); return *this; }
+	inline CPtrBase& operator=( const CPtrBase &a ) { this->Set( a.ptr ); return *this; }
 	// access
 	inline TUserObj* operator->() const { return ptr; }
 	inline operator TUserObj*() const { return ptr; }
@@ -163,8 +167,11 @@ public:                                                                         
 	inline TPtrName() {}                                                                      \
 	inline TPtrName( T *_ptr ): CBase( _ptr ) {}                                              \
 	inline TPtrName( const TPtrName &a ): CBase( a ) {}                                       \
-	inline TPtrName& operator=( T *_ptr ) { Set( _ptr ); return *this; }                      \
-	inline TPtrName& operator=( const TPtrName &a ) { SetObject( a.Get() ); return *this; }   \
+	/* MSVC accepted copy-init through two user conversions (CObj<T> -> T* -> CPtr<T>); say it once here */ \
+	template<class TOther> inline TPtrName( const TOther &a, typename std::enable_if<!std::is_same<TOther, TPtrName>::value && std::is_convertible<const TOther&, T*>::value, int>::type = 0 ): CBase( (T*)a ) {} \
+	template<class TOther> inline typename std::enable_if<!std::is_same<TOther, TPtrName>::value && std::is_convertible<const TOther&, T*>::value, TPtrName&>::type operator=( const TOther &a ) { this->Set( (T*)a ); return *this; } \
+	inline TPtrName& operator=( T *_ptr ) { this->Set( _ptr ); return *this; }                      \
+	inline TPtrName& operator=( const TPtrName &a ) { this->SetObject( a.Get() ); return *this; }   \
 	inline bool operator< ( const TPtrName &a ) const { return Get() < a.Get(); }             \
 	inline bool operator> ( const TPtrName &a ) const { return Get() > a.Get(); }             \
 	inline bool operator<=( const TPtrName &a ) const { return Get() <= a.Get(); }            \
@@ -205,7 +212,7 @@ template<class TContainer>
 inline bool EraseInvalidRefs( TContainer *pData )
 {
 	bool bRes = false;
-	for ( TContainer::iterator i = pData->begin(); i != pData->end(); )
+	for ( typename TContainer::iterator i = pData->begin(); i != pData->end(); )
 	{
 		if ( IsValid( *i ) )
 			++i;

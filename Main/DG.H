@@ -124,8 +124,11 @@ public:
 	CDGPtr() { nVersion = 0; }
 	CDGPtr( const CDGPtr<TFunc,CPtrType> &a ): pNode( a.pNode ) { nVersion = 0; }
 	CDGPtr( TFunc *_pNode ): pNode(_pNode) { nVersion = 0; }
+	// MSVC accepted copy-init through two user conversions (CPtr<U> -> U* -> TFunc*)
+	template<class TOther> CDGPtr( const TOther &a, typename std::enable_if<!std::is_same<TOther, CDGPtr>::value && std::is_convertible<const TOther&, TFunc*>::value, int>::type = 0 ): pNode( (TFunc*)a ) { nVersion = 0; }
 	CDGPtr& operator=( const CDGPtr<TFunc,CPtrType> &a ) { pNode = a.pNode; nVersion = 0; return *this; }
 	CDGPtr& operator=( TFunc *_pNode ) { pNode = _pNode; nVersion = 0; return *this; }
+	template<class TOther> typename std::enable_if<!std::is_same<TOther, CDGPtr>::value && std::is_convertible<const TOther&, TFunc*>::value, CDGPtr&>::type operator=( const TOther &a ) { pNode = (TFunc*)a; nVersion = 0; return *this; }
 	//
 	operator TFunc*() const { return pNode; }
 	TFunc* operator->() const { return pNode; }
@@ -150,13 +153,13 @@ inline bool IsValid( const CDGPtr<T,TPtrType> &p ) { return IsValid( p.Get() ); 
 template <class TSet, class TParam>
 inline void UpdateSet( TSet *a, TParam *p )
 {
-	for ( TSet::iterator i = a->begin(); i != a->end(); )
+	for ( typename TSet::iterator i = a->begin(); i != a->end(); )
 	{
 		if ( IsValid( *i ) && (*i)->Update( p ) )
 			++i;
 		else
 		{
-			TSet::iterator k = i;
+			typename TSet::iterator k = i;
 			++i;
 			a->erase( k );
 		}
@@ -166,13 +169,13 @@ inline void UpdateSet( TSet *a, TParam *p )
 template <class TSet, class TParam, class TParam2>
 inline void UpdateSet( TSet *a, TParam *p, TParam2 *p2 )
 {
-	for ( TSet::iterator i = a->begin(); i != a->end(); )
+	for ( typename TSet::iterator i = a->begin(); i != a->end(); )
 	{
 		if ( IsValid( *i ) && (*i)->Update( p, p2 ) )
 			++i;
 		else
 		{
-			TSet::iterator k = i;
+			typename TSet::iterator k = i;
 			++i;
 			a->erase( k );
 		}
@@ -182,13 +185,13 @@ inline void UpdateSet( TSet *a, TParam *p, TParam2 *p2 )
 template <class TSet, class TParam, class TParam2, class TParam3>
 inline void UpdateSet( TSet *a, TParam *p, TParam2 *p2, TParam3 *p3 )
 {
-	for ( TSet::iterator i = a->begin(); i != a->end(); )
+	for ( typename TSet::iterator i = a->begin(); i != a->end(); )
 	{
 		if ( IsValid( *i ) && (*i)->Update( p, p2, p3 ) )
 			++i;
 		else
 		{
-			TSet::iterator k = i;
+			typename TSet::iterator k = i;
 			++i;
 			a->erase( k );
 		}

@@ -8,7 +8,7 @@
 #include "aiRouteMisc.h"       // NAI::GetNearestPlaces
 #include "aiRouteLogic.h"      // NAI::CreateAIStrafeToPositionLogic
 #include "aiCombatLogic.h"     // NAI::CreateAIDefenceLogic
-#include "..\DBFormat\DataRPG.h"  // NDb::WT_PISTOL / WT_SUB_MACHINE_GUN -- BEFORE aiInventory.h (its NDB:: fwd-decl typo)
+#include "../DBFormat/DataRPG.h"  // NDb::WT_PISTOL / WT_SUB_MACHINE_GUN -- BEFORE aiInventory.h (its NDB:: fwd-decl typo)
 #include "aiInventory.h"       // NAI::CAIInventory::GetFirstFireArms
 #include "aiWeapon.h"          // NAI::CAIFireArmsWeapon::GetAnimType (release hold-type gate)
 #include "wUnitServer.h"       // NWorld::CUnitServer (GetWorld/GetWearingDBPK/CanFight/wish-pose)
@@ -34,9 +34,9 @@ inline bool SamePlace( const SPathPlace &a, const SPathPlace &b )
 {
 	return ( ( a.GetData() ^ b.GetData() ) & 0x1feffff ) == 0;
 }
-// A real (non-sentinel) place: pose bits 30-31 not both set (catches the 0xfdffffff / 0xffffffff sentinels).
+// A real (non-marker) place: pose bits 30-31 not both set (catches the 0xfdffffff / 0xffffffff markers).
 // The release's IsValidPoint(net,place) is a deeper net-validity probe; the cover/attack places come from the
-// path network so the sentinel check is the meaningful guard here (it rejects the unplanned-pair case).
+// path network so the marker check is the meaningful guard here (it rejects the unplanned-pair case).
 inline bool IsValidPlace( const SPathPlace &p )
 {
 	return ( (unsigned)p.GetData() & 0xc0000000u ) != 0xc0000000u;
@@ -109,8 +109,8 @@ bool CanUseDefenceReactionInner( IAIUnit *pUnit, const SUnitPosition &cover, con
 	if ( pNet == 0 )
 		return false;
 	// retail @0x3a4f0 probes the path net's REAL point validity on both places (net vtbl+0xb0 ==
-	// IsValidDestination, two calls in the decomp) -- not just the 0xc0000000 sentinel-bit test. The
-	// sentinel check stays as the cheap pre-filter (IsValidDestination on a sentinel is UB-ish).
+	// IsValidDestination, two calls in the decomp) -- not just the 0xc0000000 marker-bit test. The
+	// marker check stays as the cheap pre-filter (IsValidDestination on a marker is UB-ish).
 	if ( !IsValidPlace( cover.pos.p ) || !IsValidPlace( attack.pos.p ) )
 		return false;
 	if ( !pNet->IsValidDestination( cover.pos.p ) || !pNet->IsValidDestination( attack.pos.p ) )
@@ -231,7 +231,7 @@ bool GetCoveredPosition( IAIUnit *pUnit, const SUnitPosition &from, IAIUnit *pEn
 }
 }   // anonymous namespace
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// @0x3b4d0: positions default to the 0xfdffffff sentinel, both AP fields to 0xffff; with a live known enemy
+// @0x3b4d0: positions default to the 0xfdffffff marker, both AP fields to 0xffff; with a live known enemy
 // the ctor immediately plans (GetCoveredPosition into the members) and prices the pop-out (GetAPForMove).
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CAIDefenceReaction::CAIDefenceReaction( IAIUnit *pUnit, CAIReaction *pPrevReaction )
@@ -343,6 +343,9 @@ bool CanUseDefenceReaction( IAIUnit *pUnit )
 		return false;
 	IAIUnit *pEnemy = pState->pEnemy.GetPtr();
 	if ( !IsValid( pEnemy ) )
+		return false;
+	// a unit whose AI is switched off never defends; the loaded-gun gate is CanUseDefenceReactionInner's weapon test.
+	if ( !pUnit->IsAIEnabled() )
 		return false;
 	SUnitPosition cover, attack;
 	cover.pos.p = SPathPlace( (int)0xfdffffff );

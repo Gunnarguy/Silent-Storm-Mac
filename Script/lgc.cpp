@@ -57,7 +57,7 @@ static void markstack (lua_State *L, GCState *st)
   //for (o=L->stack; o<L->pCT->top; o++)
   //  markobject(st, o);
 	// we mark stacks for every thread:
-	for ( CThreads::iterator i = L->threads.begin(); i != L->threads.end(); ++i )
+	for ( typename CThreads::iterator i = L->threads.begin(); i != L->threads.end(); ++i )
 	{
 		CLuaThread *pT = *i;
 		ASSERT( IsValid(pT) );
@@ -168,7 +168,7 @@ static void markall (lua_State *L) {
 		{
       Hash *h = st.tmark;  /* get first table from list */
       st.tmark = h->mark;  /* remove it from list */
-			for ( Hash::CObjHash::iterator it = h->h.begin(); it != h->h.end(); )
+			for ( typename Hash::CObjHash::iterator it = h->h.begin(); it != h->h.end(); )
 			{
 				if ( it->first.GetType() != LUA_TNIL )
 				{
@@ -355,7 +355,7 @@ static void callgcTMudata (lua_State *L)
   for ( int tag = L->TMtable.size() - 1; tag >= 0; --tag ) 
 	{ 
 		list<int> &collect = L->TMtable[tag].collected;
-		for ( list<int>::iterator i = collect.begin(); i != collect.end(); ++i )
+		for ( typename list<int>::iterator i = collect.begin(); i != collect.end(); ++i )
 		{
 	    int udata = *i;
       o.SetUData( udata );

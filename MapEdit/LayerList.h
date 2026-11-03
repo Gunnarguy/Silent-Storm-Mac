@@ -4,7 +4,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "..\Main\MELayers.h"
+#include "../Main/MELayers.h"
 #include "MEUserSettings.h"
 #include "UserSettingsSetup.h"
 #include "LayerCtrl.h"
@@ -87,8 +87,8 @@ public:
 	void SetLayerOrder( const vector< pair<int, bool> > &order );
 	void Activate( int nLayerID, bool bActivate = true );
 	CLayerCtrl* GetLayer( int nLayerID );
-	CLayers::iterator begin();
-	CLayers::iterator end();
+	typename CLayers::iterator begin();
+	typename CLayers::iterator end();
 	void ResetLinkedFloors();
 	void GetLinkedFloors( vector<int> *pFloors );
 	void SetLinkedFloors( const vector<int> &floors );
@@ -176,7 +176,7 @@ protected:
 	CPropMap *pPlacementProps;
 	CRect rlistbar;
 
-	CLayers::iterator FindLayer( int nLayerID );
+	typename CLayers::iterator FindLayer( int nLayerID );
 	void ArrangeLayers();
 	void SendNotify( WPARAM wParam = 0 );
 	void SetupScrolls();

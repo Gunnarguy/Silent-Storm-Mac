@@ -10,9 +10,9 @@ namespace NAI
 {
 	class IAIMap;
 	class IPathNetwork;
-	enum EHitLocation;
-	enum ETileHitLocation;
-	enum EDirection;
+	enum EHitLocation : int;
+	enum ETileHitLocation : int;
+	enum EDirection : int;
 	struct SPathPlace;
 	struct SPosition;
 	struct SUnitPosition;
@@ -135,7 +135,7 @@ public:
 	virtual bool CheckPositionVisibility( const NAI::SUnitPosition observerPos, const NAI::SPosition targetPos,
 		float fRange, float fFOVAngle ) = 0;
 	// retail CGame::SetVisionMultiplier @0x298740 / SetNight @0x299550. CWorld::UpdateVisible refreshes
-	// these before every perception sweep from the world's current time-of-day sentinel.
+	// these before every perception sweep from the world's current time-of-day marker.
 	virtual void SetVisionMultiplier( float fMultiplier ) = 0;
 	virtual void SetNight( bool bIsNight ) = 0;
 	virtual bool IsNight() const = 0;

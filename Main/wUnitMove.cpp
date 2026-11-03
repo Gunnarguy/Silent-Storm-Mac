@@ -10,7 +10,7 @@
 #include "RPGItem.h"
 #include "RPGUnitMission.h"
 #include "aiMoves.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataRPG.h"
 namespace NWorld
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +87,7 @@ public:
 	// dispatch. (Retail also adds a scratch processPos + ProcessMe -- deferred with the animator.)
 	bool bJumpBack;
 	// @0x3bb000/@0x3b87fc tag 4 -- unit position snapshotted at jump dispatch (retail cmd+0x20); read by the
-	// DEFERRED FallFromHigh next pass. Default SUnitPosition/SPathPlace ctor == retail's 0xfdffffff sentinel + null pNet.
+	// DEFERRED FallFromHigh next pass. Default SUnitPosition/SPathPlace ctor == retail's 0xfdffffff marker + null pNet.
 	NAI::SUnitPosition processPos;
 	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CCmdTravel*)this); f.Add(2,&bRealJump); f.Add(3,&bJumpBack); f.Add(4,&processPos); return 0; }
 	//
@@ -616,7 +616,7 @@ void CExecMove::DoCommand()
 	if (pJumpCur)
 		pUS->FallFromHigh( pJumpCur->processPos.GetCP().z - pJumpCur->pos.GetCP().z );
 	// Retail v1.2 0x7b8cac..0x7b8ccb: the movement/visibility or fall callbacks
-	// may invalidate this mover or empty its queue. Never pop the list sentinel.
+	// may invalidate this mover or empty its queue. Never pop the list end node.
 	if ( !IsValid( this ) || commandsQueue.empty() )
 		return;
 	// fetch command
@@ -865,7 +865,7 @@ void CExecMove::Run()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int CExecMove::GetStartAP() const
 {
-	for ( list<CObj<CCommand> >::const_iterator i = commandsQueue.begin(); i != commandsQueue.end(); ++i )
+	for ( typename list<CObj<CCommand> >::const_iterator i = commandsQueue.begin(); i != commandsQueue.end(); ++i )
 	{
 		CDynamicCast<CCmdTravel> p(*i);
 		if (p)
@@ -1263,7 +1263,7 @@ NAI::CPath* CExecMove::GetCurrentPath() const
 		pRes->points.push_back( pCurrent->pos.pos.p );
 	else
 		pRes->points.push_back( pUS->GetUnitPosition().pos.p );
-	for ( list<CObj<CCommand> >::const_iterator i = commandsQueue.begin(); i != commandsQueue.end(); ++i )
+	for ( typename list<CObj<CCommand> >::const_iterator i = commandsQueue.begin(); i != commandsQueue.end(); ++i )
 	{
 		CDynamicCast<CCmdTravel> p( *i );
 		if ( p )
@@ -1314,7 +1314,7 @@ int CExecMove::GetActionAP( int nAlreadyReservedAP ) const
 	CDynamicCast<CCmdTravel> p( pCurCmd );
 	if ( p )
 		apCalc.AddPoint( p->pos );
-	for ( list<CObj<CCommand> >::const_iterator i = commandsQueue.begin(); i != commandsQueue.end(); ++i )
+	for ( typename list<CObj<CCommand> >::const_iterator i = commandsQueue.begin(); i != commandsQueue.end(); ++i )
 	{
 		CDynamicCast<CCmdTravel> p( *i );
 		if ( p )
@@ -1347,7 +1347,7 @@ void CExecMove::GetPathPoints( list<SPathPoint> *pRes )
 		pRes->push_back( SPathPoint( apCalc.GetResult(), p->pos.pos.GetFloor(), vPoint ) );
 		vLastPoint = vPoint;
 	}
-	for ( list<CObj<CCommand> >::const_iterator i = commandsQueue.begin(); i != commandsQueue.end(); ++i )
+	for ( typename list<CObj<CCommand> >::const_iterator i = commandsQueue.begin(); i != commandsQueue.end(); ++i )
 	{
 		CDynamicCast<CCmdTravel> p( *i );
 		if ( p )

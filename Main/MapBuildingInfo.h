@@ -50,7 +50,7 @@ struct SMapBuilding
 
 	const SStorey& GetStorey( int nLocalFloor ) const
 	{
-		for ( vector<SStorey>::const_iterator i = stories.begin(); i != stories.end(); ++i )
+		for ( typename vector<SStorey>::const_iterator i = stories.begin(); i != stories.end(); ++i )
 		{
 			if ( i->nFloor == nLocalFloor )
 				return *i;

@@ -69,7 +69,7 @@ struct SBuildingInfo
 	void Clear() { info.clear(); }
 	void Erase( const SPart &part )
 	{
-		unordered_map<SPart, SStoreyInfo, SPart>::iterator i = info.find( part );
+		typename unordered_map<SPart, SStoreyInfo, SPart>::iterator i = info.find( part );
 		if ( i != info.end() )
 			info.erase( i );
 	}

@@ -76,7 +76,7 @@ extern CTemplateMgr theTemplMgr;
 // Получить индекс в векторе темплейтов по ID темплейта
 inline int CTemplateMgr::GetTemplIndex( int id ) const 
 {
-  std::map<int, int>::const_iterator it = templID2Ind.find( id );
+  typename std::map<int, int>::const_iterator it = templID2Ind.find( id );
   if ( templID2Ind.end() == it )
     return -1;
   return it->second;
@@ -85,7 +85,7 @@ inline int CTemplateMgr::GetTemplIndex( int id ) const
 // Получить индекс в векторе конечных элементов по ID расстановки
 inline int CTemplateMgr::GetFinIndex( int id ) const
 {
-  std::map<int, int>::const_iterator it = plcmnID2FinInd.find( id );
+  typename std::map<int, int>::const_iterator it = plcmnID2FinInd.find( id );
   if ( plcmnID2FinInd.end() == it )
     return -1;
   return it->second;
@@ -94,7 +94,7 @@ inline int CTemplateMgr::GetFinIndex( int id ) const
 // Получить индекс в векторе  конечных элементов по ID элемента
 inline int CTemplateMgr::GetFinIndex4ElemID( int id ) const
 {
-  std::map<int, int>::const_iterator it = finID2FinInd.find( id );
+  typename std::map<int, int>::const_iterator it = finID2FinInd.find( id );
   if ( finID2FinInd.end() == it )
     return -1;
   return it->second;

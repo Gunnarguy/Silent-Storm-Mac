@@ -1,9 +1,9 @@
 #include "StdAfx.h"
 #include "MapEdit.h"
 #include "LayerList.h"
-#include "..\Main\Buildinginfo.h"
+#include "../Main/Buildinginfo.h"
 #include "iWysiwyg.h"
-#include "..\Main\iMapEditor.h"
+#include "../Main/iMapEditor.h"
 #include "MEParams.h"
 #include "WaypointDlg.h"
 #include "GameFrm.h"
@@ -16,12 +16,12 @@
 #include "CtrlObjectInspector.h"
 #include "FragmentDialog.h"
 #include "FinDBCmd.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataObject.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataCamera.h"
-#include "..\Input\Bind.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataObject.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataCamera.h"
+#include "../Input/Bind.h"
 #include "WallSpotDlg.h"
 #include "LadderDlg.h"
 #include "RectsDBCmd.h"
@@ -73,7 +73,7 @@ CLayerList::CLayerList() : invisLayer( -1, 0 )
 
 CLayerList::~CLayerList()
 {
-	for ( list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
+	for ( typename list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
 		if ( (*it)->m_hWnd != NULL )
 			(*it)->DestroyWindow();
 	internalWnd.DestroyWindow();
@@ -119,14 +119,14 @@ void CLayerList::AddLayer( CLayerCtrl *pLayer )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CLayerList::DeleteAllLayers()
 {
-	for ( list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
+	for ( typename list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
 		(*it)->ShowWindow( SW_HIDE );
 	layers.clear();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CLayerList::DeleteLayer( int nLayerID )
 {
-	CLayers::iterator it = FindLayer( nLayerID );
+	typename CLayers::iterator it = FindLayer( nLayerID );
 	if ( layers.end() != it )
 	{
 		(*it)->ShowWindow( SW_HIDE );
@@ -140,7 +140,7 @@ void CLayerList::DeleteLayer( int nLayerID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CLayers::iterator CLayerList::FindLayer( int nLayerID )
 {
-	for ( list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
+	for ( typename list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
 		if ( (*it)->GetLayerID() == nLayerID )
 			return it;
 	return layers.end();
@@ -148,7 +148,7 @@ CLayers::iterator CLayerList::FindLayer( int nLayerID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CLayerCtrl* CLayerList::GetLayer( int nLayerID )
 {
-	CLayers::iterator i = FindLayer( nLayerID );
+	typename CLayers::iterator i = FindLayer( nLayerID );
 	if ( i != layers.end() )
 		return (*i);
 	return 0;
@@ -156,7 +156,7 @@ CLayerCtrl* CLayerList::GetLayer( int nLayerID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CLayerList::HasLayer( CLayerCtrl *pLayer )
 {
-	for ( list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
+	for ( typename list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
 		if ( *it == pLayer )
 			return true;
 	return false;
@@ -164,7 +164,7 @@ bool CLayerList::HasLayer( CLayerCtrl *pLayer )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CLayerList::HasLayer( int nLayerID )
 {
-	for ( list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
+	for ( typename list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
 		if ( (*it)->GetLayerID() == nLayerID )
 			return true;
 	return false;
@@ -172,7 +172,7 @@ bool CLayerList::HasLayer( int nLayerID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int CLayerList::IsLayerVisible( int nLayerID )
 {
-	CLayers::iterator i = FindLayer( nLayerID );
+	typename CLayers::iterator i = FindLayer( nLayerID );
 	if ( i != layers.end() )
 		return (*i)->IsVisible();
 	return -1;
@@ -188,7 +188,7 @@ void CLayerList::ArrangeLayers()
 	nStartY -= GetScrollPos( SB_VERT );
 	listBar.MoveWindow( 0, -GetScrollPos( SB_VERT ), nItemWidth, rlistbar.Height() );
 	int i = 0;
-	for ( list<CLayerCtrl*>::const_iterator it = layers.begin(); it != layers.end(); ++it, ++i )
+	for ( typename list<CLayerCtrl*>::const_iterator it = layers.begin(); it != layers.end(); ++it, ++i )
 	{
 		(*it)->MoveWindow( 0, i * nItemHeight + nStartY, nItemWidth, nItemHeight );
 		(*it)->SetMiddle();
@@ -249,7 +249,7 @@ void CLayerList::Paint( ITemplateView *pView )
 		theApp.SetActiveVariant( nVar );
 		return;
 	}
-	for ( list<CLayerCtrl*>::reverse_iterator it = layers.rbegin(); it != layers.rend(); ++it )
+	for ( typename list<CLayerCtrl*>::reverse_iterator it = layers.rbegin(); it != layers.rend(); ++it )
 	{
 		if ( !(*it)->IsVisible() )
 			continue;
@@ -259,7 +259,7 @@ void CLayerList::Paint( ITemplateView *pView )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CLayerCtrl* CLayerList::GetActiveLayer() const
 {
-	for ( list<CLayerCtrl*>::const_iterator it = layers.begin(); it != layers.end(); ++it )
+	for ( typename list<CLayerCtrl*>::const_iterator it = layers.begin(); it != layers.end(); ++it )
 		if ( (*it)->IsActive()  )
 			return *it;
 		return 0;
@@ -267,7 +267,7 @@ CLayerCtrl* CLayerList::GetActiveLayer() const
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CLayerList::ClearSelection()
 {
-	for ( list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
+	for ( typename list<CLayerCtrl*>::iterator it = layers.begin(); it != layers.end(); ++it )
 		(*it)->ClearSelection();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -276,7 +276,7 @@ void CLayerList::GetLayerOrder( vector< pair<int, bool> > *pOrder )
 	if ( !pOrder )
 		return;
 	pOrder->clear();
-	for ( list<CLayerCtrl*>::const_iterator it = layers.begin(); it != layers.end(); ++it )
+	for ( typename list<CLayerCtrl*>::const_iterator it = layers.begin(); it != layers.end(); ++it )
 		pOrder->push_back( pair<int, bool>( (*it)->GetLayerID(), (*it)->IsVisible() ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -286,7 +286,7 @@ void CLayerList::SetLayerOrder( const vector< pair<int, bool> > &order )
 	
 	for ( int i = 0; i < order.size(); ++i )
 	{
-		CLayers::iterator it = FindLayer( order[i].first );
+		typename CLayers::iterator it = FindLayer( order[i].first );
 		if ( layers.end() != it )
 		{
 			(*it)->SetVisible( order[i].second );
@@ -301,10 +301,10 @@ void CLayerList::SetLayerOrder( const vector< pair<int, bool> > &order )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CLayerList::Activate( int nLayerID, bool bActivate )
 {
-	CLayers::iterator it = FindLayer( nLayerID );
+	typename CLayers::iterator it = FindLayer( nLayerID );
 	if ( layers.end() != it )
 	{
-		for ( list<CLayerCtrl*>::const_iterator i = layers.begin(); i != layers.end(); ++i )
+		for ( typename list<CLayerCtrl*>::const_iterator i = layers.begin(); i != layers.end(); ++i )
 			(*i)->Activate( false );
 		(*it)->Activate( bActivate );
 	}
@@ -344,7 +344,7 @@ BOOL CLayerList::PreTranslateMessage(MSG* pMsg)
 	{
 		case WM_USER_SELECT:
 			{
-				for ( list<CLayerCtrl*>::const_iterator it = layers.begin(); it != layers.end(); ++it )
+				for ( typename list<CLayerCtrl*>::const_iterator it = layers.begin(); it != layers.end(); ++it )
 				{
 					int nID = (*it)->GetLayerID();
 					if ( nID == pMsg->wParam )
@@ -369,10 +369,10 @@ BOOL CLayerList::PreTranslateMessage(MSG* pMsg)
 					else
 						return true;
 				}
-				CLayers::iterator it = FindLayer( nID );
+				typename CLayers::iterator it = FindLayer( nID );
 				if ( layers.end() == it || layers.begin() == it )
 					return true;
-				CLayers::iterator iprev = it;
+				typename CLayers::iterator iprev = it;
 				--iprev;  // можно сделать, т.к. it != begin()
 				swap( *it, *iprev );
 				ArrangeLayers();
@@ -390,10 +390,10 @@ BOOL CLayerList::PreTranslateMessage(MSG* pMsg)
 					else
 						return true;
 				}
-				CLayers::iterator it = FindLayer( nID );
+				typename CLayers::iterator it = FindLayer( nID );
 				if ( layers.end() == it )
 					return true;
-				CLayers::iterator inext = it;
+				typename CLayers::iterator inext = it;
 				++inext;
 				if ( inext != layers.end() )
 				{
@@ -475,7 +475,7 @@ int CLayerList::GetSelectedBrushID( int nLayerID ) const
 	CLayerCtrl *p = const_cast<CLayerList*>( this )->GetLayer( nLayerID );
 	if ( !p )
 	{
-		unordered_map<int, int>::const_iterator i = lid2brush.find( nLayerID );
+		typename unordered_map<int, int>::const_iterator i = lid2brush.find( nLayerID );
 		if ( i != lid2brush.end() )
 			return i->second;
 		return -1;
@@ -504,7 +504,7 @@ void CLayerList::GetVisibleLayers( vector<int> *pLayers ) const
 {
 	ASSERT( pLayers );
 	pLayers->clear();
-	for ( CLayers::const_iterator i = layers.begin(); i != layers.end(); ++i )
+	for ( typename CLayers::const_iterator i = layers.begin(); i != layers.end(); ++i )
 		if ( (*i)->IsVisible() )
 			pLayers->push_back( (*i)->GetLayerID() );
 }
@@ -546,7 +546,7 @@ bool CLayerList::IsWireSubTemplate() const
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 float CLayerList::GetParam( int nParamID ) const
 {
-	unordered_map<int, float>::const_iterator i = meparams.find( nParamID );
+	typename unordered_map<int, float>::const_iterator i = meparams.find( nParamID );
 	if ( i != meparams.end() )
 		return i->second;
 	//
@@ -1052,15 +1052,15 @@ void WriteCamera( int nTree, int nItem, const ICamera::SCameraPos &pos, float fF
 			else
 				szPref += "Camera";
 		}
-		CPropMap::const_iterator iax = pProps->find( szPref + "AnchorX" );
-		CPropMap::const_iterator iay = pProps->find( szPref + "AnchorY" );
-		CPropMap::const_iterator iaz = pProps->find( szPref + "AnchorZ" );
-		CPropMap::const_iterator id = pProps->find( szPref + "Distance" );
-		CPropMap::const_iterator iy = pProps->find( szPref + "Yaw" );
-		CPropMap::const_iterator ip = pProps->find( szPref + "Pitch" );
-		CPropMap::const_iterator ir = pProps->find( szPref + "Roll" );
-		CPropMap::const_iterator ifov = pProps->find( szPref + "FOV" );
-		CPropMap::const_iterator e = pProps->end();
+		typename CPropMap::const_iterator iax = pProps->find( szPref + "AnchorX" );
+		typename CPropMap::const_iterator iay = pProps->find( szPref + "AnchorY" );
+		typename CPropMap::const_iterator iaz = pProps->find( szPref + "AnchorZ" );
+		typename CPropMap::const_iterator id = pProps->find( szPref + "Distance" );
+		typename CPropMap::const_iterator iy = pProps->find( szPref + "Yaw" );
+		typename CPropMap::const_iterator ip = pProps->find( szPref + "Pitch" );
+		typename CPropMap::const_iterator ir = pProps->find( szPref + "Roll" );
+		typename CPropMap::const_iterator ifov = pProps->find( szPref + "FOV" );
+		typename CPropMap::const_iterator e = pProps->end();
 		if ( iax == e || iay == e || iaz == e || id == e || iy == e || ip == e || ir == e || ifov == e )
 			return;
 		iax->second->SetValue( pos.ptAnchor.x );

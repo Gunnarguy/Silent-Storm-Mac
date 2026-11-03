@@ -5,8 +5,8 @@
 #include "MapEdit.h"
 #include "ScriptEditDlg.h"
 #include "ItemsMgr.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataRPG.h"
 #include "TreeView.h"
 #include "dbDefs.h"
 #include "MEParams.h"
@@ -120,7 +120,7 @@ void CScriptEditDlg::SetMapScriptID( int nID )
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nItem, nVar );
 	if ( !pProps )
 		return;
-	CPropMap::const_iterator i = pProps->find( "ScriptID" );
+	typename CPropMap::const_iterator i = pProps->find( "ScriptID" );
 	if ( i != pProps->end() )
 		i->second->SetValue( nID > 0 ? nID : CVariant() );
 	pTree->pItemsTree->ReleasePropList( pProps );
@@ -160,7 +160,7 @@ BOOL CScriptEditDlg::PreTranslateMessage(MSG* pMsg)
 					const CPropMap *pProps = pTree->pItemsTree->GetPropList( nItemID );
 					if ( pProps )
 					{
-						CPropMap::const_iterator i = pProps->find( "CodeText" );
+						typename CPropMap::const_iterator i = pProps->find( "CodeText" );
 						if ( i != pProps->end() )
 							i->second->SetValue( mEdit.GetText() );
 						pTree->pItemsTree->ReleasePropList( pProps );
@@ -182,7 +182,7 @@ void CScriptEditDlg::ShowScriptText( int nID )
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nID );
 	if ( !pProps )
 		return;
-	CPropMap::const_iterator i = pProps->find( "CodeText" );
+	typename CPropMap::const_iterator i = pProps->find( "CodeText" );
 	if ( i != pProps->end() )
 	{
 		nItemID = nID;

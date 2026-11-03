@@ -1,15 +1,15 @@
 #include "StdAfx.h"
 #include "wBuilding.h"
 #include "BuildingInfo.h"
-#include "..\Misc\BasicShare.h"
+#include "../Misc/BasicShare.h"
 #include "RPGGame.h"
 #include "MakeBuilding.h"
 #include "BuildingGrid.h"
-#include "..\DBFormat\DataGeometry.h"
+#include "../DBFormat/DataGeometry.h"
 #include "Grid.h"
 #include "Transform.h"
 #include "wMain.h"
-#include "..\DBFormat\DataMap.h"
+#include "../DBFormat/DataMap.h"
 #include "aiObjectLoader.h"
 namespace NGScene
 {
@@ -68,7 +68,7 @@ public:
 	void SetFragmentCount()
 	{
 		const NBuilding::SBuildingInfo& info = pParent->pBInfo->GetInfo();
-		unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i = info.info.find( part );
+		typename unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i = info.info.find( part );
 		if ( i != info.info.end() )
 		{
 			nWallFrags = i->second.walls.size();
@@ -97,7 +97,7 @@ CBuilding::CBuilding( CSyncSrc<IVisObj> *_pShow, const SMapBuilding &_info, IWor
 	pBInfo->UpdateInfo();
 	const NBuilding::SBuildingInfo& info = pBInfo->GetInfo();
 
-	unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i;
+	typename unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i;
 	for ( i = info.info.begin(); i != info.info.end(); ++i )
 	{
 		parts[i->first.nID] = new CBuildingPart( i->first, this, bNoAI );
@@ -147,13 +147,13 @@ void CBuilding::UpdateAllParts()
 {
 	pBInfo->UpdateInfo();
 	const NBuilding::SBuildingInfo &info = pBInfo->GetInfo();
-	for ( CPartsHash::iterator i = parts.begin(); i != parts.end(); )
+	for ( typename CPartsHash::iterator i = parts.begin(); i != parts.end(); )
 	{
 		NBuilding::SPart part;
 		part.nID = i->first;
 		if ( info.info.find( part ) == info.info.end() )
 		{
-			CPartsHash::iterator itmp = i;
+			typename CPartsHash::iterator itmp = i;
 			++itmp;
 			parts.erase( i ); // for some reason it won't return an iterator to the next element :(
 			i = itmp;
@@ -165,7 +165,7 @@ void CBuilding::UpdateAllParts()
 			parts[part.nID]->Update();
 	}
 	//
-	unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i;
+	typename unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i;
 	for ( i = info.info.begin(); i != info.info.end(); ++i )
 	{
 		if ( parts.find( i->first.nID ) == parts.end() )
@@ -178,15 +178,15 @@ void CBuilding::Update()
 	pBInfo->UpdateInfo();
 	const NBuilding::SBuildingInfo& info = pBInfo->GetInfo();
 
-	for ( CPartsHash::iterator i = parts.begin(); i != parts.end(); )
+	for ( typename CPartsHash::iterator i = parts.begin(); i != parts.end(); )
 	{
 		NBuilding::SPart pid;
 		pid.nID = i->first;
-		unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator it = info.info.find( pid );
+		typename unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator it = info.info.find( pid );
 
 		if ( it == info.info.end() )
 		{
-			CPartsHash::iterator itmp = i;
+			typename CPartsHash::iterator itmp = i;
 			++itmp;
 			parts.erase( i ); // for some reason it won't return an iterator to the next element :(
 			i = itmp;
@@ -204,7 +204,7 @@ void CBuilding::Update()
 		}
 	}
 	//
-	unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i;
+	typename unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i;
 	for ( i = info.info.begin(); i != info.info.end(); ++i )
 	{
 		if ( parts.find( i->first.nID ) == parts.end() )
@@ -380,7 +380,7 @@ static void AddPieces( IAIVisitor *p,
 	int nFragmentID, bool bUseFragmentID )
 {
 	vector<IAIVisitor::SPieceMap> rparts;
-	for ( vector<int>::const_iterator i = parts.begin(); i != parts.end(); ++i )
+	for ( typename vector<int>::const_iterator i = parts.begin(); i != parts.end(); ++i )
 	{
 		int nPart = *i;
 		const int nPieceID = NBuilding::FixSmallPieceID( pGI->pieces, nPart );
@@ -403,7 +403,7 @@ void CBuildingPart::Visit( IAIVisitor* p )
 	SFBTransform place = bInfo.pPos->pos;
 	const NBuilding::SBuildingInfo &info = pParent->pBInfo->GetInfo();
 
-	unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i = info.info.find( part );
+	typename unordered_map<NBuilding::SPart, NBuilding::SStoreyInfo, NBuilding::SPart>::const_iterator i = info.info.find( part );
 	if ( i == info.info.end() )
 		return;
 	const NBuilding::SStoreyInfo &storey = i->second;

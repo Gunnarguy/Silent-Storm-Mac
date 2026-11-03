@@ -4,7 +4,7 @@
 #include "aiPosition.h"
 #include "time.h"
 #include "../DBFormat/DataAnimation.h"
-#include "..\Misc\EventsBase.h"   // NGlobal::CEventRegister (CTaskCommandSync::regOnDie, retail CRouteCommandSync::regEvent @+0x18)
+#include "../Misc/EventsBase.h"   // NGlobal::CEventRegister (CTaskCommandSync::regOnDie, retail CRouteCommandSync::regEvent @+0x18)
 #include "eventUnit.h"            // NWorld::CEventOnUnitDiedOrLoseConsciousness (the sync barrier's died/unconscious drop)
 
 namespace NWorld
@@ -38,7 +38,7 @@ namespace NAI
 // CRouteCommandLook; CTaskCommandChangeWishPose (0x2305EC00) is the retail wish-pose-only step.
 // CTask itself (0x51812130) is a DEV-ONLY wire id -- retail v1.2 registers nothing on it.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EPose;
+enum EPose : int;
 class IAIUnit;
 class CAICommander;
 class CTaskCommand;
@@ -88,7 +88,7 @@ public:
 	bool IsCircled() const { return bCircled; }
 	void GetCommands( vector< CPtr<CTaskCommand> > *pOut ) const
 	{
-		for ( vector< CObj<CTaskCommand> >::const_iterator i = Commands.begin(); i != Commands.end(); ++i )
+		for ( typename vector< CObj<CTaskCommand> >::const_iterator i = Commands.begin(); i != Commands.end(); ++i )
 		{
 			CTaskCommand *pCmd = *i;
 			pOut->push_back( pCmd );

@@ -32,7 +32,7 @@ static bool CreateScenarioXLS( SDBConnection *pConnection, const string &szSrc )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void WriteScenarioClues( int nSceanrioID, const CPropMap *pScenarioProps )
 {
-	CPropMap::const_iterator isrc = pScenarioProps->find( "SrcXLSName" );
+	typename CPropMap::const_iterator isrc = pScenarioProps->find( "SrcXLSName" );
 	if ( isrc == pScenarioProps->end() )
 		return;
 	SDBConnection connection;

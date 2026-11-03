@@ -5,15 +5,15 @@
 #include "GSceneUtils.h"
 #include "iMain.h"
 #include "G2DView.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataDifficulty.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
-#include "..\DBFormat\DataAck.h"        // NDb::CDBAck / CDBAckInfo (voice-preview ack lookup)
-#include "..\ADOImport\BasicDB.h"       // NDatabase::GetTable / CDBIterator
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataDifficulty.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
+#include "../DBFormat/DataAck.h"        // NDb::CDBAck / CDBAckInfo (voice-preview ack lookup)
+#include "../ADOImport/BasicDB.h"       // NDatabase::GetTable / CDBIterator
 #include "wInterface.h"
 #include "Sound.h"
 #include "RPGUnit.h"
@@ -28,7 +28,7 @@
 #include "iAdvFaceGen.h"
 #include "iRenderWorld.h"
 #include "iGlobalMap.h"
-#include "..\DBFormat\DataCamera.h"
+#include "../DBFormat/DataCamera.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -72,9 +72,8 @@ bool bGermanVersion = false;
 // the answer-key free-fn-over-mirror+hook style to real engine types.
 //
 // FUNCTIONAL ADAPTATIONS carried from SESSION 32 (see docs/CONVERGENCE_PROGRESS.md):
-//  - TEXTURE morph deferred: the mesh (face-shape) morph is live + faithful, but the texture-only params
-//    (EyesColor/HairColor/FacialColor/EyeGlasses/FaceDamage) move the tension map without recolouring the
-//    skin/eye textures (the Sentinels-LS TexMixer path is not reconstructed). Expected + documented.
+//  - The shape sliders run through ITransformer (port/platform/src/lifestudio.cpp); the texture sliders
+//    (EyesColor/HairColor/FacialColor/FaceDamage) through the face bake in LSHead.cpp, both live in this preview.
 //  - No bGermanVersion global in this build, so the voice buttons are not hidden for a German locale.
 //  - The per-voice acknowledgement sound IS played via the dev-native GetPersVoiceAck (= retail NUI::GetPersAck
 //    @0x2452c0), deriving the per-voice pers with FindVoicePersId in lieu of retail's GetAckHolder. Both this
@@ -124,6 +123,9 @@ private:
 	}
 
 protected:
+	enum { N_MORPH_PARAMS = 14 };
+	struct SMorphParam { CScroll *pScroll; const char *szName; };
+	int GetMorphParams( SMorphParam *pParams ) const;
 	void SetupScroll( CScroll *pScroll, int nValue, int nMaxValue );
 	void UpdateHead();
 	void UpdateVoiceChecks();
@@ -133,6 +135,8 @@ public:
 	CAdvFaceGenUI( const SWindowInfo &sInfo, NRPG::CUnit *pMerc, NDb::CNationality *pNationality );
 
 	NLSHead::CHeadInfo *CreateLSHeadInfo();
+	void TestSetMorph( const char *szName, float fValue );   // macOS port test hook
+	void TestSpin( float fDelta ) { if ( IsValid( pUnitView ) ) pUnitView->TestSpin( fDelta ); }
 
 	bool ProcessMessage( const SEvent &sEvent );
 };
@@ -158,15 +162,8 @@ void CAdvFaceGenUI::SetupScroll( CScroll *pScroll, int nValue, int nMaxValue )
 // Push the current value of all 14 morph spinners onto the live shown head. Each 0..100 spinner maps to
 // [-1,+1] via v = value*0.02 - 1.0 (the decomp constants 0.02f / 1.0f), then is sent through the IShowUnit
 // named-parameter setter (the wired SESSION-32 chain). The 3 voice buttons are NOT touched here.
-void CAdvFaceGenUI::UpdateHead()
+int CAdvFaceGenUI::GetMorphParams( SMorphParam *pParams ) const
 {
-	if ( !IsValid( pUnitView ) )
-		return;
-	NRender::IShowUnit *pShow = pUnitView->GetShowUnit();
-	if ( !IsValid( pShow ) )
-		return;
-
-	struct SMorphParam { CScroll *pScroll; const char *szName; };
 	const SMorphParam params[] =
 	{
 		{ pAgeScroll,          "Age"         },
@@ -186,12 +183,38 @@ void CAdvFaceGenUI::UpdateHead()
 	};
 	const int nParams = sizeof( params ) / sizeof( params[0] );
 	for ( int i = 0; i < nParams; ++i )
+		pParams[i] = params[i];
+	return nParams;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void CAdvFaceGenUI::UpdateHead()
+{
+	if ( !IsValid( pUnitView ) )
+		return;
+	NRender::IShowUnit *pShow = pUnitView->GetShowUnit();
+	if ( !IsValid( pShow ) )
+		return;
+
+	SMorphParam params[N_MORPH_PARAMS];
+	const int nParams = GetMorphParams( params );
+	for ( int i = 0; i < nParams; ++i )
 	{
 		if ( !IsValid( params[i].pScroll ) )
 			continue;
 		float fValue = params[i].pScroll->GetValue() * 0.02f - 1.0f;
 		pShow->SetLSHeadParam( params[i].szName, fValue );
 	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// macOS port test hook (console "advfacegen_set <name> <-1..1>"): the same scroll and the same path as a drag.
+void CAdvFaceGenUI::TestSetMorph( const char *szName, float fValue )
+{
+	SMorphParam params[N_MORPH_PARAMS];
+	const int nParams = GetMorphParams( params );
+	for ( int i = 0; i < nParams; ++i )
+		if ( strcmp( params[i].szName, szName ) == 0 && IsValid( params[i].pScroll ) )
+			params[i].pScroll->SetValue( (int)floor( ( fValue + 1.0f ) * 50.0f + 0.5f ) );
+	UpdateHead();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAdvFaceGenUI::UpdateVoiceChecks()
@@ -414,12 +437,18 @@ public:
 
 	void Step();
 	bool ProcessEvent( const NInput::SEvent &sEvent );
+
+	void Play();
+	void TestSetMorph( const char *szName, float fValue ) { if ( IsValid( pMenuUI ) ) pMenuUI->TestSetMorph( szName, fValue ); }
+	void TestSpin( float fDelta ) { if ( IsValid( pMenuUI ) ) pMenuUI->TestSpin( fDelta ); }
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CAdvFaceGenMenuInterface::CAdvFaceGenMenuInterface():
 	bindClose( "cancel" ), bindPlay( "play" )
 {
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////
+static CPtr<CAdvFaceGenMenuInterface> s_pActiveAdvFaceGen;   // macOS port test hook target (weak)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAdvFaceGenMenuInterface::Initialize( NDb::CSide *_pSide, NDb::CNationality *_pNationality, NDb::CDBDifficulty *_pDifficulty, NRPG::CUnit *_pMerc )
 {
@@ -450,6 +479,8 @@ void CAdvFaceGenMenuInterface::Initialize( NDb::CSide *_pSide, NDb::CNationality
 	pMenuUI = new NUI::CAdvFaceGenUI( NUI::SWindowInfo( GetInterface(), NUI::SPoint( 0, 0 ), NUI::SPoint( 1024, 768 ), "facegenUI", NUI::STYLE_ENABLED ), pMerc, pNationality );
 	NUI::LoadTemplate( pMenuUI, NDb::GetUIContainer( NUI::N_ADVFACEGEN_CONTAINER ) );
 	pMenuUI->ShowWindow( NUI::SWTYPE_SHOW );
+	s_pActiveAdvFaceGen = this;
+	fprintf( stderr, "[test-hook] advfacegen ready\n" );   // marker for drive.py waits
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAdvFaceGenMenuInterface::Step()
@@ -480,26 +511,59 @@ bool CAdvFaceGenMenuInterface::ProcessEvent( const NInput::SEvent &sEvent )
 	}
 	else if ( bindPlay.ProcessEvent( sEvent ) )
 	{
-		// "play" -> bake the morphed preview head and commit it to the merc, then begin the game.
-		if ( IsValid( pMenuUI ) && IsValid( pMerc ) )
-		{
-			NLSHead::CHeadInfo *pChosen = pMenuUI->CreateLSHeadInfo();
-			if ( IsValid( pChosen ) )
-				pMerc->SetHeadInfo( pChosen );
-		}
-
-		NRPG::CGlobalPlayer *pPlayer = NRPG::CreateGlobalPlayer( pSide );
-		pPlayer->mercs.push_back( pMerc );
-
-		vector<CObj<NRPG::CGlobalPlayer> > playersSet;
-		playersSet.push_back( pPlayer );
-
-		NMainLoop::Command( new NGame::CICBeginGame( pSide->nGlobalMapID, playersSet, pDifficulty ) );
+		Play();
 		return true;
 	}
 
 	return false;
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// "play" -> bake the morphed preview head and commit it to the merc, then begin the game.
+void CAdvFaceGenMenuInterface::Play()
+{
+	if ( IsValid( pMenuUI ) && IsValid( pMerc ) )
+	{
+		NLSHead::CHeadInfo *pChosen = pMenuUI->CreateLSHeadInfo();
+		if ( IsValid( pChosen ) )
+			pMerc->SetHeadInfo( pChosen );
+	}
+
+	NRPG::CGlobalPlayer *pPlayer = NRPG::CreateGlobalPlayer( pSide );
+	pPlayer->mercs.push_back( pMerc );
+
+	vector<CObj<NRPG::CGlobalPlayer> > playersSet;
+	playersSet.push_back( pPlayer );
+
+	NMainLoop::Command( new NGame::CICBeginGame( pSide->nGlobalMapID, playersSet, pDifficulty ) );
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// macOS port test hooks, hidden runs only: "advfacegen_set <name> <-1..1>" and "advfacegen_play".
+static void AdvFaceGenSetCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	if ( !getenv( "S2_HEADLESS" ) || !IsValid( s_pActiveAdvFaceGen ) || szParams.size() < 2 )
+		return;
+	const string szName( szParams[0].begin(), szParams[0].end() );
+	const string szValue( szParams[1].begin(), szParams[1].end() );
+	s_pActiveAdvFaceGen->TestSetMorph( szName.c_str(), (float)atof( szValue.c_str() ) );
+	fprintf( stderr, "[test-hook] advfacegen %s %s\n", szName.c_str(), szValue.c_str() );
+}
+static void AdvFaceGenSpinCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	if ( !getenv( "S2_HEADLESS" ) || !IsValid( s_pActiveAdvFaceGen ) || szParams.empty() )
+		return;
+	const string szValue( szParams[0].begin(), szParams[0].end() );
+	s_pActiveAdvFaceGen->TestSpin( (float)atof( szValue.c_str() ) );
+}
+static void AdvFaceGenPlayCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	if ( getenv( "S2_HEADLESS" ) && IsValid( s_pActiveAdvFaceGen ) )
+		s_pActiveAdvFaceGen->Play();
+}
+START_REGISTER(iAdvFaceGenTest)
+	REGISTER_CMD( "advfacegen_set", AdvFaceGenSetCmd )
+	REGISTER_CMD( "advfacegen_spin", AdvFaceGenSpinCmd )
+	REGISTER_CMD( "advfacegen_play", AdvFaceGenPlayCmd )
+FINISH_REGISTER
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CICAdvFaceGen
 ////////////////////////////////////////////////////////////////////////////////////////////////////

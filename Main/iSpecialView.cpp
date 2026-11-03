@@ -11,12 +11,12 @@
 #include "iCommonUI.h"
 #include "iDesktopWindow.h"
 #include "iSpecialView.h"
-#include "..\Misc\BasicShare.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataScenario.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/BasicShare.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataScenario.h"
+#include "../DBFormat/DataInterface.h"
 #include "scScenarioTracker.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 extern CBasicShare<int, CChapterInfoLoader> shareChapterInfo;
@@ -188,7 +188,7 @@ void CEarthControl::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 {
 	list< CPtr<CWindow> > windowsList;
 	FormChildrenList( &windowsList );
-	for ( list< CPtr<CWindow> >::reverse_iterator iTemp = windowsList.rbegin(); iTemp != windowsList.rend(); iTemp++ )
+	for ( typename list< CPtr<CWindow> >::reverse_iterator iTemp = windowsList.rbegin(); iTemp != windowsList.rend(); iTemp++ )
 	{
 		CWindow *pChild = *iTemp;
 		if ( !IsValid( pChild ) )

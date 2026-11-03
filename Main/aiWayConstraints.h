@@ -78,7 +78,7 @@ public:
 #ifdef _DEBUG
 		OutputDebugString(" Adding way \n");
 #endif
-		for ( CUpperNetWay::const_iterator i = way.begin(); i != way.end(); ++i )
+		for ( typename CUpperNetWay::const_iterator i = way.begin(); i != way.end(); ++i )
 		{
 			const SZone &zone = *i;
 			AddCheckArea( zone );

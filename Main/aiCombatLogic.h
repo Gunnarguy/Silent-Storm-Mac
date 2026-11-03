@@ -30,7 +30,7 @@
 #include "aiCombatLog.h"      // CAILog
 #include "aiActionPlaceSource.h"
 #include "aiChoosePlace.h"
-#include "..\Misc\EventsBase.h"   // NGlobal::CEventRegister (CAIAfterCombatLogic::regOnNewTurn)
+#include "../Misc/EventsBase.h"   // NGlobal::CEventRegister (CAIAfterCombatLogic::regOnNewTurn)
 namespace NWorld { class CEventOnNewPlayerTurn; }
 namespace NAI
 {
@@ -44,7 +44,7 @@ class CUnitArea;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // prepare state of the per-turn decision pipeline. RETAIL PDB enum (NAI::CAICombatLogic::EPrepareState):
 // prepareState IS the DoJob per-tick stage counter (there is NO separate nJobStage). PS_FINISHED (=4) is the
-// "not thinking" sentinel (IsThinking == prepareState != PS_FINISHED). Converging from the dev 4-value enum is
+// "not thinking" marker (IsThinking == prepareState != PS_FINISHED). Converging from the dev 4-value enum is
 // a latent save-compat break on the tag-7 prepareState ordinal -- transient per-turn state, runtime-deferred.
 enum EPrepareState { PS_INIT, PS_PLACESOURCE, PS_ACTION, PS_THINK, PS_FINISHED };
 ////////////////////////////////////////////////////////////////////////////////////////////////////

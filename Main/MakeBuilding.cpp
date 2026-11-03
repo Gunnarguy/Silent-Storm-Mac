@@ -5,19 +5,19 @@
 #include <limits>
 #include "Grid.h"
 #include "Transform.h"
-#include "..\Misc\2Darray.h"
-#include "..\DBFormat\DataGeometry.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../Misc/2Darray.h"
+#include "../DBFormat/DataGeometry.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataRPG.h"
 #include "BuildingSchema.h"
-#include "..\Misc\BasicShare.h"
+#include "../Misc/BasicShare.h"
 #include "GGeometry.h"
 #include "aiobject.h"
 #include "aiobjectloader.h"
-#include "..\Misc\HPTimer.h"
+#include "../Misc/HPTimer.h"
 #include "MELayers.h"
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 #include "BSPTree.h"
 #include "MakeBuildingInternal.h"
 
@@ -242,7 +242,7 @@ int FixSmallPieceID( const NAI::CGeometryInfo::CPieceMap &pieces, int nPieceID )
 {
 	return nPieceID;
 
-	NAI::CGeometryInfo::CPieceMap::const_iterator it = pieces.find( nPieceID );
+	typename NAI::CGeometryInfo::CPieceMap::const_iterator it = pieces.find( nPieceID );
 	if ( it == pieces.end() )
 	{
 //		ASSERT(0);
@@ -332,7 +332,7 @@ static void SetSolidVisibleParts( SClipInfo *pClip, CVec3 ptPos, const CBuilding
 	}
 	else
 	{
-		for ( NAI::CGeometryInfo::CPieceMap::const_iterator i = pGI->pieces.begin(); i != pGI->pieces.end(); ++i )
+		for ( typename NAI::CGeometryInfo::CPieceMap::const_iterator i = pGI->pieces.begin(); i != pGI->pieces.end(); ++i )
 		{
 			int nPieceID = FixSmallPieceID( pGI->pieces, i->first );
 			int x, y, z;
@@ -451,7 +451,7 @@ static void MakeBuilding( SBuildingInfo *pInfo, const CBuildingGrid &grid, CBuil
 	SRand rand(0), randStart( grid.GetSeed() );
 	if ( pSelect )
 	{
-		for (unordered_map<SPart, bool, SPart>::iterator i = pSelect->begin(); i != pSelect->end(); ++i )
+		for (typename unordered_map<SPart, bool, SPart>::iterator i = pSelect->begin(); i != pSelect->end(); ++i )
 			pInfo->Erase( i->first );
 	}
 	else
@@ -460,7 +460,7 @@ static void MakeBuilding( SBuildingInfo *pInfo, const CBuildingGrid &grid, CBuil
 
   // Solid objects
 	const unordered_map<int, CNodeMap<SSolidElement> > &solids = swMap.GetSolidMap();
-	for (unordered_map<int, CNodeMap<SSolidElement> >::const_iterator it = solids.begin(); it != solids.end(); ++it )
+	for (typename unordered_map<int, CNodeMap<SSolidElement> >::const_iterator it = solids.begin(); it != solids.end(); ++it )
 	{
 		const vector<SSolidElement> &frags = it->second.GetValues();
 		for ( int i = 0; i < frags.size(); ++i )
@@ -596,7 +596,7 @@ void AddPieces( CBuildingSchema *pSchema, const vector<int> &parts, const vector
 		return;
 	unordered_map<int, bool> addedParts;
 	//
-	for ( vector<int>::const_iterator it = parts.begin(); it != parts.end(); ++it )
+	for ( typename vector<int>::const_iterator it = parts.begin(); it != parts.end(); ++it )
 	{
 		int nPart = *it;
 		int x, y, z;
@@ -608,7 +608,7 @@ void AddPieces( CBuildingSchema *pSchema, const vector<int> &parts, const vector
 		const float fWeight = piece.fVolume * pAr->pMaterial->fWeight;
 
 		CVec3 pt( x-1, y-1, z-1 );
-		NDb::SPieceLinksHash::const_iterator i = pAIG->additionalLinks.find( nPart );
+		typename NDb::SPieceLinksHash::const_iterator i = pAIG->additionalLinks.find( nPart );
 		if ( i != pAIG->additionalLinks.end() )
 		{
 			const vector<CVec3> &links = i->second.links;
@@ -635,7 +635,7 @@ void AddPieces( CBuildingSchema *pSchema, const vector<int> &parts, const vector
 	for ( int j = 0; j < additionparts.size(); ++j )
 //	for ( NDb::SPieceLinksHash::const_iterator i = pAIG->additionalLinks.begin(); i != pAIG->additionalLinks.end(); ++i )
 	{
-		NDb::SPieceLinksHash::const_iterator i = pAIG->additionalLinks.find( additionparts[j] );
+		typename NDb::SPieceLinksHash::const_iterator i = pAIG->additionalLinks.find( additionparts[j] );
 		if ( i == pAIG->additionalLinks.end() || addedParts.find( i->first ) != addedParts.end() )
 			continue;
 		int x, y, z;
@@ -662,7 +662,7 @@ void AddPieces( CBuildingSchema *pSchema, const vector<int> &parts, const vector
 static int SetAdditionalVisibleParts( int nSubBlockID, CVec3 ptPos, int nRotationID, const CBuildingGrid &grid, const NDb::SPieceLinksHash &info )
 {
 	DWORD nVisible = 0;
-	for ( NDb::SPieceLinksHash::const_iterator i = info.begin(); i != info.end(); ++i )
+	for ( typename NDb::SPieceLinksHash::const_iterator i = info.begin(); i != info.end(); ++i )
 	{
 		const int nPieceID = i->first;
 		int x, y, z;
@@ -761,7 +761,7 @@ void MakeBuildingSchema( CBuildingSchema *pSchema, CBuildingGrid *pGrid, CBuildI
 	CArray2D<bool> cellarWalls;
 	MarkCellarWalls( &cellarWalls, pBuildInfo->cellar, swMap.GetBottom() );
 
-	for (unordered_map<int, CNodeMap<SSolidElement> >::const_iterator it = solidMap.begin(); it != solidMap.end(); ++it )
+	for (typename unordered_map<int, CNodeMap<SSolidElement> >::const_iterator it = solidMap.begin(); it != solidMap.end(); ++it )
 	{
 		const vector<SSolidElement> &frags = it->second.GetValues();
 		for ( int i = 0; i < frags.size(); ++i )
@@ -796,7 +796,7 @@ void MakeBuildingSchema( CBuildingSchema *pSchema, CBuildingGrid *pGrid, CBuildI
 	}
 	//
 	const vector<CJunction> &juncs = pSchema->GetJuncs();
-	for ( vector<CJunction>::const_iterator pJ = juncs.begin(); pJ != juncs.end(); ++pJ )
+	for ( typename vector<CJunction>::const_iterator pJ = juncs.begin(); pJ != juncs.end(); ++pJ )
 	{
 		if ( /*pJ->IsFilled() &&*/ pJ->IsBottom() || pJ->IsCellarWall() )
 			pGrid->SetCellar( SPoint3( pJ->ptJ.x, pJ->ptJ.y, pJ->ptJ.z ) );
@@ -878,13 +878,13 @@ static void AddNodeHP( CBuildingGrid *pGrid, const SBuildFragment &fr, int nHash
 	//
 	SDiscretePos dpos( 0, CVec3( ptPos.x, ptPos.y, ptPos.z * 4), fr.nRotationID );
 	//
-	for ( vector<int>::iterator it = parts.begin(); it != parts.end(); ++it )
+	for ( typename vector<int>::iterator it = parts.begin(); it != parts.end(); ++it )
 	{
 		int x, y, z;
-		NAI::CGeometryInfo::CPieceMap::const_iterator ipiece = pGI->pieces.find( *it );
+		typename NAI::CGeometryInfo::CPieceMap::const_iterator ipiece = pGI->pieces.find( *it );
 		if ( ipiece == pGI->pieces.end() )
 		{
-			NDb::SPieceLinksHash::const_iterator ip = pAIG->additionalLinks.find( *it );
+			typename NDb::SPieceLinksHash::const_iterator ip = pAIG->additionalLinks.find( *it );
 			if ( ip != pAIG->additionalLinks.end() )
 			{
 				GetPieceCoords( *it, &x, &y, &z );
@@ -944,7 +944,7 @@ void BuildingHP( CBuildInfo *pBuildInfo, CBuildingGrid *pGrid, CSolidAndWallMap 
 	nTotalNodes = 0;
   // Сплошные объекты
 	const unordered_map<int, CNodeMap<SSolidElement> > &solidMap = swMap.GetSolidMap();
-	for (unordered_map<int, CNodeMap<SSolidElement> >::const_iterator it = solidMap.begin(); it != solidMap.end(); ++it )
+	for (typename unordered_map<int, CNodeMap<SSolidElement> >::const_iterator it = solidMap.begin(); it != solidMap.end(); ++it )
 	{
 		const vector<SSolidElement> &frags = it->second.GetValues();
 		for ( int i = 0; i < frags.size(); ++i )

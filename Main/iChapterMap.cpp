@@ -9,7 +9,7 @@
 #include "G2DView.h"
 #include "RPGGlobal.h"
 #include "Sound.h"
-#include "..\Input\Bind.h"
+#include "../Input/Bind.h"
 #include "ChapterInfo.h"
 #include "iInterMission.h"
 #include "iMission.h"			// NGame::CMissionBase -- the CChapterMap base (retail @0x1a8480 tag 1)
@@ -26,12 +26,12 @@
 #include "iInGameMenu.h"
 #include "Interface.h"
 #include "iChapterMapUI.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Misc\BasicShare.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataScenario.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Misc/BasicShare.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataScenario.h"
 #include "scScenarioTracker.h"
 #include "scFlowChartItems.h"
 #include "RPGMerc.h"
@@ -141,7 +141,7 @@ void CChapterMap::UpdateChapterDifficulty()
 		int nZoneCount = 0;
 		pChapterInfo.Refresh();
 		const vector<SChapterSector> &sectors = pChapterInfo->GetValue()->sectorsSet;
-		for ( vector<SChapterSector>::const_iterator i = sectors.begin(); i != sectors.end(); ++i )
+		for ( typename vector<SChapterSector>::const_iterator i = sectors.begin(); i != sectors.end(); ++i )
 			if ( i->eType == ZONE )
 			{
 				CPtr<NScenario::CScenarioZone> pZone = 

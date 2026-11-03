@@ -3,12 +3,12 @@
 #include "iMain.h"
 #include "GView.h"
 #include "G2DView.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "RPGMerc.h"
 #include "RPGUnit.h"
 #include "RPGUnitInfo.h"
@@ -16,8 +16,8 @@
 #include "RPGItemInfo.h"
 #include "RPGItem.h"
 #include "RPGPerk.h"					// NRPG::CPerk/CPerksTree (CUnitPerksPanel rows)
-#include "..\DBFormat\DataPerk.h"		// NDb::CDBPerk (perk row icon/tooltip)
-#include "..\DBFormat\DataMisc.h"		// NDb::CMedal (CUnitMedalsPanel rows)
+#include "../DBFormat/DataPerk.h"		// NDb::CDBPerk (perk row icon/tooltip)
+#include "../DBFormat/DataMisc.h"		// NDb::CMedal (CUnitMedalsPanel rows)
 #include "Interface.h"
 #include "GSceneUtils.h"	// NGScene::CCFBTransform (UIWrap.h dependency)
 #include "UIWrap.h"			// NUI::CImageDraw -- the recruit-card placeholder background
@@ -491,7 +491,7 @@ static void AddItem( list<SInventoryItem> *pList, NRPG::IInventoryItem *pItem )
 	if ( !IsValid( pItem ) )
 		return;
 
-	for ( list<SInventoryItem>::iterator iTemp = pList->begin(); iTemp != pList->end(); iTemp++ )
+	for ( typename list<SInventoryItem>::iterator iTemp = pList->begin(); iTemp != pList->end(); iTemp++ )
 	{
 		if ( iTemp->pItem->GetDBItem() != pItem->GetDBItem() )
 			continue;
@@ -515,11 +515,11 @@ void CUnitInventoryPanel::Generate()
 		AddItem( &itemsList, pInventory->Get( NDb::ESlot( nTemp ) ) );
 
 	const vector<NRPG::SBackPackItem> &itemsSet = pInventory->GetItems();
-	for( vector<NRPG::SBackPackItem>::const_iterator iTemp = itemsSet.begin(); iTemp != itemsSet.end(); iTemp++ )
+	for( typename vector<NRPG::SBackPackItem>::const_iterator iTemp = itemsSet.begin(); iTemp != itemsSet.end(); iTemp++ )
 		AddItem( &itemsList, iTemp->pItem );
 
 	int nCount = 0;
-	for ( list<SInventoryItem>::const_iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+	for ( typename list<SInventoryItem>::const_iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 	{
 		CPtr<CListView> pList;
 		if ( nCount & 1 )
@@ -790,10 +790,11 @@ bool CUnitMedalsPanel::ProcessMessage( const SEvent &sEvent )
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUnitBiographyPanel -- the recruit menu's "biography" tab (the retail DEFAULT tab): the persona
-// photo, the scrollable bio prose and the "characteristics" block. Retail ctor @0x244f30 /
-// ProcessMessage @0x248e90: both text blocks are GetDBString(0x4f22 markup header) + the persona's
-// record string; the photo is pPers->pPhoto. (v1.2 appends three award widgets to this panel --
-// not ported yet.)
+// photo, the scrollable bio prose and the "characteristics" block. Retail v1.2 ctor @0x644de0 /
+// ProcessMessage @0x648d40: both text blocks are
+// GetDBString(0x4f22 markup header) + the persona's record string; the photo is pPers->pPhoto.
+// The panel has exactly the five members below (the ctor clears +0x84..+0x90 and
+// no more); the seven-member ctor @0x644f30 once cited here is CButtonsPanel. No award widgets.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class CUnitBiographyPanel: public CWindow
 {
@@ -1101,7 +1102,7 @@ void CTeamMngUI::Set( NRPG::CUnit *_pMerc, EPanel _ePanel )
 	if ( bDead )
 		pKIAPanel->ShowWindow( SWTYPE_SHOW );
 
-	vector<CObj<NRPG::CUnit> >::iterator iTemp = find( pGlobalPlayer->mercs.begin(), pGlobalPlayer->mercs.end(), pMerc );
+	typename vector<CObj<NRPG::CUnit> >::iterator iTemp = find( pGlobalPlayer->mercs.begin(), pGlobalPlayer->mercs.end(), pMerc );
 	if ( iTemp == pGlobalPlayer->mercs.end() )
 		pButtonsPanel->SetHireMode( true, ( pGlobalPlayer->mercs.size() <= N_MAX_PLAYER_UNITS ) && !bDead );
 	else
@@ -1118,7 +1119,7 @@ bool CTeamMngUI::ProcessMessage( const SEvent &sEvent )
 			{
 				if ( IsValid( pMerc ) && pGlobalPlayer->mercs.size() <= N_MAX_PLAYER_UNITS )
 				{
-					vector<CObj<NRPG::CUnit> >::iterator iTemp = find( pGlobalPlayer->mercs.begin(), pGlobalPlayer->mercs.end(), pMerc );
+					typename vector<CObj<NRPG::CUnit> >::iterator iTemp = find( pGlobalPlayer->mercs.begin(), pGlobalPlayer->mercs.end(), pMerc );
 					if ( ( iTemp == pGlobalPlayer->mercs.end() ) && !pMerc->IsDead() && !pMerc->IsUnconscious() )
 						pGlobalPlayer->Hire( pMerc );
 				}
@@ -1130,7 +1131,7 @@ bool CTeamMngUI::ProcessMessage( const SEvent &sEvent )
 			{
 				if ( IsValid( pMerc ) )
 				{
-					vector<CObj<NRPG::CUnit> >::iterator iTemp = find( pGlobalPlayer->mercs.begin(), pGlobalPlayer->mercs.end(), pMerc );
+					typename vector<CObj<NRPG::CUnit> >::iterator iTemp = find( pGlobalPlayer->mercs.begin(), pGlobalPlayer->mercs.end(), pMerc );
 					if ( iTemp != pGlobalPlayer->mercs.end() )
 						pGlobalPlayer->Fire( pMerc );
 				}
@@ -1262,7 +1263,7 @@ void CTeamMngMenuInterface::Initialize( NRPG::CGlobalPlayer *_pGlobalPlayer, IMi
 	pMission = _pMission;
 	pGlobalPlayer = _pGlobalPlayer;
 
-	for ( vector<CObj<NRPG::CUnit> >::iterator iTemp = pGlobalPlayer->mercs.begin(); iTemp != pGlobalPlayer->mercs.end(); )
+	for ( typename vector<CObj<NRPG::CUnit> >::iterator iTemp = pGlobalPlayer->mercs.begin(); iTemp != pGlobalPlayer->mercs.end(); )
 	{
 		if ( !(*iTemp)->IsDead() )
 			iTemp++;

@@ -30,7 +30,7 @@ void CMedal::Import()
 	if ( IsValid( pSide ) )
 	{
 		bool bPresent = false;
-		for ( vector< CPtr<CMedal> >::iterator it = pSide->medals.begin(); it != pSide->medals.end(); ++it )
+		for ( typename vector< CPtr<CMedal> >::iterator it = pSide->medals.begin(); it != pSide->medals.end(); ++it )
 			if ( *it == this )
 			{
 				bPresent = true;

@@ -3,7 +3,7 @@
 //
 #include "wMain.h"
 #include "rpgUnit.h"
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 #include "scriptPtr.h"
 #include "scriptCommon.h"
 #include "scriptUnitGroup.h"
@@ -30,11 +30,182 @@ static int Error_out( lua_State* state )
 	return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// macOS port: extra Lua globals. A save records every registered C function by name (Script/lsaver.cpp
+// lua_AddCFunc) and loading looks each name up again, so the set and order of these names is part of the save
+// format and they stay registered. Silent Storm's own mission scripts (game.db Scripts) call four of them, which
+// the retail engine never registered (there the call raised "attempt to call a nil value" and stopped the script
+// thread): WaitForInterface( x ) is the old spelling of WaitForUI (its argument has already run) and
+// ScenarioClueGive is called with an undefined TRUE, so both are no-ops; UnitTakeItem( unit, item ) is
+// UnitTakeObject; Random is random. Every other one is a no-op that no shipped script calls. Each name has its own
+// C function: the save stores a function by the name it was registered under, so names must not share one.
+static int __attribute__((noinline)) KeptNameNoOp( lua_State *pState, const char *pszName )
+{
+	(void)pState; (void)pszName;
+	return 0;
+}
+#define KEPT_NAME_NOOP( Name ) static int luaKept##Name( lua_State *pState ) { return KeptNameNoOp( pState, #Name ); }
+KEPT_NAME_NOOP( UnitWeaponTestShots )
+KEPT_NAME_NOOP( UnitWeaponSetJammed )
+KEPT_NAME_NOOP( UnitWeaponSetDurability )
+KEPT_NAME_NOOP( UnitWeaponSetBroken )
+KEPT_NAME_NOOP( UnitWeaponRepairJammed )
+KEPT_NAME_NOOP( UnitWeaponRepairBroken )
+KEPT_NAME_NOOP( UnitWeaponRepairAsOnBase )
+KEPT_NAME_NOOP( UnitWeaponGetDurability )
+KEPT_NAME_NOOP( ScriptShadows )
+KEPT_NAME_NOOP( AddJournalRecord )
+KEPT_NAME_NOOP( AdvancedCameraMove )
+KEPT_NAME_NOOP( BeginTemplate )
+KEPT_NAME_NOOP( BlockChapterRE )
+KEPT_NAME_NOOP( CinematicSloMo )
+KEPT_NAME_NOOP( CompleteAllBlocksBefore )
+KEPT_NAME_NOOP( DialogModeBegin )
+KEPT_NAME_NOOP( DialogModeEnd )
+KEPT_NAME_NOOP( DialogModeSet )
+KEPT_NAME_NOOP( HighlightClue )
+KEPT_NAME_NOOP( HighlightUnitAlways )
+KEPT_NAME_NOOP( MessageBox )
+KEPT_NAME_NOOP( PauseMusic )
+KEPT_NAME_NOOP( RobotActivateGun )
+KEPT_NAME_NOOP( ScenarioAddVisibleZone )
+KEPT_NAME_NOOP( ScenarioSetGoalVisible )
+KEPT_NAME_NOOP( SetGoalBlocking )
+KEPT_NAME_NOOP( ShowHallOfFame )
+KEPT_NAME_NOOP( SpecialCinematicAnimations )
+KEPT_NAME_NOOP( TakeMission )
+KEPT_NAME_NOOP( UnitAddToParty )
+KEPT_NAME_NOOP( UnitAllowHide )
+KEPT_NAME_NOOP( UnitAttachToCannon )
+KEPT_NAME_NOOP( UnitLookAtUnit )
+KEPT_NAME_NOOP( UnitMakeUnconsciousWithVector )
+KEPT_NAME_NOOP( UnitMoveInventoryToStore )
+KEPT_NAME_NOOP( UnitPutWeaponToBackpack )
+KEPT_NAME_NOOP( UnitRemoveFromParty )
+KEPT_NAME_NOOP( UnitRemoveInventoryItem )
+KEPT_NAME_NOOP( UnitRemoveWhenOnBase )
+KEPT_NAME_NOOP( UnitSetAnimSpeed )
+KEPT_NAME_NOOP( UnitSetMeleeMode )
+KEPT_NAME_NOOP( UnitSetSwarmLogic )
+KEPT_NAME_NOOP( TestAIDump )
+KEPT_NAME_NOOP( TestAIFirstAid )
+KEPT_NAME_NOOP( TestAISpawn )
+KEPT_NAME_NOOP( TestAISuppress )
+KEPT_NAME_NOOP( UnitThrowWeaponOut )
+KEPT_NAME_NOOP( ShowMessageBox )
+KEPT_NAME_NOOP( DialogShort )
+KEPT_NAME_NOOP( DialogShortPlay )
+KEPT_NAME_NOOP( ScenarioClueGive )
+KEPT_NAME_NOOP( SetAIControl )
+KEPT_NAME_NOOP( ShowCursor )
+KEPT_NAME_NOOP( UnitSwitchWeapon )
+KEPT_NAME_NOOP( GetLastDialogResult )
+KEPT_NAME_NOOP( NumMissionInBlock )
+KEPT_NAME_NOOP( UnitGetAmmoQuantityInHand )
+KEPT_NAME_NOOP( UnitGetEffectiveEngSkill )
+KEPT_NAME_NOOP( UnitGetFloor )
+KEPT_NAME_NOOP( YesNoDialog )
+KEPT_NAME_NOOP( YesNoMessageBox )
+KEPT_NAME_NOOP( uiShowMissionSelection )
+KEPT_NAME_NOOP( uiShowShop )
+KEPT_NAME_NOOP( uiShowLoot )
+KEPT_NAME_NOOP( GetNextBlockOrder )
+KEPT_NAME_NOOP( WasLastZoneEveryObjComplete )
+KEPT_NAME_NOOP( GetAllZonePK )
+KEPT_NAME_NOOP( IsMissionTaken )
+KEPT_NAME_NOOP( IsScenarioBlockComplete )
+KEPT_NAME_NOOP( ScenarioGetTaskComplete )
+KEPT_NAME_NOOP( UnitIsRobot )
+KEPT_NAME_NOOP( WasLastZoneFailed )
+KEPT_NAME_NOOP( WaitForInterface )
+KEPT_NAME_NOOP( ExecCommand )
+static int luaKeptUnitTakeItem( lua_State *pState )
+{
+	return luaUnitTakeObject( pState );
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 #define REG_FUNCTION( Name ) { #Name, lua##Name }
 Script::SRegFunction pRegList[] =
 {
 	// Common functions
 	{ "_ERRORMESSAGE", Error_out },
+	// macOS port: the extra globals above, in their save order; lua_register keeps the LAST registration, so
+	// these come first and a function below with the same name would take precedence
+	{ "UnitWeaponTestShots", luaKeptUnitWeaponTestShots },
+	{ "UnitWeaponSetJammed", luaKeptUnitWeaponSetJammed },
+	{ "UnitWeaponSetDurability", luaKeptUnitWeaponSetDurability },
+	{ "UnitWeaponSetBroken", luaKeptUnitWeaponSetBroken },
+	{ "UnitWeaponRepairJammed", luaKeptUnitWeaponRepairJammed },
+	{ "UnitWeaponRepairBroken", luaKeptUnitWeaponRepairBroken },
+	{ "UnitWeaponRepairAsOnBase", luaKeptUnitWeaponRepairAsOnBase },
+	{ "UnitWeaponGetDurability", luaKeptUnitWeaponGetDurability },
+	{ "ScriptShadows", luaKeptScriptShadows },
+	{ "AddJournalRecord", luaKeptAddJournalRecord },
+	{ "AdvancedCameraMove", luaKeptAdvancedCameraMove },
+	{ "BeginTemplate", luaKeptBeginTemplate },
+	{ "BlockChapterRE", luaKeptBlockChapterRE },
+	{ "CinematicSloMo", luaKeptCinematicSloMo },
+	{ "CompleteAllBlocksBefore", luaKeptCompleteAllBlocksBefore },
+	{ "DialogModeBegin", luaKeptDialogModeBegin },
+	{ "DialogModeEnd", luaKeptDialogModeEnd },
+	{ "DialogModeSet", luaKeptDialogModeSet },
+	{ "HighlightClue", luaKeptHighlightClue },
+	{ "HighlightUnitAlways", luaKeptHighlightUnitAlways },
+	{ "MessageBox", luaKeptMessageBox },
+	{ "PauseMusic", luaKeptPauseMusic },
+	{ "RobotActivateGun", luaKeptRobotActivateGun },
+	{ "ScenarioAddVisibleZone", luaKeptScenarioAddVisibleZone },
+	{ "ScenarioSetGoalVisible", luaKeptScenarioSetGoalVisible },
+	{ "SetGoalBlocking", luaKeptSetGoalBlocking },
+	{ "ShowHallOfFame", luaKeptShowHallOfFame },
+	{ "SpecialCinematicAnimations", luaKeptSpecialCinematicAnimations },
+	{ "TakeMission", luaKeptTakeMission },
+	{ "UnitAddToParty", luaKeptUnitAddToParty },
+	{ "UnitAllowHide", luaKeptUnitAllowHide },
+	{ "UnitAttachToCannon", luaKeptUnitAttachToCannon },
+	{ "UnitLookAtUnit", luaKeptUnitLookAtUnit },
+	{ "UnitMakeUnconsciousWithVector", luaKeptUnitMakeUnconsciousWithVector },
+	{ "UnitMoveInventoryToStore", luaKeptUnitMoveInventoryToStore },
+	{ "UnitPutWeaponToBackpack", luaKeptUnitPutWeaponToBackpack },
+	{ "UnitRemoveFromParty", luaKeptUnitRemoveFromParty },
+	{ "UnitRemoveInventoryItem", luaKeptUnitRemoveInventoryItem },
+	{ "UnitRemoveWhenOnBase", luaKeptUnitRemoveWhenOnBase },
+	{ "UnitSetAnimSpeed", luaKeptUnitSetAnimSpeed },
+	{ "UnitSetMeleeMode", luaKeptUnitSetMeleeMode },
+	{ "UnitSetSwarmLogic", luaKeptUnitSetSwarmLogic },
+	{ "TestAIDump", luaKeptTestAIDump },
+	{ "TestAIFirstAid", luaKeptTestAIFirstAid },
+	{ "TestAISpawn", luaKeptTestAISpawn },
+	{ "TestAISuppress", luaKeptTestAISuppress },
+	{ "UnitThrowWeaponOut", luaKeptUnitThrowWeaponOut },
+	{ "ShowMessageBox", luaKeptShowMessageBox },
+	{ "DialogShort", luaKeptDialogShort },
+	{ "DialogShortPlay", luaKeptDialogShortPlay },
+	{ "ScenarioClueGive", luaKeptScenarioClueGive },
+	{ "SetAIControl", luaKeptSetAIControl },
+	{ "ShowCursor", luaKeptShowCursor },
+	{ "UnitSwitchWeapon", luaKeptUnitSwitchWeapon },
+	{ "UnitTakeItem", luaKeptUnitTakeItem },
+	{ "GetLastDialogResult", luaKeptGetLastDialogResult },
+	{ "NumMissionInBlock", luaKeptNumMissionInBlock },
+	{ "UnitGetAmmoQuantityInHand", luaKeptUnitGetAmmoQuantityInHand },
+	{ "UnitGetEffectiveEngSkill", luaKeptUnitGetEffectiveEngSkill },
+	{ "UnitGetFloor", luaKeptUnitGetFloor },
+	{ "YesNoDialog", luaKeptYesNoDialog },
+	{ "YesNoMessageBox", luaKeptYesNoMessageBox },
+	{ "uiShowMissionSelection", luaKeptuiShowMissionSelection },
+	{ "uiShowShop", luaKeptuiShowShop },
+	{ "uiShowLoot", luaKeptuiShowLoot },
+	{ "GetNextBlockOrder", luaKeptGetNextBlockOrder },
+	{ "WasLastZoneEveryObjComplete", luaKeptWasLastZoneEveryObjComplete },
+	{ "GetAllZonePK", luaKeptGetAllZonePK },
+	{ "IsMissionTaken", luaKeptIsMissionTaken },
+	{ "IsScenarioBlockComplete", luaKeptIsScenarioBlockComplete },
+	{ "ScenarioGetTaskComplete", luaKeptScenarioGetTaskComplete },
+	{ "UnitIsRobot", luaKeptUnitIsRobot },
+	{ "WasLastZoneFailed", luaKeptWasLastZoneFailed },
+	{ "WaitForInterface", luaKeptWaitForInterface },
+	{ "ExecCommand", luaKeptExecCommand },
+	{ "Random", luaRandom },
 	{ "out", luaOut },
 	{ "Sleep", LuaCFuncSleep },
 	{ "StartThread", LuaCFuncStartThread },

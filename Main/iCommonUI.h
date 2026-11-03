@@ -4,7 +4,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "..\Misc\2DArray.h"
+#include "../Misc/2DArray.h"
 namespace NDb
 {
 	class CTAmbientLight;
@@ -13,7 +13,7 @@ namespace NDb
 	class CAnimation;
 	class CSound;
 	class CDBPerk;
-	enum ECameraType;
+	enum ECameraType : int;
 }
 namespace NGScene
 {
@@ -423,7 +423,7 @@ class CUnitView: public CWindow
 {
 	OBJECT_BASIC_METHODS(CUnitView);
 public:
-	enum ECameraType
+	enum ECameraType : int
 	{
 		CAMERA_FACEGEN,
 		CAMERA_PORTRAIT
@@ -510,6 +510,7 @@ public:
 	void SetUnit( NRPG::CUnit *pUnit );
 	void SetUnit( NWorld::CUnit *pUnit );
 	void SetUnit( NRPG::CUnit *pUnit, NDb::CDBCamera *pCamera );   // perspective head view (AdvFaceGen, DataCamera 5014)
+	void TestSpin( float fDelta ) { fAngle += fDelta; }   // macOS port test hook: what a mouse drag integrates
 
 	// The wrapped render object (a CShowRPGUnit -> CFakeRPGUnit chain) carries the live head-morph virtuals
 	// SetLSHeadParam/CreateLSHeadInfo. The advanced FaceGen editor (CAdvFaceGenUI) drives them through this.
@@ -532,6 +533,10 @@ private:
 public:
 	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CModel*)this); f.Add(2,&pUnit); f.Add(3,&pItem); f.Add(4,&pToolTip); return 0; }
 	CPtr<NWorld::CUnit> pUnit;
+	wstring wsLastCompare;	// runtime: the comparison block last written into the tooltip
+	wstring wsBuiltCompare;	// runtime: the block as last computed, and when
+	bool bLastCompareAll = false, bLastCompareShown = false;
+	STime tLastCompare = 0;
 
 public:
 	CShowItemModel() {}

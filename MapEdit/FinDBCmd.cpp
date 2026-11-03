@@ -26,7 +26,7 @@ string CFinDBCmd::MakePropQuery( const string &szTable, const CPropMap *propMap,
   
   if ( propMap )
   {
-    CPropMap::const_iterator it = propMap->begin();
+    typename CPropMap::const_iterator it = propMap->begin();
 
 		if ( dynamic_cast<CListProp*>( it->second.GetPtr() ) )
 			++it;
@@ -282,7 +282,7 @@ int CFinDBCmd::InsertCopyMax( const string &szTable, int nVarID, const CPropMap 
 		if ( pDefValues )
 		{
 			LPSTR pName = W2A( pColInfo[i].pwszName );
-			CPropMap::const_iterator it = pDefValues->find( pName );
+			typename CPropMap::const_iterator it = pDefValues->find( pName );
 			
 			if ( pDefValues->end() != it )
 			{

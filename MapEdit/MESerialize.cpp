@@ -1,13 +1,13 @@
 #include "StdAfx.h"
-#include "..\Main\aiWaypoint.h"
-#include "..\Main\BuildingInfo.h"
+#include "../Main/aiWaypoint.h"
+#include "../Main/BuildingInfo.h"
 #include "MESerialize.h"
 #include "MEUserSettings.h"
-#include "..\Main\METerrain.h"
-#include "..\MapEdit\ItemsMgr.h"
-#include "..\MapEdit\dbDefs.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../Main/METerrain.h"
+#include "../MapEdit/ItemsMgr.h"
+#include "../MapEdit/dbDefs.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataFormat.h"
 
 extern string GetExportDstDir();
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +43,7 @@ void CheckRoute( NAI::SRoute *pRoute )
 	CItemsMgr *pMgr = GetUserSettings().GetResourceManager( IDC_WAYPOINTNAMES_TREE );
 	if ( !pMgr )
 		return;
-	for ( vector<int>::iterator i = pRoute->waypoints.begin(); i != pRoute->waypoints.end(); )
+	for ( typename vector<int>::iterator i = pRoute->waypoints.begin(); i != pRoute->waypoints.end(); )
 	{
 		if ( !pMgr->IsExist( *i ) )
 			i = pRoute->waypoints.erase( i );
@@ -100,7 +100,7 @@ inline bool IsFragmentValid( const NBuilding::SBuildFragment &fr, NBuilding::CBu
 void CheckFragments( vector<NBuilding::SBuildFragment> *pFrags, NBuilding::CBuildInfo *pInfo )
 {
 	int nMaxID = -1;
-	for ( vector<NBuilding::SBuildFragment>::iterator i = pFrags->begin(); i != pFrags->end(); )
+	for ( typename vector<NBuilding::SBuildFragment>::iterator i = pFrags->begin(); i != pFrags->end(); )
 		if ( !IsFragmentValid( *i, pInfo ) )
 			i = pFrags->erase( i );
 		else
@@ -111,7 +111,7 @@ void CheckFragments( vector<NBuilding::SBuildFragment> *pFrags, NBuilding::CBuil
 			for ( int j = 0; j < NDb::N_CONSTRUCTION_MATERIALS; ++j )
 			{
 				NBuilding::SRawMixedMaterial &r = i->materials[j];
-				for ( vector<NBuilding::SRawMaterialApply>::iterator im = r.layers.begin(); im != r.layers.end(); )
+				for ( typename vector<NBuilding::SRawMaterialApply>::iterator im = r.layers.begin(); im != r.layers.end(); )
 				{
 					if ( !NDb::GetTMaterial( im->nTMaterialID ) )
 						im = r.layers.erase( im );
@@ -130,7 +130,7 @@ void CheckFragments( vector<NBuilding::SBuildFragment> *pFrags, NBuilding::CBuil
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CheckSpots( vector<NBuilding::SProjectedSpot> *pSpots )
 {
-	for ( vector<NBuilding::SProjectedSpot>::iterator i = pSpots->begin(); i != pSpots->end(); )
+	for ( typename vector<NBuilding::SProjectedSpot>::iterator i = pSpots->begin(); i != pSpots->end(); )
 	{
 		NDb::CTMaterial *pM = NDb::GetTMaterial( i->nMaterialID );
 		if ( !IsValid( pM ) )
@@ -142,7 +142,7 @@ void CheckSpots( vector<NBuilding::SProjectedSpot> *pSpots )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CheckLayerGroups( vector<NBuilding::SLayerGroup> *pGroups )
 {
-	for ( vector<NBuilding::SLayerGroup>::iterator i = pGroups->begin(); i != pGroups->end(); )
+	for ( typename vector<NBuilding::SLayerGroup>::iterator i = pGroups->begin(); i != pGroups->end(); )
 		if ( i->layers.empty() || (i->layers.size() == 1 && i->floor.empty() ) )
 			i = pGroups->erase( i );
 		else
@@ -189,7 +189,7 @@ void FixCellarSize( NBuilding::CBuildInfo *pInfo, int nX, int nY )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CheckLadders( vector<NBuilding::SLadder> *pLadders )
 {
-	for ( vector<NBuilding::SLadder>::iterator i = pLadders->begin(); i != pLadders->end(); )
+	for ( typename vector<NBuilding::SLadder>::iterator i = pLadders->begin(); i != pLadders->end(); )
 	{
 		if ( i->nID <= 0 )
 			i = pLadders->erase( i );

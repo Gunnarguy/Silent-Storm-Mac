@@ -1,10 +1,10 @@
 #include "StdAfx.h"
 #include "iMain.h"
 #include "G2DView.h"
-#include "..\Misc\StrProc.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"
 #include "Cursor.h"
 #include "UIBaseCtrls.h"
@@ -199,7 +199,7 @@ void CCustomGameView::GetModsList( vector<SModInfo> *pMods )
 	if ( IsValid( pLeftList ) )
 		pLeftList->GetItemsList( &itemsList );
 
-	for ( list<CPtr<CWindow> >::const_iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+	for ( typename list<CPtr<CWindow> >::const_iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 	{
 		CCustomGameItem *pItem = dynamic_cast<CCustomGameItem*>( iTemp->GetPtr() );
 		if ( pItem )
@@ -273,7 +273,7 @@ void CCustomGameView::RefreshModsList()
 		const SModInfo &mod = availableMods[nID];
 
 		bool bActive = false;
-		for ( vector<SModInfo>::const_iterator iActive = pActiveMods->begin(); iActive != pActiveMods->end(); iActive++ )
+		for ( typename vector<SModInfo>::const_iterator iActive = pActiveMods->begin(); iActive != pActiveMods->end(); iActive++ )
 		{
 			if ( iActive->szDirectory == mod.szDirectory )
 			{
@@ -367,7 +367,7 @@ void CCustomGameUI::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 	list<CPtr<CWindow> > childrenList;
 	FormChildrenList( &childrenList );
 
-	for ( list<CPtr<CWindow> >::reverse_iterator iChild = childrenList.rbegin(); iChild != childrenList.rend(); iChild++ )
+	for ( typename list<CPtr<CWindow> >::reverse_iterator iChild = childrenList.rbegin(); iChild != childrenList.rend(); iChild++ )
 	{
 		CWindow *pChild = iChild->GetPtr();
 		if ( IsValid( pChild ) && pChild->GetStyle( STYLE_VISIBLE ) )

@@ -11,15 +11,15 @@
 #include "RPGGame.h"
 #include "aiMap.h"
 #include "aiCollider.h"
-#include "..\misc\RandomGen.h"
+#include "../misc/RandomGen.h"
 #include "wObject.h"
 #include "wUnitStates.h"
 #include "wAckBase.h"
 #include "RPGToHit.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataAI.h"
+#include "../MiscDll/LogStream.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataAI.h"
 #include "RPGCritical.h"
 #include "aiPath.h"
 #include "wUnitAttackExec.h"
@@ -88,7 +88,7 @@ EActionType GetActionType( CUnitServer *pUS )
 			CDynamicCast<NRPG::IMeleeWeaponItem> pMelee(pItem);
 			if (pMelee)
 			{
-				if (pMelee->GetDBMeleeWeapon()->bThrowing)
+				if ( pMelee->GetDBMeleeWeapon() && pMelee->GetDBMeleeWeapon()->bThrowing )
 					return AT_THROW;
 
 				return AT_KNIFE;
@@ -814,10 +814,10 @@ CCommandExecute* CreateActionExecutor( CUnitServer *pUS, CCmd *pCmd, EUnitComman
 				}
 				if ( IsValid( pAttackObject->pTarget ) && (eType == AT_MELEE || eType == AT_KNIFE) )
 				{
-					// Sentinels keeps the object target for melee too: do not reduce
+					// Keep the object target for melee too: do not reduce
 					// doors/windows to an unfiltered swing at their (possibly empty) centre.
-					// 0x7fe14d..0x7fe157 supplies the object; SS v1.2 0x79db52
-					// instead passes null to its otherwise matching object executor.
+					// SS v1.2 0x79db52 instead passes null to its otherwise matching
+					// object executor.
 					ENeedActiveItem eActive = pUS->GetUnitRPG()->GetWeaponType() == NDb::WT_DEFAULT
 						? ITEM_INACTIVE : ITEM_ACTIVE;
 					return CreateActionQueue( pUS, pAttackObject.GetPtr(),

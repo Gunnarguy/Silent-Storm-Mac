@@ -2,17 +2,17 @@
 #include "Gfx.h"
 #include "iMain.h"
 #include "G2DView.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"
 #include "iCommonUI.h"
 #include "iMission.h"
 #include "wInterface.h"
 #include "iShowClue.h"
 #include "RPGGlobal.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataRPG.h"
 #include "scScenarioTracker.h"
 #include "scFlowChartItems.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -23,7 +23,7 @@ namespace NUI
 static wstring ConvertLineBreaks( const wstring &szStr )
 {
 	wstring szRet;
-	for ( wstring::const_iterator i = szStr.begin(); i != szStr.end(); )
+	for ( typename wstring::const_iterator i = szStr.begin(); i != szStr.end(); )
 	{
 		switch ( wchar_t(*i) )
 		{

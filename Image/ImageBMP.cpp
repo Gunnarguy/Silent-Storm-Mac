@@ -20,7 +20,7 @@ inline long GetWord( int nOffset, BYTE *pBuff )
 }
 inline long GetLong( int nOffset, BYTE *pBuff )
 {
-	return *reinterpret_cast<long*>( pBuff + nOffset );
+	return *reinterpret_cast<LONG*>( pBuff + nOffset );  // BMP fields are 32-bit; long is 64-bit on macOS
 }
 inline long GetDWord( int nOffset, BYTE *pBuff )
 {
@@ -85,7 +85,7 @@ bool NImage::LoadImageBMP( CDataStream *pStream, CImage *pRes )
 				pStream->Read( &(dataline[0]), dwWidth );
 				pImageData = &(image[0]) + ( dwHeight - i - 1 ) * dwWidth;
 				// convert image from palette to ARGB
-				for ( std::vector<BYTE>::const_iterator pos = dataline.begin(); pos != dataline.end(); ++pos )
+				for ( typename std::vector<BYTE>::const_iterator pos = dataline.begin(); pos != dataline.end(); ++pos )
 					*pImageData++ = palette[ *pos ];
 				// skip 'left' bytes
 				if ( nEndOfLineSkip )
@@ -140,7 +140,7 @@ bool NImage::LoadImageBMP( CDataStream *pStream, CImage *pRes )
       }
 			// depalettize image
 			pImageData = &( image[0] );
-			for ( std::vector<BYTE>::const_iterator pos = imagedata.begin(); pos != imagedata.end(); ++pos )
+			for ( typename std::vector<BYTE>::const_iterator pos = imagedata.begin(); pos != imagedata.end(); ++pos )
 				*pImageData++ = palette[ *pos ];
 		}
 	}

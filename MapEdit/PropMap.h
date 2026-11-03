@@ -101,7 +101,7 @@ inline CPropMap* CreatePropMap( const CPropMap &sample )
 {
 	CPropMap *pProps = new CPropMap;
 
-	for ( CPropMap::const_iterator it = sample.begin(); it != sample.end(); ++it )
+	for ( typename CPropMap::const_iterator it = sample.begin(); it != sample.end(); ++it )
 		pProps->insert( CPropMap::value_type( it->first, it->second->Clone() ) );
 	return pProps;
 }

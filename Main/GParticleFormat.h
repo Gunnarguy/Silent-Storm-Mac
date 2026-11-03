@@ -4,6 +4,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+#include <stdint.h>
 #include "DG.h"
 #include "GResource.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -27,12 +28,30 @@ public:
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // could use coherence between fetches to make key retrieve faster
+// The particle files are loaded as a memory image whose key arrays are referenced by 32-bit offsets
+// that the loader fixes up. A 64-bit pointer would not fit the file's 2-byte-packed layout, so on 64-bit
+// builds the field keeps a 32-bit offset relative to itself and behaves like a pointer.
+template <class T> struct SRelativePtr
+{
+	int nOffset;
+	T *Get() const { return (T*)( (char*)this + nOffset ); }
+	T &operator[]( int i ) const { return Get()[i]; }
+	T *operator->() const { return Get(); }
+	operator T*() const { return Get(); }
+	SRelativePtr &operator=( T *p ) { nOffset = (int)( (char*)p - (char*)this ); return *this; }
+};
 template <class TValue>
 class TKeyTrack
 {
 public:
 	short nKeys;
+#if UINTPTR_MAX > 0xFFFFFFFFu
+	SRelativePtr< TKey<TValue> > keys;
+	int RawFileOffset() const { return keys.nOffset; }   // before the loader's fix-up
+#else
 	TKey<TValue> *keys;
+	int RawFileOffset() const { return (int)keys; }
+#endif
 
 	void GetValue( float fT, TValue *pRes ) const
 	{
@@ -73,6 +92,7 @@ struct SParticle
 	TKeyTrack<DWORD> color;
 	TKeyTrack<short> sprite;
 };
+static_assert( sizeof( SParticle ) == 34, "SParticle must match the 2-byte-packed particle file layout" );
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma pack( pop )
 ////////////////////////////////////////////////////////////////////////////////////////////////////

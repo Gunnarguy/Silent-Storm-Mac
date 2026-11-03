@@ -78,7 +78,7 @@ bool CUIControl::Update( bool bSaveData /* = true  */ )
 			return false;
 		}
 	}
-	for ( CPropMap::const_iterator i = props.begin(); i != props.end(); ++i )
+	for ( typename CPropMap::const_iterator i = props.begin(); i != props.end(); ++i )
 		((CUIProp*)((CProp*)i->second))->SetControlValue();
 	//
 	if ( m_nNestedUIContainerID > 0 )
@@ -89,8 +89,8 @@ bool CUIControl::Update( bool bSaveData /* = true  */ )
 			const CPropMap *pProps = pTree->pItemsTree->GetPropList( m_nNestedUIContainerID );
 			if ( pProps )
 			{
-				CPropMap::const_iterator iw = pProps->find( "Width" );
-				CPropMap::const_iterator ih = pProps->find( "Height" );
+				typename CPropMap::const_iterator iw = pProps->find( "Width" );
+				typename CPropMap::const_iterator ih = pProps->find( "Height" );
 				if ( iw != pProps->end() && ih != pProps->end() )
 				{
 					rect.right = rect.left + (int)iw->second->GetValue();
@@ -142,7 +142,7 @@ void CUIControl::AddProp( const string &szName, int nType, int nViewType, const 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUIControl::SetRelation( const string &szName, int nResTreeID )
 {
-	CPropMap::const_iterator i = props.find( szName );
+	typename CPropMap::const_iterator i = props.find( szName );
 	if ( i != props.end() )
 	{
 		i->second->SetRelation( nResTreeID );
@@ -152,14 +152,14 @@ void CUIControl::SetRelation( const string &szName, int nResTreeID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUIControl::SetPrefix( const string &szName, const string &szPrefix )
 {
-	CPropMap::const_iterator i = props.find( szName );
+	typename CPropMap::const_iterator i = props.find( szName );
 	if ( i != props.end() )
 		i->second->SetPrefix( szPrefix );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUIControl::SetTip( const string &szName, int nResStrID )
 {
-	CPropMap::const_iterator i = props.find( szName );
+	typename CPropMap::const_iterator i = props.find( szName );
 	if ( i == props.end() )
 		return;
 	CString str;
@@ -411,7 +411,7 @@ void CUIControl::Setup( int _nUIContainerID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUIControl::CheckRect()
 {
-	CPropMap::const_iterator it = props.find( "UIContainerID" );
+	typename CPropMap::const_iterator it = props.find( "UIContainerID" );
 	if ( it != props.end() )
 	{
 		const SResTree *pTree = theApp.GetResTree( IDC_INTERFACES_TREE );
@@ -420,8 +420,8 @@ void CUIControl::CheckRect()
 			const CPropMap *pProps = pTree->pItemsTree->GetPropList( it->second->GetValue() );
 			if ( pProps )
 			{
-				CPropMap::const_iterator iw = pProps->find( "Width" );
-				CPropMap::const_iterator ih = pProps->find( "Height" );
+				typename CPropMap::const_iterator iw = pProps->find( "Width" );
+				typename CPropMap::const_iterator ih = pProps->find( "Height" );
 				if ( iw != pProps->end() && ih != pProps->end() )
 					rect = CRect( rect.TopLeft(), CSize( (int)iw->second->GetValue(), (int)ih->second->GetValue() ) );
 			}
@@ -463,14 +463,14 @@ bool CUIControl::SyncWithImageSize()
 		const CPropMap *pUITProps = pUITree->pItemsTree->GetPropList( m_nTexture0 );
 		if ( pUITProps )
 		{
-			CPropMap::const_iterator itex = pUITProps->find( "R_1024x768" );
+			typename CPropMap::const_iterator itex = pUITProps->find( "R_1024x768" );
 			if ( itex == pUITProps->end() )
 				return false;
 			const CPropMap *pProps = pTree->pItemsTree->GetPropList( itex->second->GetValue() );
 			if ( pProps )
 			{
-				CPropMap::const_iterator iw = pProps->find( "Width" );
-				CPropMap::const_iterator ih = pProps->find( "Height" );
+				typename CPropMap::const_iterator iw = pProps->find( "Width" );
+				typename CPropMap::const_iterator ih = pProps->find( "Height" );
 				if ( iw != pProps->end() && ih != pProps->end() )
 				{
 					SetRect( CRect( rect.TopLeft(), CSize( (int)iw->second->GetValue(), (int)ih->second->GetValue() ) ) );

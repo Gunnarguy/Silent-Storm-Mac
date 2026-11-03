@@ -2,13 +2,13 @@
 #include "LSHead.h"
 #include "GResource.h"
 #include "GGeometry.h"
-#include "..\Misc\BasicShare.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../Misc/BasicShare.h"
+#include "../DBFormat/DataFormat.h"
 #include "GfxBuffers.h"      // NGfx::MakeTexture / CTextureLock / CTexture (face-texture bake upload)
 #include "GPixelFormat.h"    // NGfx::SPixel8888
 #include "SWTexture.h"       // NGScene::CSWTextureData (source texture-layer pixels)
 #include "2DSceneSW.h"       // NGScene::GetSWTex
-#include "..\ADOImport\BasicDB.h"   // NDatabase::GetTable / CDBTable / CDBIterator (FaceGen hair/glasses bars)
+#include "../ADOImport/BasicDB.h"   // NDatabase::GetTable / CDBTable / CDBIterator (FaceGen hair/glasses bars)
 #include "ModManager.h"      // v1.2 @0x6602e0: CModManager::GetBaseVersion keys the idle-table rebuild
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -252,7 +252,7 @@ void CHeadAnimator::PlaySequence( NDb::CSequence *pDbSeq, NDb::CSequence *pDbExp
 // playing.
 void CHeadAnimator::StopSequence()
 {
-	for ( vector<SSequence>::iterator it = sequences.begin(); it != sequences.end(); )
+	for ( typename vector<SSequence>::iterator it = sequences.begin(); it != sequences.end(); )
 	{
 		if ( !it->bIdle )
 			it = sequences.erase( it );
@@ -269,7 +269,7 @@ void CHeadAnimator::SetIdleType( EIdleType e )
 		return;
 	eIdleType = e;
 	bDeathMask = false;
-	for ( vector<SSequence>::iterator it = sequences.begin(); it != sequences.end(); )
+	for ( typename vector<SSequence>::iterator it = sequences.begin(); it != sequences.end(); )
 	{
 		if ( it->bIdle )
 			it = sequences.erase( it );
@@ -323,7 +323,7 @@ void CHeadAnimator::Recalc()
 		bHasReal |= !sequences[i].bMask && !sequences[i].bIdle;
 	if ( !bHasReal )
 	{
-		for ( vector<SSequence>::iterator it = sequences.begin(); it != sequences.end(); )
+		for ( typename vector<SSequence>::iterator it = sequences.begin(); it != sequences.end(); )
 		{
 			if ( it->bMask )
 				it = sequences.erase( it );
@@ -335,7 +335,7 @@ void CHeadAnimator::Recalc()
 	// (2) refresh/expire each entry; collect this frame's renders. STime is unsigned, so the
 	// comparisons below are the release's unsigned jb/jbe.
 	bool bIdleActive = false;
-	for ( vector<SSequence>::iterator it = sequences.begin(); it != sequences.end(); )
+	for ( typename vector<SSequence>::iterator it = sequences.begin(); it != sequences.end(); )
 	{
 		if ( !IsValid( it->pSequence ) )
 		{
@@ -554,7 +554,7 @@ CHeadInfo::CHeadInfo( NDb::CComplexHead *pComplexHead ):
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHeadTransformInfo                                                                       @0x2606e0
-// The per-unit live head-morph state (reg 0xA1743120). See the LSHead.h banner for the Sentinels-LS
+// The per-unit live head-morph state (reg 0xA1743120). See the LSHead.h banner for the LifeStudio
 // adaptation (the mesh morph rides the shared pLSTree + the mesh IAnimators; the per-instance
 // ITransformer/IAnimator value slots are reserved for the texture path).
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -593,7 +593,14 @@ void CHeadTransformInfo::BuildMorphRig()
 			{
 				value.pTransformer->OutputAnimator( value.pAnimator );
 				value.pTransformer->RegisterMacroMuscle( value.pMMTree->RootMacroMuscle() );
+				// retail (the fragment at 0x660b4d): the output animator takes the global tree, so the morphed preview
+				// head plays its idle sequences like any head.
+				LoadLSTree();
+				if ( pLSTree )
+					value.pAnimator->RegisterMacroMuscle( pLSTree->RootMacroMuscle() );
 				bMorphOk = true;
+				if ( getenv( "S2_HEADLESS" ) )
+					fprintf( stderr, "[test-hook] morph rig: head %d, %d vertices\n", pDbHead->GetRecordID(), value.pAnimator->VerticesCount() );
 
 				// Parallel TEXTURE-WEIGHT rig (NEVER Saved): its own transformer + output animator, driven from the
 				// SAME GDP + MM root, with CollectUserItems(true) so the FaceGen output channels resolve via UserItem.
@@ -632,7 +639,7 @@ void CHeadTransformInfo::BuildMorphRig()
 // GetMMTension @0x25ee60 -- a macro-muscle's current tension, or -1.0f when it has never been set.
 float CHeadTransformInfo::GetMMTension( const string &name )
 {
-	unordered_map<string, float>::iterator it = mmTensions.find( name );
+	typename unordered_map<string, float>::iterator it = mmTensions.find( name );
 	if ( it == mmTensions.end() )
 		return -1.0f;
 	return it->second;
@@ -751,7 +758,7 @@ bool CHeadTransformInfo::NeedUpdate()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Recalc @0x260000 -- the macro-muscle tensions + the idle sequence are applied to the head mesh by the
 // downstream mesh transformer (which reads this node); here we only clear the tension-dirty flag once
-// the version bump (CVersioningBase::DoUpdate) has signalled the change. (Sentinels-LS adaptation: the
+// the version bump (CVersioningBase::DoUpdate) has signalled the change. (LifeStudio adaptation: the
 // SS1 Recalc pushed tensions into a per-instance ITransformer; the mesh path uses the shared tree +
 // the mesh IAnimators instead -- see the LSHead.h banner.)
 void CHeadTransformInfo::Recalc()
@@ -763,7 +770,7 @@ void CHeadTransformInfo::Recalc()
 	if ( bMorphOk )
 	{
 		value.pTransformer->ClearAllMacroMuscles();
-		for ( unordered_map<string, float>::const_iterator it = mmTensions.begin(); it != mmTensions.end(); ++it )
+		for ( typename unordered_map<string, float>::const_iterator it = mmTensions.begin(); it != mmTensions.end(); ++it )
 		{
 			LifeStudioHeadAPI::IMacroMuscle *pMM = value.pMMTree->FindMacroMuscle( it->first.c_str() );
 			if ( pMM )
@@ -780,7 +787,7 @@ void CHeadTransformInfo::Recalc()
 		try
 		{
 			value.pTexTransformer->ClearAllMacroMuscles();
-			for ( unordered_map<string, float>::const_iterator it = mmTensions.begin(); it != mmTensions.end(); ++it )
+			for ( typename unordered_map<string, float>::const_iterator it = mmTensions.begin(); it != mmTensions.end(); ++it )
 			{
 				LifeStudioHeadAPI::IMacroMuscle *pMM = value.pMMTree->FindMacroMuscle( it->first.c_str() );
 				if ( pMM )
@@ -820,6 +827,14 @@ void CFaceGenMeshHolder::Recalc()
 		{
 			pValue->pLSAnimators[i] = LifeStudioHeadAPI::IAnimator::Create();
 			pValue->pLSAnimators[i]->Load( (const char *)info.animatorStreams[i].GetBuffer(), info.animatorStreams[i].GetSize() );
+			if ( getenv( "S2_HEADLESS" ) )
+			{
+				unsigned int nHash = 2166136261u;   // FNV-1a over the baked stream: the same head before a save and after a load
+				const unsigned char *pBytes = (const unsigned char *)info.animatorStreams[i].GetBuffer();
+				for ( int k = 0; k < info.animatorStreams[i].GetSize(); ++k )
+					nHash = ( nHash ^ pBytes[k] ) * 16777619u;
+				fprintf( stderr, "[test-hook] baked head: %d bytes, %d vertices, hash %08x\n", info.animatorStreams[i].GetSize(), pValue->pLSAnimators[i]->VerticesCount(), nHash );
+			}
 			LoadLSTree();
 			if ( pLSTree )
 				pValue->pLSAnimators[i]->RegisterMacroMuscle( pLSTree->RootMacroMuscle() );
@@ -945,8 +960,13 @@ static bool MixTexture( CArray2D<NGfx::SPixel8888> &dst, int x0, int y0, int x1,
 		if ( !pSWD || pSWD->mips.empty() )
 			continue;
 		bBlended = true;
-		CArray2D<NGfx::SPixel8888> &srcImg = pSWD->mips[0];
+		// The layers are authored at the size of their rectangle; the port's HD pack doubles them. Take the mip that
+		// fits, because the copy below clips to the rectangle (retail @0x65f1c0 clips too, and never had to).
 		int rectW = x1 - x0, rectH = y1 - y0;
+		int nMip = 0;
+		while ( nMip + 1 < pSWD->mips.size() && ( pSWD->mips[nMip].GetXSize() > rectW || pSWD->mips[nMip].GetYSize() > rectH ) )
+			++nMip;
+		CArray2D<NGfx::SPixel8888> &srcImg = pSWD->mips[nMip];
 		int w = ( rectW < srcImg.GetXSize() ) ? rectW : srcImg.GetXSize();
 		int h = ( rectH < srcImg.GetYSize() ) ? rectH : srcImg.GetYSize();
 		for ( int ry = 0; ry < h; ++ry )

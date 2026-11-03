@@ -19,13 +19,13 @@
 #include "ChapterInfo.h"
 #include "iLogPanel.h"			// NUI::CLogPanel + STREAM_GAME (the chapter map's tag-19 log panel)
 #include "iChapterMapUI.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Misc\RandomGen.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
-#include "..\DBFormat\DataScenario.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Misc/RandomGen.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
+#include "../DBFormat/DataScenario.h"
 #include "scFlowChartItems.h"
 #include "scScenarioTracker.h"
 #include "UIWrap.h"
@@ -484,7 +484,7 @@ bool CZoneSector::GetDescription( wstring *psText ) const
 
 		int nCount = 0;
 		wstring wsDescr;
-		for ( list< CPtr<NScenario::CScenarioClue> >::const_iterator iTemp = cluesList.begin(); iTemp != cluesList.end(); iTemp++ )
+		for ( typename list< CPtr<NScenario::CScenarioClue> >::const_iterator iTemp = cluesList.begin(); iTemp != cluesList.end(); iTemp++ )
 		{
 			if ( pGame->pScenarioTracker->GetZoneInWhichClueWasFound( (*iTemp) ) == pZone )
 			{
@@ -1072,7 +1072,7 @@ void CChapterMapUI::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 		list< CPtr<NScenario::CScenarioClue> > cluesList;
 		pChapter->GetRPGGame()->pScenarioTracker->GetAvailableClues( &cluesList );
 		cluesList.sort( SCluesSort() );
-		for( list< CPtr<NScenario::CScenarioClue> >::const_iterator iTemp = cluesList.begin(); iTemp != cluesList.end(); iTemp++ )
+		for( typename list< CPtr<NScenario::CScenarioClue> >::const_iterator iTemp = cluesList.begin(); iTemp != cluesList.end(); iTemp++ )
 		{
 			if ( !(*iTemp)->IsJustFound() )
 				continue;
@@ -1085,10 +1085,10 @@ void CChapterMapUI::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 
 		// Retail continues the same second-frame drain with every newly awarded medal of every roster
 		// merc. GetJustFoundMedals consumes the notification bit, so each popup is queued exactly once.
-		for ( vector< CObj<NRPG::CGlobalPlayer> >::iterator p = pChapter->GetRPGGame()->players.begin();
+		for ( typename vector< CObj<NRPG::CGlobalPlayer> >::iterator p = pChapter->GetRPGGame()->players.begin();
 			p != pChapter->GetRPGGame()->players.end(); ++p )
 		{
-			for ( vector< CObj<NRPG::CUnit> >::iterator u = (*p)->mercs.begin(); u != (*p)->mercs.end(); ++u )
+			for ( typename vector< CObj<NRPG::CUnit> >::iterator u = (*p)->mercs.begin(); u != (*p)->mercs.end(); ++u )
 			{
 				vector< CDBPtr<NDb::CMedal> > medals;
 				(*u)->GetJustFoundMedals( &medals );

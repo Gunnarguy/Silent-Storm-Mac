@@ -17,7 +17,7 @@
 #include "wUnitCommands.h"     // NWorld::UCR_OK / UCR_NEED_RELOAD
 #include "rpgUnitMission.h"    // NRPG::IUnitMission::GetActionAP + NRPG::AC_APPROACH_CANNON
 #include "RPGItem.h"           // NRPG::IWeaponItem::SetShootMode / HasAmmo
-#include "..\DBFormat\DataRPG.h" // NDb::EShootMode
+#include "../DBFormat/DataRPG.h" // NDb::EShootMode
 //
 #include "aiActions.h"
 //
@@ -110,7 +110,7 @@ static bool HG_CanReachCannon( IAIUnit *pU, const SPlaceWithAP &place, NWorld::C
 	// walk the path summing per-move action AP, then add the use-cannon action cost.
 	SUnitPosition cur = pU->GetUnitPosition();
 	int nPathAP = 0;
-	for ( vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
+	for ( typename vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
 	{
 		SUnitPosition next( cur );
 		next.pos.p = *i;

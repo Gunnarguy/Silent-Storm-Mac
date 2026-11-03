@@ -6,14 +6,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // full description of buffers & textures for internal use & some internal data access
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "..\Misc\Win32Helper.h"
+#include "../Misc/Win32Helper.h"
 #include "GPixelFormat.h"
 namespace NGfx
 {
 	class CGeometry;
 	class CTexture;
 	class CCubeTexture;
-	enum EFace;
+	enum EFace : int;
 	externA5 NWin32Helper::com_ptr<IDirect3D9> pD3D;
 	externA5 NWin32Helper::com_ptr<IDirect3DDevice9> pDevice;
 	externA5 int nCurrentFrame;

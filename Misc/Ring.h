@@ -123,7 +123,7 @@ public:
 		{
 			clear();
 
-			CRing<Type>::const_iterator iTemp = ringList.begin();
+			typename CRing<Type>::const_iterator iTemp = ringList.begin();
 			for( int nTemp = 0; nTemp < ringList.size(); nTemp++, iTemp++ )
 			{
 				add( *iTemp );

@@ -1,19 +1,19 @@
 #include "StdAfx.h"
 #include "MapEdit.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataObject.h"
-#include "..\DBFormat\DataGeometry.h"
-#include "..\DBFormat\DataAnimation.h"
-#include "..\DBFormat\DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataObject.h"
+#include "../DBFormat/DataGeometry.h"
+#include "../DBFormat/DataAnimation.h"
+#include "../DBFormat/DataMap.h"
 #include "ItemsMgr.h"
 #include "Export.h"
-#include "..\Misc\basicShare.h"
-#include "..\Main\BSPtree.h"
-#include "..\Main\GAnimFormat.h"
-#include "..\Main\GAnimation.h"
-#include "..\Main\GBind.h"
-#include "..\Main\aiObject.h"
-#include "..\Main\aiObjectLoader.h"
+#include "../Misc/basicShare.h"
+#include "../Main/BSPtree.h"
+#include "../Main/GAnimFormat.h"
+#include "../Main/GAnimation.h"
+#include "../Main/GBind.h"
+#include "../Main/aiObject.h"
+#include "../Main/aiObjectLoader.h"
 namespace NAnimation
 {
 	class CFileSkeleton;
@@ -61,7 +61,7 @@ static void MakeFirstFrameGeom( NDb::CSkeleton *pSkeleton, NDb::CAnimation::ETyp
 	// store geometries:
 	NAI::CBSPPieces &pieces = *pTrees;
 	pieces.clear();
-	NAI::CGeometryInfo::CPieceMap::iterator it;
+	typename NAI::CGeometryInfo::CPieceMap::iterator it;
 	for ( it = pGeom->pieces.begin(); it != pGeom->pieces.end(); ++it )
 	{
 		if ( !it->second.trees.empty() )

@@ -4,8 +4,8 @@
 #include "TreeSelItemDlg.h"
 #include "dbDefs.h"
 #include "ItemsMgr.h"
-#include "..\Input\Bind.h"
-#include "..\Main\iMain.h"
+#include "../Input/Bind.h"
+#include "../Main/iMain.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CBaseLayer::CBaseLayer( int nLayerID, int nLayerInd, CString szName, int nBrushesTreeID ) 
@@ -48,10 +48,10 @@ void CBaseLayer::Reset()
 	const CPropMap *pProps = pBrushes->pItemsTree->GetPropList( activeBrush.nItemID );
 	if ( pProps )
 	{
-		CPropMap::const_iterator it = pProps->find( "UserColor" );
-		CPropMap::const_iterator itx = pProps->find( "SizeX" );
-		CPropMap::const_iterator ity = pProps->find( "SizeY" );
-		CPropMap::const_iterator itw = pProps->find( "Thickness" );
+		typename CPropMap::const_iterator it = pProps->find( "UserColor" );
+		typename CPropMap::const_iterator itx = pProps->find( "SizeX" );
+		typename CPropMap::const_iterator ity = pProps->find( "SizeY" );
+		typename CPropMap::const_iterator itw = pProps->find( "Thickness" );
 		if ( it  != pProps->end() ) cr = int( it->second->GetValue() );
 		if ( itx != pProps->end() ) nSizeX = 2 * int( itx->second->GetValue() );
 		if ( ity != pProps->end() ) nSizeY = 2 * int( ity->second->GetValue() );

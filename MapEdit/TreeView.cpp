@@ -5,11 +5,11 @@
 #include "dbDefs.h"
 #include "TemplMgr.h"
 #include "Templ.h"
-#include "..\FileIO\BasicChunk1.h"
-#include "..\Main\GResource.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../FileIO/BasicChunk1.h"
+#include "../Main/GResource.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataRPG.h"
 #include "placement.h"
 #include "OIDlg.h"  // for WM_ME_CANCEL 
 #include "FindDialog.h"
@@ -1313,9 +1313,9 @@ void CopyVariantProperties( CItemsMgr *pItemsMgr, int nDstID, int nDstVarID, int
 	{
 		if ( pSrcProps->size() > 0 )
 		{
-			for ( CPropMap::const_iterator it = pSrcProps->begin(); it != pSrcProps->end(); ++it )
+			for ( typename CPropMap::const_iterator it = pSrcProps->begin(); it != pSrcProps->end(); ++it )
 			{
-				CPropMap::const_iterator itd = pDstProps->find( it->first );
+				typename CPropMap::const_iterator itd = pDstProps->find( it->first );
 				if ( itd == pDstProps->end() )
 					continue;
 				CDynamicCast<CListProp> plist(itd->second);
@@ -1484,7 +1484,7 @@ string CMETreeView::GetItemPath( int nTreeID, int nItemID )
 		htif = m_treeCtrl.GetParentItem( htif );
 	}
 	string szPath;
-	for ( vector<string>::reverse_iterator rit = path.rbegin(); rit != path.rend(); ++rit )
+	for ( typename vector<string>::reverse_iterator rit = path.rbegin(); rit != path.rend(); ++rit )
 		szPath += *rit;
 	return szPath;
 }

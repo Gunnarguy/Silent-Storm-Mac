@@ -66,7 +66,7 @@ bool CUIContainer::RemoveControl( CUIControl *pCtrl )
 	if ( !IsValid( pCtrl ) )
 		return false;
 	// ищем этот контрол в списке
-	vector< CPtr<CUIControl> >::iterator it;
+	typename vector< CPtr<CUIControl> >::iterator it;
 	for ( it = controls.begin(); it != controls.end(); ++it )
 		if ( (*it)->GetID() == pCtrl->GetID() )
 			break;

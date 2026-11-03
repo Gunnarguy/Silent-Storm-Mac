@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 //
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataRPG.h"
 #include "aiPosition.h"
 #include "aiUnit.h"
 #include "aiState.h"
@@ -235,7 +235,7 @@ static int GetNearestGroup( NWorld::CUnitServer *pUS, const SUnitPosition &pos, 
 static bool IsBadGroupHealth( const SAIUnitGroup &group )
 {
 	const int N_BAD_HEALTH = 15;
-	vector< CPtr<IAIUnit> >::const_iterator i;
+	typename vector< CPtr<IAIUnit> >::const_iterator i;
 	int nHealth = 0;
 	for ( i = group.enemies.begin(); i != group.enemies.end(); ++i )
 		nHealth = Max( nHealth, (*i)->GetAP() );
@@ -667,7 +667,7 @@ void CAIWearPKAction::GetInfoInner( const SPlaceWithAP &place, SInfo *pInfo ) co
 	pWorld->GetAllUnits( &all );
 	vector< NWorld::CUnitServer* > cands;    // empty suits (preferred)
 	vector< NWorld::CUnitServer* > pilots;   // occupied suits whose pilot cannot fight
-	for ( list< CPtr<NWorld::CUnitServer> >::iterator it = all.begin(); it != all.end(); ++it )
+	for ( typename list< CPtr<NWorld::CUnitServer> >::iterator it = all.begin(); it != all.end(); ++it )
 	{
 		NWorld::CUnitServer *pS = it->GetPtr();
 		if ( !IsValid( pS ) )

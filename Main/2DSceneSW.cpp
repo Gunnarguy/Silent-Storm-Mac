@@ -3,8 +3,8 @@
 #include "2DSceneSW.h"
 #include "SWTexture.h"
 #include "Render.h"
-#include "..\Misc\BasicShare.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../Misc/BasicShare.h"
+#include "../DBFormat/DataFormat.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
 {
@@ -47,6 +47,21 @@ protected:
 	float fScale;
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+#if defined(__APPLE__)
+// macOS port: bilinear sampling while the software baker magnifies (the 512/1024 terrain bakes). Off at the
+// retail sizes, which only ever minify, so those stay identical to the original.
+static bool s_bBakeFilter = false;
+template<class TT> static __forceinline TT S2Blend4( const TT &a, const TT &, const TT &, const TT &, int, int ) { return a; }
+static __forceinline NGfx::SPixel8888 S2Blend4( const NGfx::SPixel8888 &a, const NGfx::SPixel8888 &b, const NGfx::SPixel8888 &c, const NGfx::SPixel8888 &d, int fu, int fv )
+{
+	NGfx::SPixel8888 r;
+	r.r = (unsigned char)( ( ( a.r * ( 256 - fu ) + b.r * fu ) * ( 256 - fv ) + ( c.r * ( 256 - fu ) + d.r * fu ) * fv ) >> 16 );
+	r.g = (unsigned char)( ( ( a.g * ( 256 - fu ) + b.g * fu ) * ( 256 - fv ) + ( c.g * ( 256 - fu ) + d.g * fu ) * fv ) >> 16 );
+	r.b = (unsigned char)( ( ( a.b * ( 256 - fu ) + b.b * fu ) * ( 256 - fv ) + ( c.b * ( 256 - fu ) + d.b * fu ) * fv ) >> 16 );
+	r.a = (unsigned char)( ( ( a.a * ( 256 - fu ) + b.a * fu ) * ( 256 - fv ) + ( c.a * ( 256 - fu ) + d.a * fu ) * fv ) >> 16 );
+	return r;
+}
+#endif
 template<class T>
 struct STextureIterator
 {
@@ -54,6 +69,10 @@ struct STextureIterator
 	int nUMask, nVMask;
 	unsigned int nMip;
 	T *pMip;
+#if defined(__APPLE__)
+	bool bFilter;
+	int nXBitsF, nYMaskF;
+#endif
 
 	void Init( float fU, float fV, float fDU, float fDV, const vector< CArray2D<T> > &tex )
 	{
@@ -72,9 +91,28 @@ struct STextureIterator
 		nUMask = nXSize - 1;
 		nVMask = (nYSize - 1 ) << nXBits;
 		pMip = &tex[nMip][0][0];
+#if defined(__APPLE__)
+		bFilter = s_bBakeFilter && nMip == 0 && fabs( fDU ) < 0.99f && fabs( fDV ) < 0.99f;
+		nXBitsF = nXBits; nYMaskF = nYSize - 1;
+#endif
 	}
-	__forceinline const T& Fetch()
+	__forceinline T Fetch()
 	{
+#if defined(__APPLE__)
+		if ( bFilter )
+		{
+			// texel centres sit at +0.5: sample the four around the point and blend (wrapping like the nearest path)
+			unsigned int u = nU - 0x8000, v = nV - 0x8000;
+			int x0 = ( u >> 16 ) & nUMask, x1 = ( x0 + 1 ) & nUMask;
+			int y0 = ( v >> 16 ) & nYMaskF, y1 = ( y0 + 1 ) & nYMaskF;
+			int fu = ( u >> 8 ) & 255, fv = ( v >> 8 ) & 255;
+			const T &a = pMip[( y0 << nXBitsF ) + x0], &b = pMip[( y0 << nXBitsF ) + x1];
+			const T &c = pMip[( y1 << nXBitsF ) + x0], &d = pMip[( y1 << nXBitsF ) + x1];
+			nU += nDU;
+			nV += nDV;
+			return S2Blend4( a, b, c, d, fu, fv );
+		}
+#endif
 		const T &r = pMip[((nV>>nVShift)&nVMask) + ((nU>>16)&nUMask) ];
 		nU += nDU;
 		nV += nDV;
@@ -141,13 +179,16 @@ private:
 		{
 			if ( bDoMask )
 			{
+#if defined(_M_IX86)
 				_asm
 				{
 					pxor mm2, mm2
 				}
+#endif
 				for ( ; pDst < pFinish; ++pDst )
 				{
 					DWORD color = tex.Fetch().color;
+#if defined(_M_IX86)
 					__asm
 					{
 						mov esi, pDst
@@ -167,6 +208,24 @@ private:
 						packuswb mm0, mm0
 						movd [esi], mm0
 					}
+#else
+					{
+						// exact C version of the MMX premultiplied blend: dst = sat( src + dst - dst * a / 256 )
+						s2mmx mm0 = movd_load( &color ), mm1 = movd_load( pDst );
+						s2mmx mm3 = punpcklbw( mm0, mm0 );
+						mm0 = punpcklbw( mm0, 0 );
+						mm3 = punpckhwd( mm3, mm3 );
+						mm1 = punpcklbw( mm1, 0 );
+						mm3 = punpckhdq( mm3, mm3 );
+						mm0 = paddw( mm0, mm1 );
+						mm1 = psllw( mm1, 1 );
+						mm3 = psrlw( mm3, 1 );
+						mm1 = pmulhw( mm1, mm3 );
+						mm0 = psubw( mm0, mm1 );
+						mm0 = packuswb( mm0, mm0 );
+						movd_store( pDst, mm0 );
+					}
+#endif
 					//const NGfx::SPixel8888 &color = tex.Fetch();
 					//NGfx::SPixel8888 &dst = *pDst;
 					//int a = color.a;
@@ -175,7 +234,7 @@ private:
 					//dst.b = color.b + ( ( dst.b * ( 256 - a ) ) >> 8 );
 					//dst.a = color.a + ( ( dst.a * ( 256 - a ) ) >> 8 );
 				}
-				__asm emms
+				S2_EMMS();
 			}
 			else
 			{
@@ -425,7 +484,7 @@ private:
 	template<class T>
 	void DrawScene( T *pRes )
 	{
-		for ( list< CPtr<ISWRects> >::iterator iTemp = rects.begin(); iTemp != rects.end(); )
+		for ( typename list< CPtr<ISWRects> >::iterator iTemp = rects.begin(); iTemp != rects.end(); )
 		{
 			ISWRects *pRect = *iTemp;
 			if ( IsValid( pRect ) )
@@ -447,10 +506,22 @@ private:
 		{
 			nXSize /= 2; nYSize /= 2; fScale *= 0.5f;
 		}
+#if defined(__APPLE__)
+		// macOS port: targets larger than the virtual space (the 512/1024 terrain bake) render at full size,
+		// with bilinear sampling where source textures are magnified
+		while ( nXSize * 2 <= p2DBuffer->GetXSize() && nYSize * 2 <= p2DBuffer->GetYSize() )
+		{
+			nXSize *= 2; nYSize *= 2; fScale *= 2;
+		}
+		s_bBakeFilter = fScale > 1;
+#endif
 		CTRect<int> dstRegion( 0, 0, nXSize, nYSize );
 		pRes->SetRegion( dstRegion );
 		pRes->SetScale( fScale );
 		DrawScene( pRes );
+#if defined(__APPLE__)
+		s_bBakeFilter = false;
+#endif
 	}
 public:
 	ISWRects* CreateRects( CPtrFuncBase<CSWTextureData> *pTexture, CFuncBase<CSWRectLayout> *pLayout );

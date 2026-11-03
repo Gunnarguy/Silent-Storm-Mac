@@ -5,10 +5,10 @@
 #include "wInterface.h"
 #include "wUICommands.h"
 #include "wUnitServer.h"
-#include "..\DBFormat\DataCamera.h"
-#include "..\DBFormat\DataSound.h"		// NDb::GetSound (PlaySound)
-#include "..\DBFormat\DataFormat.h"		// NDb::GetTEffect (PlayEffect)
-#include "..\DBFormat\DataLight.h"		// NDb::GetTAmbientLight (SetupAmbientLight)
+#include "../DBFormat/DataCamera.h"
+#include "../DBFormat/DataSound.h"		// NDb::GetSound (PlaySound)
+#include "../DBFormat/DataFormat.h"		// NDb::GetTEffect (PlayEffect)
+#include "../DBFormat/DataLight.h"		// NDb::GetTAmbientLight (SetupAmbientLight)
 #include "scriptPtr.h"
 #include "scriptPosition.h"				// NScript::CLUAObjectPosition (Play3DSound/PlayEffect)
 #include "rpgCheatConstants.h"
@@ -16,7 +16,7 @@
 #include "rpgUnit.h"
 #include "rpgGlobal.h"					// NRPG::CGlobalGame::hintsSet (ShowHint dedup)
 #include "wAnimation.h"
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 #include "aiCommander.h"
 #include "aiUnit.h"				// IAIUnit::De/ActivateCurrentControl (sequence route suspend/resume)
 #include "aiMap.h"						// NAI::IAIMap::Sync (SlowSyncAIMap)
@@ -63,7 +63,7 @@ static void SetSequenceCheat( NWorld::CWorld *pWorld, bool bOn )
 	// below, retail-1:1; this function is now only the depth-guarded per-unit block)
 	vector< CPtr<NWorld::CUnit> > units;
 	pWorld->GetAllUnits( &units );
-	for ( vector< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CPtr<NWorld::CUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		CDynamicCast<NWorld::CUnitServer> pUS(*i);
 		if (pUS)
@@ -266,7 +266,7 @@ BEGIN_SCRIPT_COMMAND( ShowHint, "n" )
 	if ( !IsValid( pGlobalGame ) )
 		return 0;
 	// already shown this hint? -> do nothing
-	for ( vector< CDBPtr<NDb::CUIHint> >::iterator i = pGlobalGame->hintsSet.begin(); i != pGlobalGame->hintsSet.end(); ++i )
+	for ( typename vector< CDBPtr<NDb::CUIHint> >::iterator i = pGlobalGame->hintsSet.begin(); i != pGlobalGame->hintsSet.end(); ++i )
 		if ( (*i).GetPtr() == pHint )
 			return 0;
 	pGlobalGame->hintsSet.push_back( pHint );
@@ -393,9 +393,9 @@ BEGIN_SCRIPT_COMMAND( SetAmbientEffect, "n" )
 	return 0;
 END_SCRIPT_COMMAND
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// retail @0x2ed970 ("n"): set the world time-of-day (arg0 = TOD sentinel 6=day/5=night/0=anytime), then
+// retail @0x2ed970 ("n"): set the world time-of-day (arg0 = TOD code 6=day/5=night/0=anytime), then
 // queue a null-light CUICmdSetAmbient(immediate) -- the mission dispatch recomputes the current ambient.
-// CWorld::SetTimeOfDay rewrites the createFlags sentinel + re-lights every object (UpdateLight). Returns 1
+// CWorld::SetTimeOfDay rewrites the createFlags marker + re-lights every object (UpdateLight). Returns 1
 // (faithful to the .obj -- the binding pushes nothing, so the input value is what lua sees back).
 BEGIN_SCRIPT_COMMAND( SetTimeOfDay, "n" )
 	pScript->pWorld->SetTimeOfDay( (NWorld::ETimeOfDay)luaParams[ 0 ].n );

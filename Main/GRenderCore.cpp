@@ -61,7 +61,7 @@ void CSceneFragments::AddElement( int _nGeometryIndex, const CPartFlags &_parts,
 	k.pMat = pMaterial;
 	k.pLightmap = pLightmap;
 	k.pLM = pLM;
-	CFragmentHash::iterator i = fragmentHash.find( k );
+	typename CFragmentHash::iterator i = fragmentHash.find( k );
 	SRenderFragmentInfo *pFragment;
 	if ( i == fragmentHash.end() )
 	{
@@ -267,7 +267,7 @@ EFragmentsSplit SIgnoredSphereFilter::operator()( SRenderStaticInfo *pStatic, SR
 	// excludes absent handles and intersects the existing per-part selection.
 	if ( !pIgnoreList )
 		return sph( pStatic, pGeom, pRes );
-	CPointHSRParts::iterator i = pIgnoreList->find( pStatic->pHandle );
+	typename CPointHSRParts::iterator i = pIgnoreList->find( pStatic->pHandle );
 	if ( i == pIgnoreList->end() )
 		return FST_REJECT;
 	SIgnorePartsInfo &info = i->second;
@@ -306,7 +306,7 @@ EFragmentsSplit SIgnoredSphereFilter::operator()( SRenderStaticInfo *pStatic, SR
 	ECullAcceptLevel l = GetIntersectLevel( sph, pF->pGeometry->pVertices->GetBound().s );
 	if ( l == REJECT )
 		return FST_REJECT;
-	CFilterPartsHash::const_iterator ignored = ignoreList.find( pF->pStatic->pHandle );
+	typename CFilterPartsHash::const_iterator ignored = ignoreList.find( pF->pStatic->pHandle );
 	if ( ( l == FULL_GET || pF->bSkipPerPartTests ) && ignored == ignoreList.end() )
 		return FST_ACCEPT;
 	IVBCombiner *pVB = pF->pStatic->pGeometry->pVertices;

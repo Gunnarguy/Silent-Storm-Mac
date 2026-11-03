@@ -13,12 +13,12 @@ const int N_FOV = 35;
 #include "Camera.h"
 #include "Interface.h"
 #include "wInterface.h"
-#include "..\Misc\RandomGen.h"
+#include "../Misc/RandomGen.h"
 #include "wUnitCommands.h"
 
 namespace NDb
 {
-	enum EDiplomacyState;
+	enum EDiplomacyState : int;
 	class CChapterMap;		// IMission::GetChapterMap (retail mission vtbl+0x14c) -- see below
 	class CGlobalMap;		// IMission::GetGlobalMap (retail mission vtbl+0x154)
 }
@@ -173,7 +173,7 @@ struct SActionInfo
 
 	// retail SActionInfo::SActionInfo @0x1a0a20 (bEnoughAPToStart is left UNINITIALIZED by the
 	// retail ctor; initialized false here -- an uninitialized read cannot be reproduced safely).
-	// UCR_NULL is the retail "no result yet" sentinel, including in saved caches.
+	// UCR_NULL is the retail "no result yet" value, including in saved caches.
 	SActionInfo(): bValid( false ), nMinAP( -1 ), nMaxAP( -1 ), bOk( false ), bEnoughAP( false ), bEnoughAPToStart( false ), bAvailable( false ), eResult( NWorld::UCR_NULL ) {}
 
 	// retail SActionInfo::SetValid @0x1a18d0: the "instant OK, zero AP" filler used by

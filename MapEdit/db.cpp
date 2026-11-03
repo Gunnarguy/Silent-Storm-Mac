@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 #include "MapEdit.h"
-#include "..\ADOImport\BasicDB.h"
+#include "../ADOImport/BasicDB.h"
 
 #include "TemplDBCmd.h"
 #include "TreeDBCmd.h"

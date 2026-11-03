@@ -28,7 +28,7 @@ bool CAttributesList::AddAttribute( const string &szAttr )
 	if ( !ReadListFromDB() )
 		return false;
 	//
-	CAttrMap::iterator it = attrs.find( szAttr );		
+	typename CAttrMap::iterator it = attrs.find( szAttr );		
 	if ( attrs.end() != it ) // такой уже есть
 		return false;
 	if ( FAILED(dbAttr.Open( string( "SELECT * FROM " ) + ATTRIBUTES_TBL + " WHERE ID=-1" )) )
@@ -48,7 +48,7 @@ bool CAttributesList::DelAttribute( const string &szAttr )
 	if ( !ReadListFromDB() )
 		return false;
 	//
-	CAttrMap::iterator it = attrs.find( szAttr );
+	typename CAttrMap::iterator it = attrs.find( szAttr );
 	if ( attrs.end() == it )
 		return false;
 	if ( FAILED(dbAttr.Open( string( "SELECT * FROM " ) + ATTRIBUTES_TBL + " WHERE ID=" + IToA( it->second ) )) )
@@ -64,9 +64,9 @@ bool CAttributesList::operator== ( const CAttributesList &op ) const
 {
 	if ( attrs.size() != op.attrs.size() ) 
 		return false;
-	for ( CAttrMap::const_iterator i = attrs.begin(); i != attrs.end(); ++i )
+	for ( typename CAttrMap::const_iterator i = attrs.begin(); i != attrs.end(); ++i )
 	{
-		CAttrMap::const_iterator io = op.attrs.find( i->first );
+		typename CAttrMap::const_iterator io = op.attrs.find( i->first );
 		if ( io == op.attrs.end() || io->second != i->second )
 			return false;
 	}

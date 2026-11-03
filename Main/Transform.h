@@ -39,6 +39,9 @@ public :
 template <int nMaxNumMatrices>
 class CMatrixStack43: public CBaseMatrixStack<nMaxNumMatrices, SHMatrix>
 {
+protected:
+	using CBaseMatrixStack<nMaxNumMatrices, SHMatrix>::nCurrentMatrix;
+	using CBaseMatrixStack<nMaxNumMatrices, SHMatrix>::matrices;
 public :
 	CMatrixStack43() { for ( int i = 0; i < nMaxNumMatrices; i++ ) Identity( matrices + i ); }
 	void Push43( const SHMatrix &matrix );
@@ -54,6 +57,9 @@ public :
 template <int nMaxNumMatrices>
 class CFBMatrixStack: public CBaseMatrixStack<nMaxNumMatrices, SFBTransform>
 {
+protected:
+	using CBaseMatrixStack<nMaxNumMatrices, SFBTransform>::nCurrentMatrix;
+	using CBaseMatrixStack<nMaxNumMatrices, SFBTransform>::matrices;
 protected:
 	void SetToFirst() { ASSERT( nCurrentMatrix >= 0 ); nCurrentMatrix = 0; }
 public :

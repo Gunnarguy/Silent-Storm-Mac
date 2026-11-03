@@ -200,7 +200,7 @@ static void ExecOps( NGfx::CRenderContext *pRC, const vector<CRenderCmdList::SOp
 		pOccluded->assign( scene.GetGeometriesNumber(), empty );
 	}
 	vector<const CRenderCmdList::SOperation*> renderThem;
-	for ( vector<CRenderCmdList::SOperation>::const_iterator i = ops.begin(); i != ops.end(); ++i )
+	for ( typename vector<CRenderCmdList::SOperation>::const_iterator i = ops.begin(); i != ops.end(); ++i )
 		renderThem.push_back( &(*i) );
 
 	sort( renderThem.begin(), renderThem.end(), SCompareOps() );
@@ -209,7 +209,7 @@ static void ExecOps( NGfx::CRenderContext *pRC, const vector<CRenderCmdList::SOp
 	const CRenderCmdList::SOperation *pPrevOp = 0;
 	bool bSetLightParams = lightInfo.bNeedSet;
 	ETrilistType triListType = TLT_GEOM;
-	for ( vector<const CRenderCmdList::SOperation*>::iterator i = renderThem.begin(); i != renderThem.end(); ++i )
+	for ( typename vector<const CRenderCmdList::SOperation*>::iterator i = renderThem.begin(); i != renderThem.end(); ++i )
 	{
 		const CRenderCmdList::SOperation &op = *(*i);
 		if ( op.op == RO_NOP )

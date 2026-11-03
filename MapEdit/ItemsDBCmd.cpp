@@ -13,7 +13,7 @@ inline string MakePropQuery( string *pRes, const string &szTable, const CPropMap
 	
   if ( propMap )
   {
-    CPropMap::const_iterator it = propMap->begin();
+    typename CPropMap::const_iterator it = propMap->begin();
     
     while ( it != propMap->end() )
     {
@@ -390,7 +390,7 @@ int CItemsDBCmd::InsertCopyMax( const string &szTable, const CPropMap *pDefValue
 			}
 			if ( pDefValues )
 			{
-				CPropMap::const_iterator it = pDefValues->find( pName );
+				typename CPropMap::const_iterator it = pDefValues->find( pName );
 				// Подставляем дефолтное значение, если оно указано
 				if ( pDefValues->end() != it )
 				{

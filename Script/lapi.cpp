@@ -471,7 +471,7 @@ LUA_API int LuaCFuncSleep( lua_State *L )
 
 LUA_API void lua_executeThreads( lua_State *L )
 {
-	for ( CThreads::iterator i = L->threads.begin(); i != L->threads.end(); )
+	for ( typename CThreads::iterator i = L->threads.begin(); i != L->threads.end(); )
 	{
 		CLuaThread *pThread = *i;
 		if ( IsValid(pThread) )

@@ -15,8 +15,8 @@ namespace NDb
 	class CRPGWeapon;
 	class IUnitMission;
 	class CUnit;
-	enum EShootMode;   // MS-extension fwd decl (as NAI::EHitLocation below) -- DataRPG.h defines it
-	enum EDiplomacyState;
+	enum EShootMode : int;   // MS-extension fwd decl (as NAI::EHitLocation below) -- DataRPG.h defines it
+	enum EDiplomacyState : int;
 }
 
 namespace NWorld
@@ -37,12 +37,12 @@ class CTask;
 class IAILogic;   // phase-7 supersede: the unit holds the command-driven IAILogic (was the dev CAILogic:CAIJob)
 class CAIReaction; // the unit's reflex layer (release): chooses the logic each think (release vtbl 0x64 SetReaction)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EHitLocation;
+enum EHitLocation : int;
 struct SPathPlace;
 struct SPosition;
 struct SUnitPosition;
 struct SAIUnitState;   // per-unit threat state (release IAIUnit vtbl 0x74 GetAIUnitState)
-enum EAIManager;
+enum EAIManager : int;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // IAIUnit
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -146,6 +146,7 @@ public:
 	// other IAIUnit implementor still builds.
 	virtual int GetHideProbability() { return 0; }
 	virtual void SetHideProbability( int ) {}
+	virtual bool IsAIEnabled() { return true; }
 	// release CAIUnit::OnAISegment @0xad2c0: per-segment tick that builds + ticks the unit's CAIEventTracker. Non-pure
 	// (default no-op) so non-CAIUnit IAIUnit impls are unaffected and the vtable-order append is harmless.
 	virtual void OnAISegment() {}

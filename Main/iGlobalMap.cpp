@@ -4,7 +4,7 @@
 #include "G2DView.h"
 #include "RPGGlobal.h"
 #include "Sound.h"
-#include "..\Input\Bind.h"
+#include "../Input/Bind.h"
 #include "iSaveManager.h"
 #include "iInterMission.h"
 #include "iGlobalMap.h"
@@ -21,12 +21,12 @@
 #include "iGlobalMapUI.h"
 #include "iCommonUI.h"
 #include "iSpecialView.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Misc\BasicShare.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataScenario.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Misc/BasicShare.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataScenario.h"
 #include "scFlowChartItems.h"
 #include "scScenarioTracker.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +71,7 @@ protected:
 	void ProcessWorldCommands();
 
 public:
+	void GoToBaseZone();   // the base flag / console "globalmap_base" (macOS port)
 	CGlobalMap();
 
 	bool Initialize( NRPG::CGlobalGame* pGame, bool bShowMode = false );
@@ -93,8 +94,11 @@ CGlobalMap::CGlobalMap():
 	bRenderWorld = false;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+static CPtr<CGlobalMap> s_pActiveGlobalMap;   // weak test-hook target (macOS port)
 bool CGlobalMap::Initialize( NRPG::CGlobalGame *_pGame, bool _bShowMode )
 {
+	s_pActiveGlobalMap = this;
+	fprintf( stderr, "[test-hook] globalmap ready\n" );   // marker for drive.py waits
 	bShowMode = _bShowMode;
 	pGlobalGame = _pGame;
 
@@ -194,13 +198,23 @@ bool CGlobalMap::ProcessEvent( const NInput::SEvent &sEvent )
 
 	if ( bindBaseZone.ProcessEvent( sEvent ) )
 	{
-		vector<string> templParams;
-		CPtr<NScenario::CScenarioZone> pZone = pGlobalGame->pScenarioTracker->GetZoneByDBZone( pGlobalMap->pBaseZone );
-		if ( IsValid( pZone ) )
-			NMainLoop::Command( new NGame::CICBeginMission( pZone, -1, templParams, pGlobalGame ) );
+		GoToBaseZone();
 	}
 
 	return false;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// what the base flag does; also the console test hook "globalmap_base" (macOS port)
+void CGlobalMap::GoToBaseZone()
+{
+	vector<string> templParams;
+	CPtr<NScenario::CScenarioZone> pZone = pGlobalGame->pScenarioTracker->GetZoneByDBZone( pGlobalMap->pBaseZone );
+	if ( IsValid( pZone ) )
+		NMainLoop::Command( new NGame::CICBeginMission( pZone, -1, templParams, pGlobalGame ) );
+}
+static void GlobalMapBaseCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	if ( IsValid( s_pActiveGlobalMap ) ) s_pActiveGlobalMap->GoToBaseZone();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalMap::ProcessWorldCommands()
@@ -369,5 +383,6 @@ static void CommandStartGlobal( const string &szID, const vector<wstring> &param
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 START_REGISTER(iGlobalMap)
 	REGISTER_CMD( "global", CommandStartGlobal )
+	REGISTER_CMD( "globalmap_base", GlobalMapBaseCmd )
 	REGISTER_VAR_EX( "cheat_global_xcom", NGlobal::VarBoolHandler, &bXComMode, 0, false )
 FINISH_REGISTER

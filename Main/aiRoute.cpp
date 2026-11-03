@@ -9,7 +9,7 @@
 #include "aiMisc.h"
 #include "aiUnit.h"
 #include "aiRouteLogic.h"   // NAI::CreateAIRouteLogic / CreateAIRoamingLogic (the per-unit route logic)
-#include "..\DBFormat\DataMap.h"
+#include "../DBFormat/DataMap.h"
 #include "wUnitCommands.h"
 #include "wUnitGroup.h"
 #include "wUnitServer.h"
@@ -104,7 +104,7 @@ CAIRoute::CAIRoute( const vector< CPtr<CAIRouteWaypoint> > &_waypoints ):
 CAIRoute::CAIRoute( NWorld::CWorld *pWorld,	
 	const vector< CPtr<CMapWaypoint> > &_mapWaypoints )
 {
-	for ( vector< CPtr<CMapWaypoint> >::const_iterator 
+	for ( typename vector< CPtr<CMapWaypoint> >::const_iterator 
 		i = _mapWaypoints.begin(); i != _mapWaypoints.end(); ++i )
 	{
 		CPtr<NAI::CAIRouteWaypoint> pWaypoint = pWorld->GetWaypoint( (*i)->pName->szName );
@@ -157,7 +157,7 @@ CTask *CAIRoute::GetTask( NWorld::CUnitServer *pUS, NWorld::CUnitGroup *_pUnitGr
 		return 0;
 	//
 	int nSync = 0;
-	for ( vector< CPtr<CAIRouteWaypoint> >::iterator 
+	for ( typename vector< CPtr<CAIRouteWaypoint> >::iterator 
 		i = waypoints.begin(); i != waypoints.end(); ++i, ++nSync )
 	{
 		// add Waypoint
@@ -173,7 +173,7 @@ CTask *CAIRoute::GetTask( NWorld::CUnitServer *pUS, NWorld::CUnitGroup *_pUnitGr
 		//
 		pTask->AddCommand( new CTaskCommandGoto( unitPlaces[ nIndex ] ) );
 		// add commands
-		for ( vector<NAI::SCommand>::iterator 
+		for ( typename vector<NAI::SCommand>::iterator 
 			c = (*i)->commands.begin(); c != (*i)->commands.end(); ++c )
 		{
 			CTaskCommand *pCommand = 0;

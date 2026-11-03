@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "GlobalMapView.h"
-#include "..\Main\ChapterInfo.h"
-#include "..\Main\GlobalInfo.h"
+#include "../Main/ChapterInfo.h"
+#include "../Main/GlobalInfo.h"
 #include "SectorCtrl.h"
 #include "MapEdit.h"
 #include "ChapterSectorDlg.h"
@@ -62,7 +62,7 @@ void CGlobalMapView::SetGlobalMap( int nID )
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nID );
 	if ( !pProps )
 		return;
-	CPropMap::const_iterator i = pProps->find( "Background" );
+	typename CPropMap::const_iterator i = pProps->find( "Background" );
 	if ( i != pProps->end() )
 		nBackgroundID = i->second->GetValue();
 	pTree->pItemsTree->ReleasePropList( pProps );

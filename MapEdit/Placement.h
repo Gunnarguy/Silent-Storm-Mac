@@ -2,16 +2,16 @@
 #define __PLACEMENT_H__
 
 #include "PropMap.h"
-#include "..\FileIO\BasicChunk1.h"
-#include "..\Main\TerrainInfo.h"
-#include "..\Main\METerrain.h"
+#include "../FileIO/BasicChunk1.h"
+#include "../Main/TerrainInfo.h"
+#include "../Main/METerrain.h"
 
 namespace NBuilding
 {
 	struct SLayerGroup;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EMapObjType
+enum EMapObjType : int
 {
 	MO_TEMPLATE,
 	MO_UNIT,
@@ -21,7 +21,7 @@ enum EMapObjType
 	MO_EMPTY
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EFloorType
+enum EFloorType : int
 {
 	FT_FLOOR = 0, // не мен€ть пор€док объ€влений
 	FT_FLOOR_INTERMEDIATE,
@@ -187,7 +187,7 @@ private:
 		if ( !pRects )
 			return -1;
 		
-    unordered_map<int, int>::const_iterator it = pRects->objID2objIndex.find( id );
+    typename unordered_map<int, int>::const_iterator it = pRects->objID2objIndex.find( id );
     if ( pRects->objID2objIndex.end() == it )
       return -1;
     return it->second;
@@ -200,7 +200,7 @@ private:
 		if ( !pUnits )
 			return -1;
 		
-    unordered_map<int, int>::const_iterator it = pUnits->unitID2unitIndex.find( id );
+    typename unordered_map<int, int>::const_iterator it = pUnits->unitID2unitIndex.find( id );
     if ( pUnits->unitID2unitIndex.end() == it )
       return -1;
     return it->second;
@@ -211,7 +211,7 @@ private:
 		if ( !pObjs )
 			return -1;
 		
-    unordered_map<int, int>::const_iterator it = pObjs->objID2objIndex.find( id );
+    typename unordered_map<int, int>::const_iterator it = pObjs->objID2objIndex.find( id );
     if ( pObjs->objID2objIndex.end() == it )
       return -1;
     return it->second;
@@ -222,7 +222,7 @@ private:
 		if ( !pObjs )
 			return -1;
 		
-    unordered_map<int, int>::const_iterator it = pObjs->objID2objIndex.find( id );
+    typename unordered_map<int, int>::const_iterator it = pObjs->objID2objIndex.find( id );
     if ( pObjs->objID2objIndex.end() == it )
       return -1;
     return it->second;

@@ -4,15 +4,15 @@
 #pragma once
 #endif // _MSC_VER > 1000
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "..\Main\iMain.h"
-#include "..\Main\Camera.h"
-#include "..\Main\BuildingInfo.h"
+#include "../Main/iMain.h"
+#include "../Main/Camera.h"
+#include "../Main/BuildingInfo.h"
 namespace NAI
 {
 	class IAIMap;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EBrushType 
+enum EBrushType : int 
 { 
 	BT_GEOMETRY = 0x1, 
 	BT_SUBTEMPLATE = 0x2,

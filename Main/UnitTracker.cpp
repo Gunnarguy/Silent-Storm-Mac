@@ -17,11 +17,11 @@
 #include "MemObject.h"
 #include "UnitTracker.h"
 #include "iGameStates.h"	// GetSelectionColor (v1.2 selection palette)
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataGeometry.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataGeometry.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGame
 {
@@ -60,7 +60,7 @@ int CUnitTracker::GetSkillChanges( int nSkill )
 	if ( IsValid( pUnit ) && pUnit->GetRPG() )
 		nCur = pUnit->GetRPG()->GetSkillMaxValue( (NDb::ESkillType)nSkill );
 
-	unordered_map<int,int>::iterator pos = skillsChanges.find( nSkill );
+	typename unordered_map<int,int>::iterator pos = skillsChanges.find( nSkill );
 	if ( pos != skillsChanges.end() )
 		return nCur - pos->second;
 
@@ -72,7 +72,7 @@ int CUnitTracker::GetSkillChanges( int nSkill )
 // (after this GetSkillChanges reports 0 for each until the unit's skills move again).
 void CUnitTracker::SyncAllSkills()
 {
-	for ( unordered_map<int,int>::iterator pos = skillsChanges.begin(); pos != skillsChanges.end(); ++pos )
+	for ( typename unordered_map<int,int>::iterator pos = skillsChanges.begin(); pos != skillsChanges.end(); ++pos )
 	{
 		int nCur = 0;
 		if ( IsValid( pUnit ) && pUnit->GetRPG() )
@@ -482,10 +482,10 @@ NWorld::CUnit* CUnitTracker::GetNextVisibleEnemy()
 		return 0;
 	}
 
-	list<CPtr<NWorld::CUnit> >::iterator iTemp = enemiesList.begin();
+	typename list<CPtr<NWorld::CUnit> >::iterator iTemp = enemiesList.begin();
 	if ( IsValid( pLastEnemyUnit ) )
 	{
-		list<CPtr<NWorld::CUnit> >::iterator iSearch = find( enemiesList.begin(), enemiesList.end(), pLastEnemyUnit );
+		typename list<CPtr<NWorld::CUnit> >::iterator iSearch = find( enemiesList.begin(), enemiesList.end(), pLastEnemyUnit );
 		if ( iSearch != enemiesList.end() )
 		{
 			iTemp = iSearch;

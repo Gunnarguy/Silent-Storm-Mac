@@ -4,9 +4,9 @@
 #include "stdafx.h"
 #include "mapedit.h"
 #include "PiecesInfoView.h"
-#include "..\Misc\StrProc.h"
-#include "..\Main\BuildingClip.h"
-#include "..\Main\GResource.h"
+#include "../Misc/StrProc.h"
+#include "../Main/BuildingClip.h"
+#include "../Main/GResource.h"
 #include "PieceEditDlg.h"
 #include "AIGeometryFormat.h"
 
@@ -127,7 +127,7 @@ int CPiecesInfoView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		CStoredPieceMap fpieces;
 
 		file->Add( N_PIECES_CHUNK, &fpieces );
-		for ( CStoredPieceMap::const_iterator i = fpieces.begin(); i != fpieces.end(); ++i )
+		for ( typename CStoredPieceMap::const_iterator i = fpieces.begin(); i != fpieces.end(); ++i )
 		{
 			const SStoredPiece &p = i->second;
 			int x,y,z;
@@ -234,7 +234,7 @@ void CPiecesInfoView::EditRecord( NM_LISTVIEW *pNMListView )
 	if ( iItem != -1 )
 	{
 		nData = m_wndList.GetItemData( iItem );
-		unordered_map<int, SPieceInfo>::iterator it = pieces.find( nData );
+		typename unordered_map<int, SPieceInfo>::iterator it = pieces.find( nData );
 		if ( it == pieces.end() )
 			return;
 		SPieceInfo &info = it->second;
@@ -328,7 +328,7 @@ void CPiecesInfoView::OnLvnKeydownList(NMHDR *pNMHDR, LRESULT *pResult)
 		{
 			int nItem = m_wndList.GetNextSelectedItem(pos);
 			int nData = m_wndList.GetItemData( nItem );
-			unordered_map<int, SPieceInfo>::iterator it = pieces.find( nData );
+			typename unordered_map<int, SPieceInfo>::iterator it = pieces.find( nData );
 			if ( it != pieces.end() && it->second.bEditable )
 			{
 				pieces.erase( it );
@@ -353,7 +353,7 @@ void CPiecesInfoView::OnLvnKeydownList(NMHDR *pNMHDR, LRESULT *pResult)
 string CPiecesInfoView::GetAdditionalPieces( bool bOriginal /* = false  */ )
 {
 	string szRet;
-	for ( unordered_map<int, SPieceInfo>::iterator it = pieces.begin(); it != pieces.end(); ++it )
+	for ( typename unordered_map<int, SPieceInfo>::iterator it = pieces.begin(); it != pieces.end(); ++it )
 	{
 		const SPieceInfo &info = it->second;
 		if ( (bOriginal && info.bEditable ) || (!bOriginal && !info.bEditable ) )

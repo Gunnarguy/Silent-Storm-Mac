@@ -7,10 +7,10 @@
 struct SRandomSeed;
 namespace NDb
 {
-	enum EWeaponType;
-	enum ESkillType;
-	enum ECritical;
-	enum ECriticalLocation;
+	enum EWeaponType : int;
+	enum ESkillType : int;
+	enum ECritical : int;
+	enum ECriticalLocation : int;
 	class CModel;
 	class CRPGArmor;
 	class CRPGPers;
@@ -20,9 +20,9 @@ namespace NDb
 }
 namespace NAI
 {
-	enum EPose;
-	enum EHitLocation;
-	enum ETileHitLocation;
+	enum EPose : int;
+	enum EHitLocation : int;
+	enum ETileHitLocation : int;
 	struct SPosition;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,7 +48,7 @@ public:
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Actions that an RPG unit can perform
-enum EAction // Do not change this enum or reorder its lines without agreeing with Epik! (or only add at the end)
+enum EAction : int // Do not change this enum or reorder its lines without agreeing with Epik! (or only add at the end)
 {
 	AC_NONE,
 	AC_MOVE_SIDE,

@@ -21,7 +21,7 @@
 #include "aiMisc.h"            // NAI::GetAPForMove @0x74520 (price the held-spot move at CROUCH)
 #include "aiInventory.h"       // CAIInventory::GetFirstFireArms
 #include "aiWeapon.h"          // CAIFireArmsWeapon
-#include "..\DBFormat\DataMap.h" // NDb::DS_ALLY
+#include "../DBFormat/DataMap.h" // NDb::DS_ALLY
 //
 #include "aiActionPlaceSource.h"
 //
@@ -63,13 +63,13 @@ int CUnitArea::operator&( CStructureSaver &f )
 // (NOT a real hash -- the release hash_map<ulong,int> hashes it again; it is the map key.)
 // MISSING in the a5dll -- the old port keyed on raw GetData(), which kept those extra bits and fragmented the
 // set so an in-area tile queried with a different direction wrongly missed the gate.
-static inline unsigned long AreaHash( const SPathPlace &p )
+static inline DWORD AreaHash( const SPathPlace &p )
 {
 	unsigned h = (unsigned)p.GetPose();
 	h = ( h << 8 ) | (unsigned)p.GetLayer();
 	h = ( h << 8 ) | (unsigned)p.GetY();
 	h = ( h << 8 ) | (unsigned)p.GetX();
-	return (unsigned long)h;
+	return (DWORD)h;
 }
 bool CUnitArea::Prepare()                                                    // @0x74880
 {
@@ -106,7 +106,7 @@ bool CUnitArea::Prepare()                                                    // 
 	// `lea eax,[esi+0x10]` = &this->place -- the CENTRE, not *i -- so the per-place passability filter
 	// is inert (the centre already passed above). Reproduced verbatim, NOT corrected.
 	places.clear();
-	for ( list<SPathPlace>::const_iterator i = reach.begin(); i != reach.end(); ++i )
+	for ( typename list<SPathPlace>::const_iterator i = reach.begin(); i != reach.end(); ++i )
 	{
 		EPassable ePass = pNet->GetPassability( place );   // sic: the centre, not *i (retail @0x4749d2)
 		if ( ePass == AIP_NOT_PASSABLE || ePass == AIP_CANNOT_LAY )
@@ -331,7 +331,7 @@ bool CAIActionPlaceSource::IsPosDangerousForAllies( const SUnitPosition &pos, CA
 	NRPG::GetObjectsThatMayBeDamaged( pCover, &endangered );
 	vector< CPtr<IAIUnit> > allies;
 	pState->GetUnits( &allies, true, true );
-	for ( vector< CPtr<IAIUnit> >::const_iterator i = allies.begin(); i != allies.end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::const_iterator i = allies.begin(); i != allies.end(); ++i )
 	{
 		if ( !IsValid( *i ) || *i == pU )
 			continue;
@@ -395,7 +395,7 @@ void CAIAttackPlaceSource::Prepare()                                    // @0x00
 		if ( IsValid( pPath ) )
 		{
 			CPathAPCalcerLocal calcer( pWorld, pRPG, pU->GetUnitPosition(), false );
-			for ( vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
+			for ( typename vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
 			{
 				calcer.AddPoint( *i );
 				if ( calcer.GetResult() > nMaxAP )
@@ -435,7 +435,7 @@ void CAIAttackPlaceSource::Prepare()                                    // @0x00
 		list<SPathPlace>      reach;
 		// Retail @0x48fd5a: flank wave skips suicide checks and transient unit locks.
 		NWorld::PrepareAllPaths( pNet, &movesTable, &reach, pUS, curPlace, nBudget, pUS, false, true );
-		for ( list<SPathPlace>::const_iterator i = reach.begin(); i != reach.end(); ++i )
+		for ( typename list<SPathPlace>::const_iterator i = reach.begin(); i != reach.end(); ++i )
 		{
 			if ( (*i).GetPose() == 3 )                                       // skip special/climbing-pose tiles
 				continue;
@@ -494,7 +494,7 @@ void CAICurrentPlaceSource::Prepare()                                   // @0x00
 	// inside AddAllPoses rejects it). Reproduced verbatim, NOT corrected.
 	int        nBest = 0x540be400;
 	SPathPlace best( (int)0xfdffffff );
-	for ( vector<SPathPlace>::const_iterator i = near_.begin(); i != near_.end(); ++i )
+	for ( typename vector<SPathPlace>::const_iterator i = near_.begin(); i != near_.end(); ++i )
 	{
 		const SPathPlace &p = *i;
 		if ( pNet->IsLocked( p, false ) )
@@ -554,7 +554,7 @@ void CAINearEnemyPlaceSource::Prepare()                                 // @0x00
 	if ( !IsValid( pPath ) || pPath->points.empty() )
 		return;
 	CPathAPCalcerLocal calcer( pWorld, pRPG, pU->GetUnitPosition(), false );
-	for ( vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
+	for ( typename vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
 		calcer.AddPoint( *i );
 	AddPlace( pPath->points.back(), pU->GetAP() - calcer.GetResult() );
 	pUS->SetWishPose( nOldWish );
@@ -596,7 +596,7 @@ void CAIToPlacePlaceSource::Prepare()                                   // @0x00
 	if ( !IsValid( pPath ) )
 		return;   // ORIGINAL BUG (@0x0048f0e0): wish pose intentionally NOT restored on this early return
 	CPathAPCalcerLocal calcer( pWorld, pRPG, pU->GetUnitPosition(), false );
-	for ( vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
+	for ( typename vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
 	{
 		calcer.AddPoint( *i );
 		if ( calcer.GetResult() > nMaxAP )

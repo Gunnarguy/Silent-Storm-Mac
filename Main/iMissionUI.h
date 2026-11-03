@@ -86,6 +86,9 @@ private:
 	// retail CMissionUI hosts the medals + biography sub-panels too (@0x214d40 TEMPLATELOAD:
 	// "medalspanel"/"biographypanel"; serialized in retail operator& @0x218dc0)
 	CObj<CMedalsPanel> pMedalsPanel;
+	// tags 28/29: never set; written as empty references so saves keep the layout this port has always written
+	CObj<CWindow> pUnusedPanel28;
+	CObj<CWindow> pUnusedPanel29;
 	CObj<CBiographyPanel> pBiographyPanel;
 	list<CObj<CHitTracker> > hitsList;
 	// retail tail members @0x218dc0 tags 25-26:
@@ -100,7 +103,7 @@ private:
 	// 18=pStorePanel, 19=pMedalsPanel, 20=pInventory, 21=pCharacter, 22=pInventoryPanel,
 	// 23=pBiographyPanel, 24=pCharacterPanel, 25=pPlayerSwitchUI, 26=pLastActivePlayer, 27=pPause;
 	// then the OnSerialize(@0x219e60) post-pass.
-	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CDesktopWindow*)this); f.Add(2,&pMission); f.Add(3,&sCameraScrollUpdate); f.Add(4,&hitsList); f.Add(5,&itemTextsList); f.Add(6,&enemyIconsList); f.Add(7,&hintIconsList); f.Add(8,&clueItemIconsList); f.Add(9,&clueUnitIconsList); f.Add(10,&trapIconsList); f.Add(11,&clueIconsList); f.Add(13,&pTopBar); f.Add(14,&pAck); f.Add(15,&pLogPanel); f.Add(16,&pUnitPanel); f.Add(17,&pPerksPanel); f.Add(18,&pStorePanel); f.Add(19,&pMedalsPanel); f.Add(20,&pInventory); f.Add(21,&pCharacter); f.Add(22,&pInventoryPanel); f.Add(23,&pBiographyPanel); f.Add(24,&pCharacterPanel); f.Add(25,&pPlayerSwitchUI); f.Add(26,&pLastActivePlayer); f.Add(27,&pPause); OnSerialize( f ); return 0; }
+	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CDesktopWindow*)this); f.Add(2,&pMission); f.Add(3,&sCameraScrollUpdate); f.Add(4,&hitsList); f.Add(5,&itemTextsList); f.Add(6,&enemyIconsList); f.Add(7,&hintIconsList); f.Add(8,&clueItemIconsList); f.Add(9,&clueUnitIconsList); f.Add(10,&trapIconsList); f.Add(11,&clueIconsList); f.Add(13,&pTopBar); f.Add(14,&pAck); f.Add(15,&pLogPanel); f.Add(16,&pUnitPanel); f.Add(17,&pPerksPanel); f.Add(18,&pStorePanel); f.Add(19,&pMedalsPanel); f.Add(20,&pInventory); f.Add(21,&pCharacter); f.Add(22,&pInventoryPanel); f.Add(23,&pBiographyPanel); f.Add(24,&pCharacterPanel); f.Add(25,&pPlayerSwitchUI); f.Add(26,&pLastActivePlayer); f.Add(27,&pPause); f.Add(28,&pUnusedPanel28); f.Add(29,&pUnusedPanel29); OnSerialize( f ); return 0; }
 
 protected:
 	void OnSerialize( CStructureSaver &f );		// retail @0x219e60: post-serialize "pause" text re-resolve

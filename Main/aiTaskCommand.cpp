@@ -16,8 +16,8 @@
 #include "aiMultiMoves.h"
 #include "aiPosition.h"
 
-#include "..\dbformat\datamap.h"
-#include "..\dbformat\DataAnimation.h"
+#include "../dbformat/datamap.h"
+#include "../dbformat/DataAnimation.h"
 
 #include "MapBuild.h"
 #include "BuildingInfo.h"
@@ -38,7 +38,7 @@ CTask::CTask( NWorld::CUnitServer *_pUnitServer, bool _bCircled ):
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CTask::OnPerformerDied()
 {
-	for ( vector< CObj<CTaskCommand> >::iterator i = Commands.begin(); i != Commands.end(); ++i )
+	for ( typename vector< CObj<CTaskCommand> >::iterator i = Commands.begin(); i != Commands.end(); ++i )
 		(*i)->OnPerformerDied();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ void CTask::OnNewTurn()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CTask::OnTaskStarted()
 {
-	for ( vector< CObj<CTaskCommand> >::iterator i = Commands.begin(); i != Commands.end(); ++i )
+	for ( typename vector< CObj<CTaskCommand> >::iterator i = Commands.begin(); i != Commands.end(); ++i )
 		(*i)->OnTaskStarted();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,7 +209,7 @@ void CTaskCommandRoaming::Do()
 		{
 			// get random place for path command
 			int n = random.Get( 0, places.size() );
-			list<NAI::SPathPlace>::const_iterator i = places.begin();
+			typename list<NAI::SPathPlace>::const_iterator i = places.begin();
 			for ( ; n > 0; --n, ++i );
 			// do path command
 			NAI::SPosition pos;
@@ -236,7 +236,7 @@ void CTaskCommandChangePose::Do()
 		nPose = WALK;
 	DoCommand( new NWorld::CCmdWishPose( nPose ) );
 	SUnitPosition ptPosition = pUnitServer->GetPosition();
-	if ( ( (unsigned)ptPosition.pos.p.GetData() & 0xc0000000u ) != 0xc0000000u )   // a real (non-sentinel) place
+	if ( ( (unsigned)ptPosition.pos.p.GetData() & 0xc0000000u ) != 0xc0000000u )   // a real (non-marker) place
 	{
 		ptPosition.SetPose( nPose );
 		DoCommand( new NWorld::CCmdPath( ptPosition.pos, PF_USE_POSEDIR, NWorld::ITEM_NO_MATTER ) );
@@ -279,7 +279,7 @@ void CTaskCommandWait::OnCommandStarted()
 	nTurnID = pWorld->GetTurnID();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// retail @0x98e50: a sentinel unit position (pose bits 30-31 both set) is never waiting; otherwise
+// retail @0x98e50: a marker unit position (pose bits 30-31 both set) is never waiting; otherwise
 // waiting == (TBS: still the captured turn) OR (real-time: the deadline is ahead).
 bool CTaskCommandWait::IsWaiting()
 {
@@ -304,7 +304,7 @@ bool CTaskCommandWait::IsEndOfUnitTurn()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CTaskCommandChangeDirection
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// retail @0x99740 (CRouteCommandLook::Do): invalid unit -> nothing; sentinel place (pose bits 30-31 both
+// retail @0x99740 (CRouteCommandLook::Do): invalid unit -> nothing; marker place (pose bits 30-31 both
 // set) -> nothing. Otherwise fold the stored direction into the CURRENT place and queue a CCmdLook -- an
 // in-place turn command, NOT a PF_USE_DIR path (the dev predecessor's shape).
 void CTaskCommandChangeDirection::Do()
@@ -390,7 +390,7 @@ void CTaskSyncObject::Unlock( CTaskSyncObjectClient *pClient )
 	unlockedClients.push_back( pClient );
 	if ( unlockedClients.size() >= clients.size() )
 	{
-		vector< CPtr<CTaskSyncObjectClient> >::const_iterator i;
+		typename vector< CPtr<CTaskSyncObjectClient> >::const_iterator i;
 		for ( i = clients.begin(); i != clients.end(); ++i )
 			(*i)->OnUnlock();
 		unlockedClients.clear();

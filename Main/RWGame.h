@@ -82,7 +82,7 @@ public:
 	virtual void ResetTiming() = 0;
 	// retail IRenderGame vtbl+0x30 @0x2cb1c0: advance BOTH sound mixers (world pSound + fog-gated
 	// pUnitSounds). The advance flag freezes both clocks while paused. CMissionBase now
-	// supplies GetGameTime(), following the intentional Sentinels sound-clock correction.
+	// supplies GetGameTime(), an intentional sound-clock correction.
 	virtual void UpdateSound( bool bAdvanceTime, CTransformStack *pTS, STime currentTime ) = 0;	// retail @0x2cb1c0: (bool,...)
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////

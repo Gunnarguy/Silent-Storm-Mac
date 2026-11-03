@@ -12,19 +12,19 @@
 #include "FloorLayer.h"
 #include "RectsLayer.h"
 #include "TerrainLayer.h"
-#include "..\FileIO\BasicChunk1.h"
-#include "..\Main\TerrainInfo.h"
-#include "..\Main\BuildingInfo.h"
-#include "..\Main\iMain.h"
-#include "..\Image\Image.h"
-#include "..\Image\ImageTga.h"
+#include "../FileIO/BasicChunk1.h"
+#include "../Main/TerrainInfo.h"
+#include "../Main/BuildingInfo.h"
+#include "../Main/iMain.h"
+#include "../Image/Image.h"
+#include "../Image/ImageTga.h"
 #include "iWysiwyg.h"
 #include "ItemsMgr.h"
 #include "CtrlObjectInspector.h"
 #include "RoomsLayer.h"
 #include "CellarLayer.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataMap.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataMap.h"
 
 const float fMaxZoom = 7.0f;
 const COLORREF GRID_BACKGROUND = RGB( 255, 255, 255 );
@@ -2066,7 +2066,7 @@ void CChildView::DeleteLayer( CLayerCtrl *pLr )
 	CGrassLayer *pGrass = dynamic_cast<CGrassLayer*>( pLr );
 	if ( pGrass )
 	{
-		vector<CLayerCtrl*>::iterator it = find( grassLs.begin(), grassLs.end(), pGrass );
+		typename vector<CLayerCtrl*>::iterator it = find( grassLs.begin(), grassLs.end(), pGrass );
 		if ( it != grassLs.end() )
 		{
 			ELayer eType;
@@ -2077,7 +2077,7 @@ void CChildView::DeleteLayer( CLayerCtrl *pLr )
 			CColorLayer *pCr = dynamic_cast<CColorLayer*>( pLayers->GetLayer( nID ) );
 			if ( pCr )
 			{
-				vector<CLayerCtrl*>::iterator itc = find( grassLs.begin(), grassLs.end(), pCr );
+				typename vector<CLayerCtrl*>::iterator itc = find( grassLs.begin(), grassLs.end(), pCr );
 				grassLs.erase( itc );
 				pLayers->DeleteLayer( pCr->GetLayerID() );
 				pCr->DestroyWindow();
@@ -2092,7 +2092,7 @@ void CChildView::DeleteLayer( CLayerCtrl *pLr )
 				if ( pTerr )
 				{
 					int nInd = pGrass->GetGrassLayerInd();
-					for ( vector<SGrassLayer>::iterator it = pTerr->info.grass.begin(); it != pTerr->info.grass.end(); ++it )
+					for ( typename vector<SGrassLayer>::iterator it = pTerr->info.grass.begin(); it != pTerr->info.grass.end(); ++it )
 						if ( it->nID == nInd )
 						{
 							pTerr->info.grass.erase( it );
@@ -2119,7 +2119,7 @@ void CChildView::OnActivateLayer( CLayerCtrl *p )
 	ASSERT( p );
 	if ( !pCurPlacement )
 		return;
-	for ( CLayers::iterator i = pLayers->begin(); i != pLayers->end(); ++i )
+	for ( typename CLayers::iterator i = pLayers->begin(); i != pLayers->end(); ++i )
 	{
 		if ( *i )
 			(*i)->SetLink( false );
@@ -2164,7 +2164,7 @@ void CChildView::OnLinkLayer( CLayerCtrl *p )
 		{
 			// удаляем из старой группы
 			NBuilding::SLayerGroup &g = groups[nGroup];
-			vector<int>::iterator i = find( g.layers.begin(), g.layers.end(), p->GetLayerID() );
+			typename vector<int>::iterator i = find( g.layers.begin(), g.layers.end(), p->GetLayerID() );
 			ASSERT( i != g.layers.end() );
 			g.layers.erase( i );
 		}
@@ -2193,7 +2193,7 @@ void CChildView::OnLinkLayer( CLayerCtrl *p )
 			return;
 		}
 		NBuilding::SLayerGroup &g = groups[nGroup];
-		vector<int>::iterator i = find( g.layers.begin(), g.layers.end(), p->GetLayerID() );
+		typename vector<int>::iterator i = find( g.layers.begin(), g.layers.end(), p->GetLayerID() );
 		ASSERT( i != g.layers.end() );
 		g.layers.erase( i );
 	}
@@ -2270,7 +2270,7 @@ void CChildView::AddTerrainSpotLayers()
 		if ( IsValid( pVar->terrainSpots[i] ) )
 			spotlayers[pVar->terrainSpots[i]->nLayer] = true;
 	//
-	for ( unordered_map<int, bool>::const_iterator i = spotlayers.begin(); i != spotlayers.end(); ++i )
+	for ( typename unordered_map<int, bool>::const_iterator i = spotlayers.begin(); i != spotlayers.end(); ++i )
 		AddLayer( LID_SPOTS, i->first );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////

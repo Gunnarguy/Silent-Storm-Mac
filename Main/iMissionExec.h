@@ -132,7 +132,7 @@ public:
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUICmdExplosionCameraExec -- sink for the arbitrated NWorld::CUICmdPointCamera (retail iUIExec.obj,
 // 0x44 bytes, saveload id 0x00183130; ctor @0x24f570, Update @0x24e6e0, Finished @0x24f550). Frames
-// the blast point via ShowPlacesFromBestPoint (rod >= 12, the -100 nFloor sentinel resolves to the
+// the blast point via ShowPlacesFromBestPoint (rod >= 12, the -100 nFloor marker resolves to the
 // current cut floor), dwells nExecTime seconds, then self-terminates. Scroll-locks the camera.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class CUICmdExplosionCameraExec: public CUICmdLocatorExec

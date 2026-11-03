@@ -52,7 +52,7 @@ public:
  */
 class WordList {
 public:
-	// Each word contains at least one character - a empty word acts as sentinel at the end.
+	// Each word contains at least one character - a empty word acts as terminator at the end.
 	char **words;
 	char **wordsNoCase;
 	char *list;

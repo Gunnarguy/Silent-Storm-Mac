@@ -1,6 +1,6 @@
 # Silent Storm
 
-*[Русский](README.md) | English*
+*[Русский](README.reconstruction.ru.md) | English*
 
 The Silent Storm source code belongs to Nival; the original repository:
 https://github.com/nival/Silent-Storm
@@ -41,7 +41,7 @@ you still have to install the unoffical patch to beat the last mission on Steam 
 ## Changes from retail game
 Most notable differences of this binary compared to retail:
 
-- All resolutions are supported, like in Sentinels (without clipped symbols)
+- All resolutions are supported (without clipped symbols)
 - Ctrl+V supported in console
 - Bug with high AA settings on high resolutions is fixed
 

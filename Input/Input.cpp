@@ -1,12 +1,12 @@
 #include "StdAfx.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #include <dinput.h>
-#include "..\Misc\basic2.h"
-#include "..\FileIO\Streams.h"
-#include "..\Input\Input.h"
-#include "..\Misc\Win32Helper.h"
-#include "..\Misc\StrProc.h"
-#include "..\Misc\Tools.h"
+#include "../Misc/basic2.h"
+#include "../FileIO/Streams.h"
+#include "../Input/Input.h"
+#include "../Misc/Win32Helper.h"
+#include "../Misc/StrProc.h"
+#include "../Misc/Tools.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 extern "C" WINBASEAPI BOOL WINAPI IsDebuggerPresent(void);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -349,7 +349,7 @@ bool InitInput( HWND hWnd, bool _bNonExclusiveMode, int nSampleBufferSize )
 	bInitialized = true;
 	SetFocus( true );
 	
-	for ( CDevicesList::iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
+	for ( typename CDevicesList::iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
 		ResyncDevice( *iTempDevice );
 
 	events.resize( SAMPLE_BUFFER_SIZE * devices.size() );
@@ -376,7 +376,7 @@ bool SetCoopLevel()
 	if ( bCoopLevelSet )
 		return true;
 	
-	for ( CDevicesList::iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
+	for ( typename CDevicesList::iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
 	{
 		HRESULT hRes;
 		
@@ -437,7 +437,7 @@ void PumpMessages( bool bFocus )
 
 	int nNumEvents = 0;
 	events.resize( SAMPLE_BUFFER_SIZE * devices.size() );
-	for ( CDevicesList::iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
+	for ( typename CDevicesList::iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
 	{
 		DWORD dwElements = SAMPLE_BUFFER_SIZE;
 		DIDEVICEOBJECTDATA didObjects[SAMPLE_BUFFER_SIZE];
@@ -492,7 +492,7 @@ void PumpMessages( bool bFocus )
 	///
 	sort( events.begin(), events.end(), SSeqNumberLessThenFunctional() );
 	///
-	for ( CEventList::const_iterator iTempEvent = events.begin(); iTempEvent != events.end(); ++iTempEvent )
+	for ( typename CEventList::const_iterator iTempEvent = events.begin(); iTempEvent != events.end(); ++iTempEvent )
 	{
 		if ( iTempEvent->sMessage.nAction != -1 )
 		{
@@ -528,7 +528,7 @@ void PumpMessages( bool bFocus )
 		}
 	}
 
-	for ( CDevicesList::iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
+	for ( typename CDevicesList::iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
 	{
 		if ( !iTempDevice->bNeedResync )
 			continue;
@@ -546,7 +546,7 @@ void ResyncDevice( const SInputDevice &sDevice )
 
 	sDevice.pdiDevice->GetDeviceState( sDevice.dwFormatSize, &( sBuffer[0] ) );
 
-	for ( unordered_map<DWORD, SKey>::iterator iTemp = actionIDs.begin(); iTemp != actionIDs.end(); iTemp++ )
+	for ( typename unordered_map<DWORD, SKey>::iterator iTemp = actionIDs.begin(); iTemp != actionIDs.end(); iTemp++ )
 	{
 		SKey &sKey = iTemp->second;
 		if ( sKey.nDevType == GET_DIDEVICE_TYPE( sDevice.dwDevType ) )
@@ -735,7 +735,7 @@ void GetControlInfo( int nAction, EControlType *pcType, float *pfGranularity )
 			break;
 	}
 
-	for ( CDevicesList::const_iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
+	for ( typename CDevicesList::const_iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
 	{
 		if ( GET_DIDEVICE_TYPE( iTempDevice->dwDevType ) != sKey.nDevType )
 			continue;
@@ -789,7 +789,7 @@ bool SetFocus( bool bFocus )
 		if ( !SetCoopLevel() )
 			return false;
 
-		for ( CDevicesList::const_iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
+		for ( typename CDevicesList::const_iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
 		{
 			hRes = iTempDevice->pdiDevice->Acquire();
 			if( FAILED( hRes ) )
@@ -800,7 +800,7 @@ bool SetFocus( bool bFocus )
 	}
 	else
 	{
-		for ( CDevicesList::const_iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
+		for ( typename CDevicesList::const_iterator iTempDevice = devices.begin(); iTempDevice != devices.end(); ++iTempDevice )
 		{
 			hRes = iTempDevice->pdiDevice->Unacquire();
 			if ( FAILED( hRes ) )
@@ -925,7 +925,7 @@ void AddDeviceEnum( IDirectInputDevice8 *pdiDevice )
 	if( FAILED(hRes) )
 		return;
 
-	for ( vector<DIOBJECTDATAFORMAT>::iterator iTemp = sDeviceEnum.vectorObjects.begin(); iTemp != sDeviceEnum.vectorObjects.end(); iTemp++ )
+	for ( typename vector<DIOBJECTDATAFORMAT>::iterator iTemp = sDeviceEnum.vectorObjects.begin(); iTemp != sDeviceEnum.vectorObjects.end(); iTemp++ )
 	{
 		if ( ( iTemp->dwType & DIDFT_AXIS ) == 0 )
 			continue;

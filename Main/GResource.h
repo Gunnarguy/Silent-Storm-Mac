@@ -5,7 +5,11 @@
 #endif // _MSC_VER > 1000
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "DG.h"
-#include "..\\FileIO\\FilesPackage.h"
+#include "../FileIO/FilesPackage.h"
+#if defined(__APPLE__)
+bool S2HDTexturesEnabled();   // port/platform/src/settings.mm: the HD texture pack is switched on
+bool S2HDTexturePackAvailable();
+#endif
 namespace NGScene
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -60,7 +64,7 @@ protected:
 				AddFileRequest( pRequest );
 		}
 	}
-	bool NeedUpdate() { TParent::NeedUpdate(); if ( !IsValid(pValue) && IsValid(pRequest) && pRequest->IsReady() ) return true; return false; }
+	bool NeedUpdate() { TParent::NeedUpdate(); if ( !IsValid(this->pValue) && IsValid(pRequest) && pRequest->IsReady() ) return true; return false; }
 public:
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -182,6 +186,12 @@ public:
 void AddResourceDir( const char *pszName );
 void ClearResourceDirs();	// release @0x157950 -- drop all resource dirs (CModManager::Activate)
 void CloseAllResources();
+#if defined(__APPLE__)
+// Drain pending reads before switching sources, then lazily rebuild textures
+// through the existing dependency graph without unloading the mission.
+void SetHDTextureSources(bool enabled);
+unsigned TextureSourceGeneration();
+#endif
 void RunResourceLoadingThread();
 void ReleaseFileRequestHolder();
 void AddFileRequest( CFileRequest *pReq );

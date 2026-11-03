@@ -6,8 +6,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "Time.h"
 #include "GResource.h"
-#include "..\Misc\RandomGen.h"
-#include "..\DBFormat\DataFaceGen.h"   // NDb::CRace complete type (CHeadInfo::pBodyColor CDBPtr factory)
+#include "../Misc/RandomGen.h"
+#include "../DBFormat/DataFaceGen.h"   // NDb::CRace complete type (CHeadInfo::pBodyColor CDBPtr factory)
 #include <LifeStudioHeadAPI.h>
 #include <LifeStudioHeadAPIMMTS.h>
 #include <LifeStudioHeadAPITransform.h>   // LifeStudioHeadAPI::ITransformer (CHeadTransformInfo value)
@@ -237,7 +237,7 @@ public:
 // face-animation sequence. It is a versioned CFuncBase node so the downstream head mesh/texture
 // transformers re-bake whenever a tension changes; CreateHeadInfo() publishes a renderable CHeadInfo.
 //
-// SENTINELS-LS ADAPTATION (the SS1 binary was built against an OLDER LifeStudio): the SS1 class held
+// LIFESTUDIO ADAPTATION (the SS1 binary was built against an OLDER LifeStudio): the SS1 class held
 // its own {IMMTree,ITransformer,IAnimator} and pushed SetTension(idx,val) into the ITransformer. Here
 // the MESH morph is driven the PROVEN CHeadAnimator way -- macro-muscle expressions applied to the head
 // mesh's IAnimators via the shared global pLSTree (IMMTree::FindMacroMuscle -> IAnimator::AddMacroMuscle)
@@ -248,7 +248,7 @@ public:
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 struct SLSHeadTransformInfo
 {
-	CLSPtr<LifeStudioHeadAPI::IMMTree> pMMTree;            // (Sentinels: the shared global tree is used directly)
+	CLSPtr<LifeStudioHeadAPI::IMMTree> pMMTree;            // (the shared global tree is used directly)
 	CLSPtr<LifeStudioHeadAPI::ITransformer> pTransformer;  // MESH rig: Generate() -> pAnimator (Saved for the static mesh)
 	CLSPtr<LifeStudioHeadAPI::IAnimator> pAnimator;        // MESH rig output (Save()d -> CFaceGenMeshHolder); NEVER collect user-items
 	// TEXTURE-WEIGHT rig (release-faithful decoupling): a SEPARATE transformer + output animator that NEVER

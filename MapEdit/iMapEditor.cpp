@@ -1,48 +1,48 @@
 #include "StdAfx.h"
-#include "..\Main\iMain.h"
-#include "..\Main\GView.h"
-#include "..\Main\G2DView.h"
-#include "..\Main\GSceneUtils.h"
-#include "..\Input\Input.h"
-#include "..\Input\Bind.h"
-#include "..\Main\Camera.h"
-#include "..\Main\Transform.h"
+#include "../Main/iMain.h"
+#include "../Main/GView.h"
+#include "../Main/G2DView.h"
+#include "../Main/GSceneUtils.h"
+#include "../Input/Input.h"
+#include "../Input/Bind.h"
+#include "../Main/Camera.h"
+#include "../Main/Transform.h"
 #include "iMapEditor.h"
-#include "..\Main\MapBuild.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataAnimation.h"
-#include "..\DBFormat\DataGeometry.h"
-#include "..\DBFormat\DataObject.h"
-#include "..\DBFormat\DataSound.h"
-#include "..\DBFormat\DataLight.h"
-#include "..\DBFormat\DataCamera.h"
-#include "..\Misc\StrProc.h"
-#include "..\Main\GAnimation.h"
-#include "..\Main\BuildingGrid.h"
-#include "..\Main\TerrainInfo.h"
-#include "..\Main\GBuilding.h"
-#include "..\Main\Grid.h"
-#include "..\Main\Interface.h"
-#include "..\Main\MemObject.h"
-#include "..\Main\Sound.h"
-#include "..\Main\aiMap.h"
-#include "..\Main\wInterface.h"
-#include "..\Main\RWGame.h"
+#include "../Main/MapBuild.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataAnimation.h"
+#include "../DBFormat/DataGeometry.h"
+#include "../DBFormat/DataObject.h"
+#include "../DBFormat/DataSound.h"
+#include "../DBFormat/DataLight.h"
+#include "../DBFormat/DataCamera.h"
+#include "../Misc/StrProc.h"
+#include "../Main/GAnimation.h"
+#include "../Main/BuildingGrid.h"
+#include "../Main/TerrainInfo.h"
+#include "../Main/GBuilding.h"
+#include "../Main/Grid.h"
+#include "../Main/Interface.h"
+#include "../Main/MemObject.h"
+#include "../Main/Sound.h"
+#include "../Main/aiMap.h"
+#include "../Main/wInterface.h"
+#include "../Main/RWGame.h"
 #include "MEUserSettings.h"
 #include "MEParams.h"
-#include "..\Main\MELayers.h"
-#include "..\MapEdit\UserSettingsSetup.h"
-#include "..\Main\GSceneUtils.h"
-#include "..\Main\LSHead.h"
-#include "..\Main\LSController.h"
-#include "..\Main\RPGUnitMission.h"
-#include "..\Main\RPGGame.h"
-#include "..\Main\InventoryUnit.h"
-#include "..\Main\RPGItemInfo.h"
-#include "..\Main\RPGItem.h"
-#include "..\Main\RPGGlobal.h"
+#include "../Main/MELayers.h"
+#include "../MapEdit/UserSettingsSetup.h"
+#include "../Main/GSceneUtils.h"
+#include "../Main/LSHead.h"
+#include "../Main/LSController.h"
+#include "../Main/RPGUnitMission.h"
+#include "../Main/RPGGame.h"
+#include "../Main/InventoryUnit.h"
+#include "../Main/RPGItemInfo.h"
+#include "../Main/RPGItem.h"
+#include "../Main/RPGGlobal.h"
 
 extern float gfMayaCameraSpeed;
 extern ERPGItemCamera geRPGInventoryCamera;
@@ -148,7 +148,7 @@ bool CMapViewer::ProcessEvent( const NInput::SEvent &eEvent )
 	else if ( cExec.ProcessEvent( eEvent ) )
 	{
 		/*
-		for ( list< CObj<NBuilding::CBuildingGrid> >::iterator it = buildingGrids.begin(); it != buildingGrids.end(); ++it )
+		for ( typename list< CObj<NBuilding::CBuildingGrid> >::iterator it = buildingGrids.begin(); it != buildingGrids.end(); ++it )
 			(*it)->Explode( CVec3( 0.0f, 0.0f, 1.5f ), 1000 );
 		buildings.clear();
 		for ( int i = 0; i < info.buildings.size(); ++i )
@@ -183,9 +183,9 @@ bool CMapViewer::ProcessEvent( const NInput::SEvent &eEvent )
 	}
 	else if ( cBuildParts.ProcessEvent( eEvent ) )
 	{
-		for ( list< CObj<NBuilding::CBuildingGrid> >::iterator it = buildingGrids.begin(); it != buildingGrids.end(); ++it )
+		for ( typename list< CObj<NBuilding::CBuildingGrid> >::iterator it = buildingGrids.begin(); it != buildingGrids.end(); ++it )
 			(*it)->Explode( CVec3( 2.5, 4.0, 1.5 ), 0, 1 );
-		for ( list< CObj<NGScene::CBuilding> >::iterator it = buildings.begin(); it != buildings.end(); ++it )
+		for ( typename list< CObj<NGScene::CBuilding> >::iterator it = buildings.begin(); it != buildings.end(); ++it )
 			(*it)->ToggleParts();
 		
 		return true;
@@ -281,7 +281,7 @@ void CMapViewer::Step()
 	if ( CanRender() )
 	{
 		//
-		for ( list< CObj<NGScene::CBuilding> >::iterator it = buildings.begin(); it != buildings.end(); ++it )
+		for ( typename list< CObj<NGScene::CBuilding> >::iterator it = buildings.begin(); it != buildings.end(); ++it )
 			(*it)->CheckHP();
     pCamera->Update( GetTime() );
 		pInterface->Step( GetTime() );
@@ -358,7 +358,7 @@ inline void RotatePt( CVec3 *pVec, int nAngle )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CMapViewer::InsertObjects( const SMapInfo &info )
 {
-  for ( list<SMapElement>::const_iterator i = info.items.begin(); i != info.items.end(); ++i )
+  for ( typename list<SMapElement>::const_iterator i = info.items.begin(); i != info.items.end(); ++i )
   {
 		if ( IsValid( i->pObject ) && IsValid( i->pObject->pModels[0] ) )
 		{
@@ -400,7 +400,7 @@ void CMapViewer::InsertObjects( const SMapInfo &info )
 			}
 		}
   }
-  for ( list<SMapUnit>::const_iterator i = info.units.begin(); i != info.units.end(); ++i )
+  for ( typename list<SMapUnit>::const_iterator i = info.units.begin(); i != info.units.end(); ++i )
   {
 		SRand rand;
 		CPtr<NDb::CModel> pModel = i->pPers->pModel->CreateModel( &rand );
@@ -961,7 +961,7 @@ void CMapViewer::AddAIGeometry( int nAIGeomID, const CVec3 &ptShift )
 	NAI::GetGeometry( &objs, &spheres, nAIGeomID, &bClosed );
 	SFBTransform id;
 	id = MakeTransform( ptShift, 0 );
-	for ( list<NAI::SObjectInfo>::iterator i = objs.begin(); i != objs.end(); ++i )
+	for ( typename list<NAI::SObjectInfo>::iterator i = objs.begin(); i != objs.end(); ++i )
 	{
 		NAI::SObjectInfo &info = *i;
 		if ( info.tris.size() > 0 )

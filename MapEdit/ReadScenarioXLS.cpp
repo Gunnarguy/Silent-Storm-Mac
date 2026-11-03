@@ -14,14 +14,14 @@ static void SetString( int nID, const string &szStr )
 	const CPropMap *pProps = tree.pItemsTree->GetPropList( nID );
 	if ( !pProps )
 		return;
-	CPropMap::const_iterator i = pProps->find( "String" );
+	typename CPropMap::const_iterator i = pProps->find( "String" );
 	i->second->SetValue( szStr );
 	tree.pItemsTree->ReleasePropList( pProps );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void ReadScenarioClues( int nScenarioID, const CPropMap *pScenarioProps )
 {
-	CPropMap::const_iterator isrc = pScenarioProps->find( "SrcXLSName" );
+	typename CPropMap::const_iterator isrc = pScenarioProps->find( "SrcXLSName" );
 	if ( isrc == pScenarioProps->end() )
 		return;
 	string szSrc = GetExportSrcDir() + (string)isrc->second->GetValue();

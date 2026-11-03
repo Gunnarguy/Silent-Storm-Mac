@@ -28,7 +28,7 @@ int CUnitElement::GetModelID() const
 	int nMonster = -1;
 	{
 		const CPropMap *pProps = GetPropList();
-		CPropMap::const_iterator it = pProps->find( "MonsterID" );
+		typename CPropMap::const_iterator it = pProps->find( "MonsterID" );
 		if ( it == pProps->end() )
 			return -1;
 		nMonster = it->second->GetValue();
@@ -36,7 +36,7 @@ int CUnitElement::GetModelID() const
   const CPropMap *pProps = pTree->pItemsTree->GetPropList( nMonster );
   if ( !pProps )
     return -1;
-  CPropMap::const_iterator i = pProps->find( "ModelID" );
+  typename CPropMap::const_iterator i = pProps->find( "ModelID" );
   if ( i != pProps->end() )
     return i->second->GetValue();
   return -1;

@@ -9,16 +9,22 @@
 #include "RPGUnit.h"
 #include "RPGItemInfo.h"
 #include "RPGItem.h"   // GetGrenadeRec* which-record accessors
+#include "RPGToHit.h"               // CToHitCalcer: the weapon comparison runs the game's own hit formula
+#include "RPGUnitMission.h"
+#include "rpgPerkConstants.h"
+#include "wMain.h"
+#include "wUnitServer.h"
+#include "RPGGame.h"
 #include "RPGItemSet.h"             // CClipItem (drag-compat yellow) -- CSlot::Draw @0x1c34d0 tint pass
-#include "..\DBFormat\DataMisc.h"   // NDb::CRPGPicklock (the can't-use red predicate)
-#include "..\DBFormat\DataPerk.h"   // NDb::CDBPerk (tool/picklock pNeededPerk id)
+#include "../DBFormat/DataMisc.h"   // NDb::CRPGPicklock (the can't-use red predicate)
+#include "../DBFormat/DataPerk.h"   // NDb::CDBPerk (tool/picklock pNeededPerk id)
 #include "RPGUnitInfo.h"
-#include "..\Misc\StrProc.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataLight.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataCamera.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataLight.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataCamera.h"
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"
 #include "UIWrap.h"
 #include "iMission.h"
@@ -26,6 +32,9 @@
 #include "RWGame.h"
 #include "iGameStates.h"
 #include "iActionDecorator.h"
+bool S2WeaponCompareOn();      // port/platform/src/settings.mm: the Settings switch for the weapon comparison
+namespace NRPG { NAI::EPose GetBestPose( const NDb::CRPGWeaponType &wt ); }	// RPGToHit.cpp
+bool S2WeaponCompareAll();     // port/platform/src/macwindow.mm: Shift held, every stat
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -159,7 +168,7 @@ void CImageNumber::SetColor( const NGfx::SPixel8888 &_sColor )
 {
 	sColor = _sColor;
 
-	for ( list<CObj<CImage> >::iterator iTemp = imagesList.begin(); iTemp != imagesList.end(); iTemp++ )
+	for ( typename list<CObj<CImage> >::iterator iTemp = imagesList.begin(); iTemp != imagesList.end(); iTemp++ )
 		(*iTemp)->SetColor( sColor );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -325,7 +334,7 @@ void CComplexButtonFlash::Draw( const STime &sTime, NGScene::I2DGameView *pView 
 		sFlashTime = sStartTime;
 	}
 
-	const float fElapsed = float( (unsigned long)( sTime - sFlashTime ) ) * 0.002f;
+	const float fElapsed = float( (DWORD)( sTime - sFlashTime ) ) * 0.002f;
 	int nAlpha = 0xFF;
 	if ( fElapsed < 1.0f )
 		nAlpha = int( fElapsed * 255.0f );
@@ -981,7 +990,7 @@ void CShowItemModel::Set( NGScene::IGameView *pView, NWorld::CUnit *_pUnit, NRPG
 	{
 		NDb::CRPGWeapon *pW = pWeapon->GetDBWeapon();
 		NRPG::IClipItem *pInner = pWeapon->GetInnerClip();
-		pToolTip->SetText( GetDBString( 4468 ) );
+		pToolTip->SetText( GetDBString( 4468 ) + L"<value id=s2compare>" );	// Draw fills the Mac comparison block
 		pToolTip->SetVal( L"typename", GetDBString( pW->pWeaponType->pName ) );
 
 		NRPG::SWeaponInfo sInfo;
@@ -1165,6 +1174,296 @@ void CShowItemModel::Set( NGScene::IGameView *pView, NWorld::CUnit *_pUnit, NRPG
 // retail CShowItemModel::Draw @0x1c07b0: per-FRAME refresh of only the LIVE numbers -- everything else
 // was written once by Set. weapon conv/range/damage + familiarity, melee familiarity, clip ammo,
 // first-aid quantity, tool/picklock engquantity.
+// macOS port: the weapon comparison under a gun's tooltip, against the gun the same soldier has in hand.
+namespace
+{
+const wchar_t *SkillName( int nSkill )
+{
+	switch ( nSkill )
+	{
+	case NDb::ST_MELEE: return L"Melee";
+	case NDb::ST_SHOOTING: return L"Shooting";
+	case NDb::ST_THROWING: return L"Throwing";
+	case NDb::ST_BURST: return L"Burst";
+	case NDb::ST_SNIPE: return L"Sniping";
+	}
+	return L"Skill";
+}
+// rounds this soldier carries that the gun can load, in the backpack and the hands
+int CarriedRounds( NRPG::IWeaponItemInfo *pGun, NRPG::IInventoryInfo *pInv )
+{
+	int n = 0;
+	for ( const NRPG::SBackPackItem &b : pInv->GetItems() )
+	{
+		CDynamicCast<NRPG::IClipItem> pClip( b.pItem.GetPtr() );
+		if ( pClip && pGun->CanLoad( pClip ) )
+			n += pClip->GetIncQuantity();
+	}
+	return n;
+}
+struct SGunFigures { float fDamage = 0; int nRange = 0, nSnapAP = 0, nAimedAP = 0, nPierce = 0, nRecoil = 0, nRoF = 0, nMagazine = 0, nWeight = 0, nSkill = 0, nExtraSkill = -1, nFamiliarity = 0; };
+SGunFigures Figures( NRPG::IWeaponItemInfo *pGun, NRPG::CUnit *pRPG )
+{
+	SGunFigures f;
+	NRPG::SWeaponInfo s;
+	pGun->GetInfo( &s );
+	f.fDamage = ( s.nDmgMin + s.nDmgMax ) * 0.5f;
+	f.nRange = s.nMaxRange; f.nSnapAP = s.nShotAP; f.nAimedAP = s.nShotAP + s.nTargetingAP;
+	f.nPierce = s.nArmorPiercingAbility; f.nRecoil = s.nRecoil; f.nRoF = s.nRoF;
+	if ( NRPG::IClipItem *pInner = pGun->GetInnerClip() )
+		f.nMagazine = pInner->GetMaxIncQuantity();
+	if ( IsValid( pGun->GetDBItem() ) )
+		f.nWeight = pGun->GetDBItem()->nWeight;
+	// every gun shot uses Shooting (CUnitMission::GetWeaponSkill); bursts add Burst and the scope adds Sniping
+	// (RPGToHit.cpp). The weapon type's SkillIndex is only a category (1 melee, 2 gun, 3 grenade).
+	NDb::CRPGWeapon *pW = pGun->GetDBWeapon();
+	const int nShooting = int( pRPG->Skills( NDb::ST_SHOOTING ) );
+	f.nSkill = nShooting;
+	if ( pW->bScope || pW->shootModes[NDb::SM_Snipe] )
+		f.nExtraSkill = NDb::ST_SNIPE;
+	else if ( pW->shootModes[NDb::SM_ShortBurst] || pW->shootModes[NDb::SM_LongBurst] )
+		f.nExtraSkill = NDb::ST_BURST;
+	if ( f.nExtraSkill >= 0 )
+		f.nSkill = ( nShooting + int( pRPG->Skills( f.nExtraSkill ) ) ) / 2;
+	f.nFamiliarity = Float2Int( pRPG->GetWeaponAdaptation( pGun ) );
+	return f;
+}
+// The game's own target-free hit formula (CToHitCalcer, as the cursor uses for a shot at the ground) for a gun the
+// soldier is not holding: the calculator reads the gun in hand, so this one is given the hovered gun instead.
+// Cover and the target's size are left out: an exposed target, the same for both guns.
+class CHoverToHitCalcer: public NRPG::CToHitCalcer
+{
+	OBJECT_NOCOPY_METHODS( CHoverToHitCalcer );
+public:
+	CHoverToHitCalcer() {}
+	CHoverToHitCalcer( NWorld::CUnitServer *pUS, NAI::EPose ePose, int nDistance, int nBullet, bool bNight, NRPG::CWeaponItem *pGun ):
+		NRPG::CToHitCalcer( pUS, ePose, nDistance, pUS->GetPosition().GetCP(), 0, 0, 1.0f, false, bNight, CVec3( 1, 1, 1 ), nBullet, false )
+	{
+		pWeaponItem = pGun;
+	}
+	// the base reads the stance bonus from the gun in hand; this one from the gun being rated
+	float GetStance()
+	{
+		if ( !IsValid( pWeaponItem ) )
+			return 0;
+		NAI::EPose pose = eCurPose;
+		const NDb::CRPGWeaponType &wt = *pWeaponItem->GetDBWeapon()->pWeaponType;
+		if ( pUnitMission->HasPerk( NRPG::N_PERK_BEST_SHOOTING_POSE ) )
+			pose = NRPG::GetBestPose( wt );
+		return NAI::CROUCH == pose ? float( int( wt.fCrouchBonus ) ) : ( NAI::CRAWL == pose ? float( int( wt.fCrawlBonus ) ) : 0.0f );
+	}	// familiarity: the base adds the soldier's familiarity with the gun in hand (CUnitMission::GetWeaponAdaptation)
+	float GetAllAdd()
+	{
+		float f = NRPG::CToHitCalcer::GetAllAdd();
+		if ( IsValid( pWeaponItem ) && pUnitMission->GetRPGUnit()->GetWeaponItem() != pWeaponItem )
+			f += pUnitMission->GetRPGUnit()->GetWeaponAdaptation( pWeaponItem ) - pUnitMission->GetWeaponAdaptation();
+		return f;
+	}
+};
+// the game's calculator exactly as it is, for the check hook: nothing overridden, it reads the gun in hand
+class CGameToHitCalcer: public NRPG::CToHitCalcer
+{
+	OBJECT_NOCOPY_METHODS( CGameToHitCalcer );
+public:
+	CGameToHitCalcer() {}
+	CGameToHitCalcer( NWorld::CUnitServer *pUS, int nDistance, bool bNight ):
+		NRPG::CToHitCalcer( pUS, pUS->GetPose(), nDistance, pUS->GetPosition().GetCP(), 0, 0, 1.0f, false, bNight, CVec3( 1, 1, 1 ), 0, false ) {}
+};
+struct SBestShot { float fDamagePerAP = 0; int nHit = 0; const wchar_t *pszMode = L"-"; };
+// Expected damage per AP of the soldier's best mode with pGun at nDistance: snap, aimed and the short burst, each burst
+// bullet scored on its own (CUnitMission::GetWeaponSkill drops it by Burst skill and recoil). The gun's own mode is
+// put back afterwards.
+SBestShot BestShot( NWorld::CUnitServer *pUS, NRPG::CWeaponItem *pGun, int nDistance )
+{
+	SBestShot best;
+	NRPG::SWeaponInfo s;
+	pGun->GetInfo( &s );
+	const float fDamage = ( s.nDmgMin + s.nDmgMax ) * 0.5f;
+	const bool bNight = pUS->GetWorld()->GetGame()->IsNight();
+	const NAI::EPose ePose = pUS->GetPose();
+	NDb::CRPGWeapon *pW = pGun->GetDBWeapon();
+	const NDb::EShootMode eWas = pGun->GetShootMode();
+	auto hit = [&]( NDb::EShootMode eMode, int nBullet ) {
+		pGun->SetShootMode( eMode );
+		CObj<CHoverToHitCalcer> pCalc = new CHoverToHitCalcer( pUS, ePose, nDistance, nBullet, bNight, pGun );
+		return pCalc->GetToHit();
+	};
+	auto consider = [&]( float fExpected, int nAP, int nHit, const wchar_t *pszMode ) {
+		const float v = fExpected / Max( 1, nAP );
+		if ( v > best.fDamagePerAP ) { best.fDamagePerAP = v; best.nHit = nHit; best.pszMode = pszMode; }
+	};
+	const int nSnapAP = pGun->GetShootAP();
+	if ( pW->shootModes[NDb::SM_Snap] )
+	{
+		const int n = hit( NDb::SM_Snap, 0 );
+		consider( fDamage * n / 100.0f, nSnapAP, n, L"snap" );
+	}
+	if ( pW->shootModes[NDb::SM_Aimed] )
+	{
+		const int n = hit( NDb::SM_Aimed, 0 );
+		consider( fDamage * n / 100.0f, nSnapAP + s.nTargetingAP, n, L"aimed" );
+	}
+	if ( pW->shootModes[NDb::SM_ShortBurst] )
+	{
+		float fPerkBullets = 0;
+		pUS->GetUnitRPG()->HasPerk( NRPG::N_PERK_LONGER_SHORT_BURST, &fPerkBullets );
+		const int nBullets = Max( 1, int( pW->nRoF / 6.f + fPerkBullets ) );
+		float fHits = 0;
+		int nFirst = 0;
+		for ( int b = 0; b < nBullets; ++b )
+		{
+			const int n = hit( NDb::SM_ShortBurst, b );
+			if ( b == 0 ) nFirst = n;
+			fHits += n / 100.0f;
+		}
+		consider( fDamage * fHits, nSnapAP + s.nRoF / 3, nFirst, L"burst" );
+	}
+	pGun->SetShootMode( eWas );
+	return best;
+}
+}
+// test hook (console "compare_check"): each hand-slot gun's snap and aimed hit chance at three ranges through the
+// hovered-gun calculator, and the game's own calculator for the gun in hand, to show the two agree
+void S2CompareCheck( NWorld::CUnit *pUnit )
+{
+	CDynamicCast<NWorld::CUnitServer> pUS( pUnit );
+	if ( !pUS )
+		return;
+	NRPG::IInventoryInfo *pInv = pUnit->GetRPG()->GetInventoryInfo();
+	const bool bNight = pUS->GetWorld()->GetGame()->IsNight();
+	for ( NDb::ESlot eSlot : { NDb::SLOT_1, NDb::SLOT_2 } )
+	{
+		CDynamicCast<NRPG::CWeaponItem> pGun( pInv->Get( eSlot ) );
+		if ( !pGun )
+			continue;
+		const bool bActive = static_cast<NRPG::IInventoryItem*>( pGun ) == pInv->GetActive();
+		for ( int nDistance : { 10, 25, 45 } )
+		{
+			const NDb::EShootMode eWas = pGun->GetShootMode();
+			for ( NDb::EShootMode eMode : { NDb::SM_Snap, NDb::SM_Aimed } )
+			{
+				if ( !pGun->GetDBWeapon()->shootModes[eMode] )
+					continue;
+				pGun->SetShootMode( eMode );
+				CObj<CHoverToHitCalcer> pHover = new CHoverToHitCalcer( pUS, pUS->GetPose(), nDistance, 0, bNight, pGun );
+				int nGame = -1;
+				if ( bActive )
+				{
+					CObj<CGameToHitCalcer> pGame = new CGameToHitCalcer( pUS, nDistance, bNight );
+					nGame = pGame->GetToHit();
+				}
+				fprintf( stderr, "[compare-check] slot %d%s %ls range %d %s: hovered-gun calculator %d, game calculator %d\n", (int)eSlot, bActive ? " (in hand)" : "",
+					IsValid( pGun->GetDBItem() ) && IsValid( pGun->GetDBItem()->pName ) ? GetDBString( pGun->GetDBItem()->pName ).c_str() : L"?", nDistance,
+					eMode == NDb::SM_Snap ? "snap" : "aimed", pHover->GetToHit(), nGame );
+			}
+			pGun->SetShootMode( eWas );
+		}
+	}
+}
+namespace
+{
+// one row: label, this gun, the one in hand, the difference in green when it is better and red when worse
+wstring Row( const wchar_t *pszLabel, float fNew, float fOld, bool bHigherIsBetter, bool bWhole = true )
+{
+	if ( fNew == 0 && fOld == 0 )
+		return L"";	// a stat neither gun has (recoil and rate of fire on a bolt-action rifle)
+	WCHAR wsBuf[256];
+	const float d = fNew - fOld;
+	const bool bBetter = bHigherIsBetter ? d > 0 : d < 0;
+	const wchar_t *pszColor = d == 0 ? L"beige" : ( bBetter ? L"FF7FDA7F" : L"FFE87060" );
+	if ( bWhole )
+		swprintf( wsBuf, 256, L"<br><color=darkyellow>%ls: <color=beige>%d vs %d <color=%ls>%ls%d", pszLabel, int( fNew ), int( fOld ), pszColor, d > 0 ? L"+" : L"", int( d ) );
+	else
+		swprintf( wsBuf, 256, L"<br><color=darkyellow>%ls: <color=beige>%.1f vs %.1f <color=%ls>%ls%.1f", pszLabel, fNew, fOld, pszColor, d > 0 ? L"+" : L"", d );
+	return wsBuf;
+}
+}
+// The compare block for pNew in pUnit's hands. The verdict compares expected damage per AP from the game's own hit
+// formula (BestShot) at three ranges; ammo carried and the class's own best
+// weapon skill are reported beside it. Empty when the soldier has no gun to compare with.
+static wstring WeaponCompareText( CPtr<NWorld::CUnit> pUnit, NRPG::IWeaponItemInfo *pNew, bool bAll, bool bHitMaths )
+{
+	if ( !IsValid( pUnit ) || !IsValid( pUnit->GetRPG() ) )
+		return L"";
+	NRPG::IInventoryInfo *pInv = pUnit->GetRPG()->GetInventoryInfo();
+	NRPG::CUnit *pRPG = pUnit->GetRPG()->GetRPGUnit();
+	if ( !pInv || !IsValid( pRPG ) )
+		return L"";
+	CDynamicCast<NRPG::IWeaponItemInfo> pOld( pInv->GetActive() );
+	for ( NDb::ESlot eSlot : { NDb::SLOT_1, NDb::SLOT_2 } )
+		if ( !pOld || !IsValid( pOld->GetDBWeapon()->pWeaponType ) )
+			pOld = CDynamicCast<NRPG::IWeaponItemInfo>( pInv->Get( eSlot ) );
+	if ( !pOld || !IsValid( pOld->GetDBWeapon()->pWeaponType ) )
+		return L"";
+	const wstring wsName = pRPG->GetName();
+	if ( static_cast<NRPG::IInventoryItem*>( pOld ) == static_cast<NRPG::IInventoryItem*>( pNew ) )
+		return L"<br><br><color=darkyellow>In " + wsName + L"'s hands";
+	const SGunFigures n = Figures( pNew, pRPG ), o = Figures( pOld, pRPG );
+	const int nRounds = CarriedRounds( pNew, pInv ) + pNew->GetAmmoQuantity();
+	// the class's stronger gun skill, Burst or Sniping, from its own growth column
+	int nClassBest = -1;
+	if ( IsValid( pRPG->pClass ) )
+		nClassBest = pRPG->pClass->skills.skills[NDb::ST_BURST] >= pRPG->pClass->skills.skills[NDb::ST_SNIPE] ? NDb::ST_BURST : NDb::ST_SNIPE;
+	wstring wsOld = IsValid( pOld->GetDBItem() ) && IsValid( pOld->GetDBItem()->pName ) ? GetDBString( pOld->GetDBItem()->pName ) : L"the gun in hand";
+	WCHAR wsBuf[512];
+	wstring s = L"<br><br><color=darkyellow>Compared with " + wsOld + L", for " + wsName + L":";
+	s += Row( L"Damage", n.fDamage, o.fDamage, true, false );
+	s += Row( L"Range", float( n.nRange ), float( o.nRange ), true );
+	s += Row( L"Snap shot AP", float( n.nSnapAP ), float( o.nSnapAP ), false );
+	auto uses = [pRPG]( const SGunFigures &f ) {
+		WCHAR w[96];
+		if ( f.nExtraSkill >= 0 )
+			swprintf( w, 96, L"Shooting %d + %ls %d", int( pRPG->Skills( NDb::ST_SHOOTING ) ), SkillName( f.nExtraSkill ), int( pRPG->Skills( f.nExtraSkill ) ) );
+		else
+			swprintf( w, 96, L"Shooting %d", int( pRPG->Skills( NDb::ST_SHOOTING ) ) );
+		return wstring( w );
+	};
+	s += L"<br><color=darkyellow>Skills: <color=beige>" + uses( n ) + L" vs " + uses( o );
+	if ( bAll )
+	{
+		s += Row( L"Aimed shot AP", float( n.nAimedAP ), float( o.nAimedAP ), false );
+		s += Row( L"Penetration", float( n.nPierce ), float( o.nPierce ), true );
+		s += Row( L"Recoil", float( n.nRecoil ), float( o.nRecoil ), false );
+		s += Row( L"Rate of fire", float( n.nRoF ), float( o.nRoF ), true );
+		s += Row( L"Magazine", float( n.nMagazine ), float( o.nMagazine ), true );
+		s += Row( L"Weight (g)", float( n.nWeight ), float( o.nWeight ), false );
+		s += Row( L"Familiarity", float( n.nFamiliarity ), float( o.nFamiliarity ), true );
+	}
+	swprintf( wsBuf, 512, L"<br><color=darkyellow>Ammo carried: <color=%ls>%d rounds", nRounds > 0 ? L"beige" : L"FFE87060", nRounds );
+	s += wsBuf;
+	// the game's hit formula for this soldier: only while the tooltip is on screen, it runs a few dozen hit rolls
+	CDynamicCast<NWorld::CUnitServer> pUS( pUnit.GetPtr() );
+	CDynamicCast<NRPG::CWeaponItem> pNewGun( pNew ), pOldGun( pOld.GetPtr() );
+	if ( bHitMaths && pUS && pNewGun && pOldGun )
+	{
+		s += L"<br><color=darkyellow>Damage per AP, best mode, exposed target:";
+		float fSum = 0;
+		int nRanges = 0;
+		for ( int nDistance : { 10, 25, 45 } )
+		{
+			const SBestShot a = BestShot( pUS, pNewGun, nDistance ), b = BestShot( pUS, pOldGun, nDistance );
+			const float d = a.fDamagePerAP - b.fDamagePerAP;
+			const wchar_t *pszColor = fabs( d ) < 0.005f ? L"beige" : ( d > 0 ? L"FF7FDA7F" : L"FFE87060" );
+			swprintf( wsBuf, 512, L"<br><color=darkyellow>At range %d: <color=beige>%.2f %ls %d%% vs %.2f %ls %d%% <color=%ls>%ls%.2f",
+				nDistance, a.fDamagePerAP, a.pszMode, a.nHit, b.fDamagePerAP, b.pszMode, b.nHit, pszColor, d > 0 ? L"+" : L"", d );
+			s += wsBuf;
+			if ( b.fDamagePerAP > 0 ) { fSum += a.fDamagePerAP / b.fDamagePerAP; ++nRanges; }
+			else if ( a.fDamagePerAP > 0 ) { fSum += 2; ++nRanges; }
+		}
+		const float fRatio = nRanges ? fSum / nRanges : 1;
+		const wchar_t *pszVerdict = fRatio > 1.1f ? L"<color=FF7FDA7F>Better" : ( fRatio < 0.9f ? L"<color=FFE87060>Worse" : L"<color=beige>About the same" );
+		swprintf( wsBuf, 512, L"<br>%ls for %ls<color=beige>: %d%% damage per AP over the 3 ranges", pszVerdict, wsName.c_str(), Float2Int( fRatio * 100.0f ) );
+		s += wsBuf;
+	}
+	if ( nClassBest >= 0 && n.nExtraSkill == nClassBest && o.nExtraSkill != nClassBest )
+		s += wstring( L"<br><color=beige>" ) + SkillName( nClassBest ) + L" suits this soldier's class";
+	if ( nRounds == 0 )
+		s += L"<br><color=FFE87060>No ammo for it in the pack";
+	if ( !bAll )
+		s += L"<br><color=grey>Hold Shift for every stat";
+	return s;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void CShowItemModel::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 {
 	if ( !IsValid( pItem ) )
@@ -1190,6 +1489,25 @@ void CShowItemModel::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 		pToolTip->SetVal( L"damagemin", sInfo.nDmgMin );
 		pToolTip->SetVal( L"damagemax", sInfo.nDmgMax );
 		pToolTip->SetVal( L"familiarity", IsValid( pUnit ) ? Float2Int( pUnit->GetRPG()->GetRPGUnit()->GetWeaponAdaptation( pItem ) ) : 0 );
+		if ( S2WeaponCompareOn() )
+		{
+			const bool bAll = S2WeaponCompareAll(), bShown = pToolTip->GetStyle( STYLE_VISIBLE );
+			if ( bAll != bLastCompareAll || bShown != bLastCompareShown || ( bShown && sTime - tLastCompare > 500 ) || wsLastCompare.empty() )
+			{
+				bLastCompareAll = bAll;
+				bLastCompareShown = bShown;
+				tLastCompare = sTime;
+				wsBuiltCompare = WeaponCompareText( pUnit, pWeapon, bAll, bShown || getenv( "S2_COMPARE_ALL" ) != 0 );
+			}
+			const wstring &wsCompare = wsBuiltCompare;
+			if ( wsCompare != wsLastCompare )
+			{
+				wsLastCompare = wsCompare;
+				pToolTip->SetVal( L"s2compare", wsCompare );
+				if ( getenv( "S2_HEADLESS" ) && !wsCompare.empty() )
+					fprintf( stderr, "[weapon-compare] %ls\n", wsCompare.c_str() );
+			}
+		}
 	}
 	else if ( pMelee )
 	{

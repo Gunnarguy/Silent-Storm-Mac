@@ -3,16 +3,16 @@
 #include "RectLayout.h"
 #include "GView.h"
 #include "G2DView.h"
-#include "..\Input\Bind.h"
+#include "../Input/Bind.h"
 #include "Interface.h"
 #include "UIBaseCtrls.h"
 #include "UICommCtrls.h"
 #include "Console.h"
 #include "Cursor.h"
 #include "Transform.h"
-#include "..\Misc\StrProc.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -49,7 +49,7 @@ CMouseCaptureHandler::CMouseCaptureHandler( IInterface *_pInterface, IWindow *_p
 	{
 		list< CPtr<IWindow> > childerList;
 		pParent->GetChildrenList( &childerList );
-		for ( list< CPtr<IWindow> >::iterator iTemp = childerList.begin(); iTemp != childerList.end(); iTemp++ )
+		for ( typename list< CPtr<IWindow> >::iterator iTemp = childerList.begin(); iTemp != childerList.end(); iTemp++ )
 		{
 			if ( (*iTemp)->IsSame( _pWindow ) )
 			{

@@ -1,11 +1,11 @@
 #include "StdAfx.h"
 #include "DG.h"
 #include "Time.h"
-#include "..\DBFormat\DataSound.h"
-#include "..\FModSound\FMSound.h"
+#include "../DBFormat/DataSound.h"
+#include "../FModSound/FMSound.h"
 #include "SoundEffect.h"
 #include "SoundFormat.h"
-#include "..\Misc\BasicShare.h"
+#include "../Misc/BasicShare.h"
 
 namespace NSound
 {
@@ -15,7 +15,7 @@ CSoundInstance::CSoundInstance( NDb::CSoundInstance *_pInstance, STime t, CFuncB
 	: pInstance(_pInstance), pTime(_pTime), pPlacement(pPos), flags(_flags)
 {
 	value = false;
-	// Retail v1.2 0x7092d5..0x709335 / Sentinels 0x4085e0..0x408640:
+	// Retail v1.2 0x7092d5..0x709335:
 	// t is elapsed effect age, not an absolute clock value (Jan03 semantics).
 	pTime.Refresh();
 	const int nWait = (int)( pInstance->nStartTime - t );
@@ -82,7 +82,7 @@ void CSoundInstance::Recalc()
 		p.bFadeIn = pInstance->bFadeIn;
 		p.bFadeOut = pInstance->bFadeOut;
 		p.nFadeSamples = pInstance->nFadeSamples;
-		p.nStartMs = (int)tStartTime; // v1.2 0x70965c..0x709672 / Sentinels 0x40896c
+		p.nStartMs = (int)tStartTime; // v1.2 0x70965c..0x709672
 		pSound = NFMSound::Play3DSound( p );
 		tLastSound = pTime->GetValue();
 	}
@@ -97,7 +97,7 @@ CSoundEffect::CSoundEffect( NDb::CSoundEffect *pEff, STime stBeginTime, CFuncBas
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CSoundEffect::Update()
 {
-	for ( vector<CDGPtr<CFuncBase<bool> > >::iterator i = instances.begin(); i != instances.end(); )
+	for ( typename vector<CDGPtr<CFuncBase<bool> > >::iterator i = instances.begin(); i != instances.end(); )
 	{
 		if ( !IsValid( *i ) || ((*i).Refresh(), (*i)->GetValue()) )
 			i = instances.erase( i );

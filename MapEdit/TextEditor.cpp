@@ -5,7 +5,7 @@
 #include "MapEdit.h"
 #include "TextEditor.h"
 #include "Export.h"
-#include "..\Script\Script.h"
+#include "../Script/Script.h"
 #include <fstream>
 #include "MEParams.h"
 #include "MEUserSettings.h"
@@ -19,7 +19,7 @@ static int ScriptLOG(lua_State* state)
 	Script script(state);
 	Script::Object obj = script.GetObject(script.GetTop());
 	string sz = obj.GetString();
-	for ( string::const_iterator i = sz.begin(); i != sz.end(); ++i )
+	for ( typename string::const_iterator i = sz.begin(); i != sz.end(); ++i )
 		if ( *i != '\n' )
 			szErr += *i;
 		else

@@ -64,7 +64,7 @@ void CAIChoosePlaceJob::DoJob()
 			SPlaceWithAP &place = si.places[ si.nCurrentPlace ];
 			// skip inactive/lay poses (the 2-bit pose category 0 and 3 are rejected)
 			int nPoseCat = ( ECheckMove )( place.place.pos.p.GetPose() );
-			if ( nPoseCat != CM_LAY && nPoseCat != CM_INACTIVE )
+			if ( nPoseCat != CM_INACTIVE && nPoseCat != CM_LAY )
 			{
 				if ( pAction->CanDo( place ) &&
 					( si.nBestPlace < 0 ||
@@ -88,7 +88,7 @@ void CAIChoosePlaceJob::Reset()
 {
 	ReArm();    // retail @0x475210: clears the base CAIJob finished byte (+0xc)
 	nCurrentAction = 0;
-	for ( unordered_map< CPtr<CAIAction>, SPlaceSourceInfo, SPtrHash >::iterator i = info.begin(); i != info.end(); ++i )
+	for ( typename unordered_map< CPtr<CAIAction>, SPlaceSourceInfo, SPtrHash >::iterator i = info.begin(); i != info.end(); ++i )
 	{
 		SPlaceSourceInfo &si = (*i).second;
 		si.nCurrentPlace = 0;
@@ -125,7 +125,7 @@ bool CAIChoosePlaceJob::GetPlaceForAction( CAIAction *pAction, SPlaceWithAP *pPl
 {
 	if ( !IsValid( pAction ) )
 		return false;
-	unordered_map< CPtr<CAIAction>, SPlaceSourceInfo, SPtrHash >::iterator i = info.find( pAction );
+	typename unordered_map< CPtr<CAIAction>, SPlaceSourceInfo, SPtrHash >::iterator i = info.find( pAction );
 	if ( i == info.end() )
 		return false;
 	SPlaceSourceInfo &si = (*i).second;

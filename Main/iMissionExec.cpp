@@ -7,8 +7,8 @@
 #include "iMissionExec.h"
 #include "iTeamMngMenu.h"
 #include "scFlowChartItems.h"
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"     // csSystem ("[tutorcam]" camera-move evidence trace)
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"     // csSystem ("[tutorcam]" camera-move evidence trace)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGame
 {
@@ -246,7 +246,7 @@ void CUICmdUnitCameraExec::Finished()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUICmdExplosionCameraExec (retail iUIExec.obj: ctor @0x24f570, Update @0x24e6e0, Finished @0x24f550).
 // The blast auto-focus: frame the explosion point (rod = Max(current rod, 12), the producer's -100
-// nFloor sentinel resolves to the mission's current cut floor), optional slo-mo, 3 s dwell.
+// nFloor marker resolves to the mission's current cut floor), optional slo-mo, 3 s dwell.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CUICmdExplosionCameraExec::CUICmdExplosionCameraExec( NWorld::CUICmdPointCamera *_pCmd, IMission *_pMission ):
 	CUICmdLocatorExec( _pCmd ), pMission( _pMission ), pCmd( _pCmd ), bDone( false ), tStart( 0 )
@@ -281,7 +281,7 @@ bool CUICmdExplosionCameraExec::Update( const STime &sTime )
 	if ( IsValid( pCamera ) )
 	{
 		// retail @0x24e6e0 first tick: rod = Max(stored placement rod, 12); nFloor < -10 (the
-		// producer's -100 sentinel) -> the controller's current cut floor; then the one-point
+		// producer's -100 marker) -> the controller's current cut floor; then the one-point
 		// best-point framing with the slo-mo ratio (bUseSloMo ? 3 : 1).
 		ICamera::SCameraPos sCameraPos;
 		pCamera->GetPlacement( &sCameraPos );

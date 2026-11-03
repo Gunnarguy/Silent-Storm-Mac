@@ -1,20 +1,20 @@
 #include "StdAfx.h"
 #include "weInterface.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\Main\BuildingInfo.h"
-#include "..\Main\Transform.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataRPG.h"
+#include "../Main/BuildingInfo.h"
+#include "../Main/Transform.h"
 #include "iWysiwyg.h"
-#include "..\Main\MemObject.h"
-#include "..\Main\Grid.h"
-#include "..\Main\wBuilding.h"
-#include "..\Main\BuildingGrid.h"
+#include "../Main/MemObject.h"
+#include "../Main/Grid.h"
+#include "../Main/wBuilding.h"
+#include "../Main/BuildingGrid.h"
 #include "MEUserSettings.h"
 #include "MEParams.h"
-#include "..\Main\MELayers.h"
-#include "..\Main\MapBuild.h"
-#include "..\Misc\BasicShare.h"
+#include "../Main/MELayers.h"
+#include "../Main/MapBuild.h"
+#include "../Misc/BasicShare.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
@@ -205,7 +205,7 @@ void CSubTemplate::Update( int _nCutFloor, vector<CTRect<float> > *pUpdatedRects
 			if ( buildings.empty() )
 				AddBuildings();
 			else
-				for ( vector<SBuilding>::iterator i = buildings.begin(); i != buildings.end(); ++i )
+				for ( typename vector<SBuilding>::iterator i = buildings.begin(); i != buildings.end(); ++i )
 				{
 					ptBuildingShift.z = GetHeightInRect( i->ptAlignTo );
 					SetBuildingPos( &(*i), ptBuildingShift, fRotation );
@@ -280,7 +280,7 @@ void CSubTemplate::AddItems( IRenderVisitor *p, const SFBTransform &posParent )
 {
 	CVec3 ptShift = GetCreatePos() - ptCreatePos;
 	float fRotation = pRect->fRotation - fCreateRotation;
-	for ( list<SMapElement>::const_iterator i = mapInfo.items.begin(); i != mapInfo.items.end(); ++i )
+	for ( typename list<SMapElement>::const_iterator i = mapInfo.items.begin(); i != mapInfo.items.end(); ++i )
 	{
 		if ( IsValid( i->pObject->pModels[0] ) && IsValid( i->pObject->pModels[0]->pModel ) )
 		{
@@ -300,7 +300,7 @@ void CSubTemplate::AddUnits( IRenderVisitor *p, const SFBTransform &pos )
 {
 	CVec3 ptShift = GetCreatePos() - ptCreatePos;
 	float fRotation = pRect->fRotation - fCreateRotation;
-	for ( list<SMapUnit>::const_iterator i = mapInfo.units.begin(); i != mapInfo.units.end(); ++i )
+	for ( typename list<SMapUnit>::const_iterator i = mapInfo.units.begin(); i != mapInfo.units.end(); ++i )
 	{
 		if ( IsValid( i->pPers ) && IsValid( i->pPers->pModel ) )
 		{
@@ -453,7 +453,7 @@ void CSubTemplate::SetBuildingPos( SBuilding *p, const CVec3 &ptDelta, float fRo
 int CSubTemplate::GetItemsMaxFloor()
 {
 	int nMax = 0;
-	for ( list<SMapElement>::const_iterator i = mapInfo.items.begin(); i != mapInfo.items.end(); ++i )
+	for ( typename list<SMapElement>::const_iterator i = mapInfo.items.begin(); i != mapInfo.items.end(); ++i )
 		nMax = Max( nMax, i->pos.nFloor );
 	//
 	return nMax;

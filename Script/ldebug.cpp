@@ -256,7 +256,7 @@ static const char *travtagmethods (lua_State *L, const TObject *o)
 
 static const char *travglobals (lua_State *L, const TObject *o) {
   Hash *g = L->tables[ L->nGT ];
-	for ( Hash::CObjHash::iterator it = g->h.begin(); it != g->h.end(); ++it )
+	for ( typename Hash::CObjHash::iterator it = g->h.begin(); it != g->h.end(); ++it )
 	{
 		if ( luaO_equalObj( o, &it->second ) && it->first.GetType() == LUA_TSTRING ) 
 			return it->first.GetS()->c_str();

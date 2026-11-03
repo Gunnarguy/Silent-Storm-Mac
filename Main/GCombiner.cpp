@@ -107,7 +107,7 @@ void CPerMaterialCombiner::AddPart( IPart *pPart )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CPerMaterialCombiner::RemovePart( IPart *pPart )
 {
-	vector< CPtr<IPart> >::iterator i = find( value.begin(), value.end(), pPart );
+	typename vector< CPtr<IPart> >::iterator i = find( value.begin(), value.end(), pPart );
 	if ( i == value.end() )
 		return;
 	value.erase( i );
@@ -142,7 +142,7 @@ int CPerMaterialCombiner::operator&( CStructureSaver &f )
 bool CAutomaticCombiner::NeedUpdate()
 {
 	bool bRes = false;
-	for ( vector< CPtr<IPart> >::iterator i = value.begin(); i != value.end(); )
+	for ( typename vector< CPtr<IPart> >::iterator i = value.begin(); i != value.end(); )
 	{
 		if ( IsValid( *i ) )
 			++i;
@@ -223,6 +223,7 @@ static struct SNormalizeInit
 static void MMXTransformVector( NGfx::SCompactVector *pRes, const NGfx::SCompactVector *pSrc, const SMMXFixups *pFixups,
 	const NGfx::SCompactTransformer *pTrans )
 {
+#if defined(_M_IX86)
 	ASSERT( pSrc->w == 0 );
 	_asm
 	{
@@ -273,12 +274,42 @@ static void MMXTransformVector( NGfx::SCompactVector *pRes, const NGfx::SCompact
 		mov esi, pRes
 		movd [esi], mm1
 	}
+#else
+	s2mmx mm7 = movd_load( pSrc );
+	s2mmx mm0 = punpcklbw( 0, mm7 ); // unpacked vector
+	mm0 = psubw( mm0, movq_load( &pFixups->normalFixup ) );
+	s2mmx mm1 = pmulhw( mm0, movq_load( (const char*)pTrans ) ); // z y x
+	s2mmx mm2 = paddw( psllq( mm0, 16 ), psrlq( mm0, 32 ) );     // x z y
+	mm2 = pmulhw( mm2, movq_load( (const char*)pTrans + 8 ) );
+	mm1 = paddsw( mm1, mm2 );
+	s2mmx mm3 = paddw( psllq( mm0, 32 ), psrlq( mm0, 16 ) );     // y x z
+	mm3 = pmulhw( mm3, movq_load( (const char*)pTrans + 16 ) );
+	mm1 = paddsw( mm1, mm3 ); // packed result
+	// normalize: same fixed-point steps as the MMX path
+	mm1 = psllw( mm1, 5 );
+	mm2 = pmaddwd( mm1, mm1 );
+	mm3 = psrlq( mm2, 32 );
+	mm2 = paddd( mm2, mm3 );
+	{
+		uint32_t nIndex = (uint32_t)s2d( mm2, 0 ) >> 18;
+		s2mmx t = (uint16_t)nNormalizeTable[nIndex];
+		t = punpcklwd( t, t );
+		t = punpckldq( t, t );
+		mm1 = pmulhw( mm1, t );
+	}
+	mm1 = psllw( mm1, 5 );
+	mm1 = paddw( mm1, movq_load( &pFixups->shiftedFixup ) );
+	mm1 = psrlw( mm1, 8 );
+	mm1 = packuswb( mm1, mm1 );
+	movd_store( pRes, mm1 );
+#endif
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static void MMXTransformVector2( NGfx::SCompactVector *pRes, const NGfx::SCompactVector *pSrc, const SMMXFixups *pFixups,
 	const NGfx::SCompactTransformer *pTrans, char w1,
 	const NGfx::SCompactTransformer *pTrans2, char w2 )
 {
+#if defined(_M_IX86)
 	ASSERT( pSrc->w == 0 );
 	_asm
 	{
@@ -345,6 +376,38 @@ static void MMXTransformVector2( NGfx::SCompactVector *pRes, const NGfx::SCompac
 		mov esi, pRes
 		movd [esi], mm1
 	}
+#else
+	s2mmx mm7 = movd_load( pSrc );
+	s2mmx mm0 = punpcklbw( 0, mm7 ); // unpacked vector
+	mm0 = psubw( mm0, movq_load( &pFixups->normalFixup ) );
+	s2mmx mm2, mm3;
+	s2mmx r1 = pmulhw( mm0, movq_load( (const char*)pTrans ) );
+	r1 = paddsw( r1, pmulhw( paddw( psllq( mm0, 16 ), psrlq( mm0, 32 ) ), movq_load( (const char*)pTrans + 8 ) ) );
+	r1 = paddsw( r1, pmulhw( paddw( psllq( mm0, 32 ), psrlq( mm0, 16 ) ), movq_load( (const char*)pTrans + 16 ) ) );
+	r1 = pmulhw( psllw( r1, 4 ), movq_load( &mmxWeights[(uint8_t)w1] ) );
+	s2mmx r2 = pmulhw( mm0, movq_load( (const char*)pTrans2 ) );
+	r2 = paddsw( r2, pmulhw( paddw( psllq( mm0, 16 ), psrlq( mm0, 32 ) ), movq_load( (const char*)pTrans2 + 8 ) ) );
+	r2 = paddsw( r2, pmulhw( paddw( psllq( mm0, 32 ), psrlq( mm0, 16 ) ), movq_load( (const char*)pTrans2 + 16 ) ) );
+	r2 = pmulhw( psllw( r2, 4 ), movq_load( &mmxWeights[(uint8_t)w2] ) );
+	s2mmx mm1 = paddsw( r1, r2 );
+	// normalize: same fixed-point steps as the MMX path
+	mm1 = psllw( mm1, 3 );
+	mm2 = pmaddwd( mm1, mm1 );
+	mm3 = psrlq( mm2, 32 );
+	mm2 = paddd( mm2, mm3 );
+	{
+		uint32_t nIndex = (uint32_t)s2d( mm2, 0 ) >> 18;
+		s2mmx t = (uint16_t)nNormalizeTable[nIndex];
+		t = punpcklwd( t, t );
+		t = punpckldq( t, t );
+		mm1 = pmulhw( mm1, t );
+	}
+	mm1 = psllw( mm1, 5 );
+	mm1 = paddw( mm1, movq_load( &pFixups->shiftedFixup ) );
+	mm1 = psrlw( mm1, 8 );
+	mm1 = packuswb( mm1, mm1 );
+	movd_store( pRes, mm1 );
+#endif
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static void MMXTransformVector3( NGfx::SCompactVector *pRes, const NGfx::SCompactVector *pSrc, const SMMXFixups *pFixups,
@@ -352,6 +415,7 @@ static void MMXTransformVector3( NGfx::SCompactVector *pRes, const NGfx::SCompac
 	const NGfx::SCompactTransformer *pTrans2, char w2,
 	const NGfx::SCompactTransformer *pTrans3, char w3 )
 {
+#if defined(_M_IX86)
 	ASSERT( pSrc->w == 0 );
 	_asm
 	{
@@ -431,6 +495,42 @@ static void MMXTransformVector3( NGfx::SCompactVector *pRes, const NGfx::SCompac
 		mov esi, pRes
 		movd [esi], mm1
 	}
+#else
+	s2mmx mm7 = movd_load( pSrc );
+	s2mmx mm0 = punpcklbw( 0, mm7 ); // unpacked vector
+	mm0 = psubw( mm0, movq_load( &pFixups->normalFixup ) );
+	s2mmx mm2, mm3;
+	s2mmx r1 = pmulhw( mm0, movq_load( (const char*)pTrans ) );
+	r1 = paddsw( r1, pmulhw( paddw( psllq( mm0, 16 ), psrlq( mm0, 32 ) ), movq_load( (const char*)pTrans + 8 ) ) );
+	r1 = paddsw( r1, pmulhw( paddw( psllq( mm0, 32 ), psrlq( mm0, 16 ) ), movq_load( (const char*)pTrans + 16 ) ) );
+	r1 = pmulhw( psllw( r1, 4 ), movq_load( &mmxWeights[(uint8_t)w1] ) );
+	s2mmx r2 = pmulhw( mm0, movq_load( (const char*)pTrans2 ) );
+	r2 = paddsw( r2, pmulhw( paddw( psllq( mm0, 16 ), psrlq( mm0, 32 ) ), movq_load( (const char*)pTrans2 + 8 ) ) );
+	r2 = paddsw( r2, pmulhw( paddw( psllq( mm0, 32 ), psrlq( mm0, 16 ) ), movq_load( (const char*)pTrans2 + 16 ) ) );
+	r2 = pmulhw( psllw( r2, 4 ), movq_load( &mmxWeights[(uint8_t)w2] ) );
+	s2mmx r3 = pmulhw( mm0, movq_load( (const char*)pTrans3 ) );
+	r3 = paddsw( r3, pmulhw( paddw( psllq( mm0, 16 ), psrlq( mm0, 32 ) ), movq_load( (const char*)pTrans3 + 8 ) ) );
+	r3 = paddsw( r3, pmulhw( paddw( psllq( mm0, 32 ), psrlq( mm0, 16 ) ), movq_load( (const char*)pTrans3 + 16 ) ) );
+	r3 = pmulhw( psllw( r3, 4 ), movq_load( &mmxWeights[(uint8_t)w3] ) );
+	s2mmx mm1 = paddsw( paddsw( r1, r2 ), r3 );
+	// normalize: same fixed-point steps as the MMX path
+	mm1 = psllw( mm1, 3 );
+	mm2 = pmaddwd( mm1, mm1 );
+	mm3 = psrlq( mm2, 32 );
+	mm2 = paddd( mm2, mm3 );
+	{
+		uint32_t nIndex = (uint32_t)s2d( mm2, 0 ) >> 18;
+		s2mmx t = (uint16_t)nNormalizeTable[nIndex];
+		t = punpcklwd( t, t );
+		t = punpckldq( t, t );
+		mm1 = pmulhw( mm1, t );
+	}
+	mm1 = psllw( mm1, 5 );
+	mm1 = paddw( mm1, movq_load( &pFixups->shiftedFixup ) );
+	mm1 = psrlw( mm1, 8 );
+	mm1 = packuswb( mm1, mm1 );
+	movd_store( pRes, mm1 );
+#endif
 }
 #pragma warning( default : 4799 )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -530,7 +630,7 @@ struct SGenericTransformer
 			res.texLM.dw = 0;
 			MMXTransformVector( &res.texU, &pSrc->texU, &fixups, &transformer );
 			MMXTransformVector( &res.texV, &pSrc->texV, &fixups, &transformer );
-			_asm emms;
+			S2_EMMS();
 			//TransformVertexT( &res.texU, vertexTransform, pSrc->texU );
 			//TransformVertexT( &res.texV, vertexTransform, pSrc->texV );
 		}
@@ -587,7 +687,7 @@ struct SGenericTransformer
 				MMXTransformVector3( &texU, &pSrc->texU, &fixups, &blend1, nW1, &blend2, nW2, &blend3, nW3 );
 				MMXTransformVector3( &texV, &pSrc->texV, &fixups, &blend1, nW1, &blend2, nW2, &blend3, nW3 );
 			}	
-			_asm emms;
+			S2_EMMS();
 
 /*			CVec3 tnormal, ttexU, ttexV;
 			if ( pWeight->fWeights[1] == 0 )
@@ -847,11 +947,11 @@ struct SPartTransformer : public T
 		switch ( p->GetTransformType() )
 		{
 		case TT_NONE:
-			CopyTransform( pObjInfo->GetPositions(), &srcVerts[0], pObjInfo->GetPositionIndices(), 
+			this->CopyTransform( pObjInfo->GetPositions(), &srcVerts[0], pObjInfo->GetPositionIndices(), 
 				pRes );
 			break;
 		case TT_SIMPLE:
-			SimpleTransform( pObjInfo->GetPositions(), transformed, &srcVerts[0], pObjInfo->GetPositionIndices(), 
+			this->SimpleTransform( pObjInfo->GetPositions(), transformed, &srcVerts[0], pObjInfo->GetPositionIndices(), 
 				p->GetSimplePos(), pRes );
 			break;
 		case TT_SIMPLE_DISCRETE:
@@ -859,16 +959,16 @@ struct SPartTransformer : public T
 				const SDiscretePos& dPos = p->GetDiscretePos();
 				SFBTransform transform;
 				dPos.MakeMatrix( &transform );
-				SimpleDiscreteTransform( pObjInfo->GetPositions(), transformed, &srcVerts[0], pObjInfo->GetPositionIndices(), 
+				this->SimpleDiscreteTransform( pObjInfo->GetPositions(), transformed, &srcVerts[0], pObjInfo->GetPositionIndices(), 
 					dPos.GetTransform()->pos.forward, transform.backward, dPos, pRes );
 			}
 			break;
 		case TT_SINGLE_SKIN:
 			if ( T::PASS_MMX_BLENDS )
-				SingleSkinTransform( pObjInfo->GetPositions(), transformed, &srcVerts[0], pObjInfo->GetPositionIndices(), 
+				this->SingleSkinTransform( pObjInfo->GetPositions(), transformed, &srcVerts[0], pObjInfo->GetPositionIndices(), 
 					&(pObjInfo->GetWeights()[0]), p->GetAnimation(), p->GetMMXAnimation(), pRes );
 			else
-				SingleSkinTransform( pObjInfo->GetPositions(), transformed, &srcVerts[0], pObjInfo->GetPositionIndices(), 
+				this->SingleSkinTransform( pObjInfo->GetPositions(), transformed, &srcVerts[0], pObjInfo->GetPositionIndices(), 
 					&(pObjInfo->GetWeights()[0]), p->GetAnimation(), *(vector<NGfx::SCompactTransformer>*)0, pRes );
 			break;
 		default:
@@ -890,7 +990,7 @@ struct SGfxOutputTransformer : public SPartTransformer<SGenericTransformer>
 	}
 	void Transform( IPart *p, const vector<CVec3> &transformed )
 	{
-		nVert += DoTransform( p, &geom[nVert], transformed );
+		nVert += this->DoTransform( p, &geom[nVert], transformed );
 		ASSERT( nVert <= geom.GetSize() );
 	}
 };
@@ -949,7 +1049,7 @@ struct SGfxTnLTransformer : public SPartTransformer<TTrans>
 	}
 	void Transform( IPart *p, const vector<CVec3> &transformed )
 	{
-		nVert += DoTransform( p, &geom[nVert], transformed );
+		nVert += this->DoTransform( p, &geom[nVert], transformed );
 		ASSERT( nVert <= geom.GetSize() );
 	}
 };
@@ -1085,7 +1185,7 @@ void CVBCombiner::DoRecalc()
 	ASSERT( NGfx::N_VEC_FULL_TEX_SIZE == N_VERTEX_TEX_SIZE );
 	const vector< CPtr<IPart> > &parts = pCombiner->GetValue();
 	partBVs.resize( parts.size() );
-	vector< CPtr<IPart> >::const_iterator i = parts.begin();
+	typename vector< CPtr<IPart> >::const_iterator i = parts.begin();
 	int nVerts = 0, nLMs = 0, nPositions = 0;
 	
 	for ( ; i != parts.end(); ++i )
@@ -1111,14 +1211,14 @@ void CVBCombiner::DoRecalc()
 	if ( lt == LT_TNL )
 	{
 		SGfxTnLTransformer<STnLTransformer> trans( &pValue, nVerts, bufUsage );
-		SimpleTransform( &trans );
+		this->SimpleTransform( &trans );
 		return;
 	}
 	if ( lt == LT_TNL_SELECTION )
 	{
 		SGfxTnLTransformer<STnLSelectionTransformer> trans( &pValue, nVerts, bufUsage );
 		trans.fOffset = fOffset;
-		SimpleTransform( &trans );
+		this->SimpleTransform( &trans );
 		return;
 	}
 	if ( lt == LT_NONE )
@@ -1129,12 +1229,12 @@ void CVBCombiner::DoRecalc()
 			// cache as static batches. SetCombiner invalidates changed parts;
 			// an animated neighbour must not force every mesh to be skinned again.
 			SGfxCacheTransformer trans( &pValue, nVerts, bufUsage );
-			SimpleTransform( &trans );
+			this->SimpleTransform( &trans );
 		}
 		else
 		{
 			SGfxCacheTransformer trans( &pValue, nVerts, bufUsage );
-			SimpleTransform( &trans );
+			this->SimpleTransform( &trans );
 		}
 		return;
 	}

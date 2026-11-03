@@ -226,7 +226,7 @@ void CStoreItemsDlg::DropTreeItem()
 		const CPropMap *pProps = pTree->pItemsTree->GetPropList( nID );
 		if ( !pProps )
 			continue;
-		CPropMap::const_iterator it = pProps->find( "ItemID" );
+		typename CPropMap::const_iterator it = pProps->find( "ItemID" );
 		if ( it != pProps->end() && (int)it->second->GetValue() == nRPGItem )
 		{
 			pTree->pItemsTree->ReleasePropList( pProps );

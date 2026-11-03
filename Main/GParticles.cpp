@@ -3,8 +3,8 @@
 #include "GParticleFormat.h"
 #include "GGrass.h"
 #include "GParticleInfo.h"
-#include "..\DBFormat\DataTerrain.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../DBFormat/DataTerrain.h"
+#include "../DBFormat/DataFormat.h"
 #include "Grid.h"
 #include "Interpolate.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,7 +175,7 @@ void CExplosionAnimator::Recalc()
 	STime time = pTime->GetValue();
 	value.positions.clear();
 	value.fTimes.clear();
-	for ( list<SParticleBorn>::iterator i = particles.begin(); i != particles.end(); )
+	for ( typename list<SParticleBorn>::iterator i = particles.begin(); i != particles.end(); )
 	{
 		if ( time < i->tBorn )
 		{
@@ -208,7 +208,7 @@ void CExplosionAnimator::Recalc()
 	}
 
 	STime time = pTime->GetValue();
-	for ( list<SParticleBorn>::iterator i = particles.begin(); i != particles.end(); )
+	for ( typename list<SParticleBorn>::iterator i = particles.begin(); i != particles.end(); )
 	{
 		if ( time < i->tBorn )
 		{
@@ -255,7 +255,7 @@ void CRainAnimator::Recalc()
 	value.bEnd = false;
 	value.nGrassSize = 0;
 
-	unsigned long nTime = pTime->GetValue();
+	DWORD nTime = pTime->GetValue();
 	if ( tStart == 0 )
 		tStart = nTime;
 

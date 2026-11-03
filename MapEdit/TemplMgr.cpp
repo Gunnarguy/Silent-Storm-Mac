@@ -31,7 +31,7 @@ namespace
 
 inline void PushUnique( vector<int> &vec, int item )
 {
-  std::vector<int>::const_iterator it = std::find( vec.begin(), vec.end(), item );
+  typename std::vector<int>::const_iterator it = std::find( vec.begin(), vec.end(), item );
 
   if ( vec.end() == it )
     vec.push_back( item );
@@ -53,7 +53,7 @@ CTemplateMgr::~CTemplateMgr()
 
   int i;
 	
-  for ( list<CPlacement* >::iterator  it = placementList.begin(); it != placementList.end(); ++it )
+  for ( typename list<CPlacement* >::iterator  it = placementList.begin(); it != placementList.end(); ++it )
     delete *it;
   for ( i=0; i < (int)templates.size(); ++i )
     delete templates[i];
@@ -145,7 +145,7 @@ CPlacement* CTemplateMgr::GetPlacement( int id )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CTemplateMgr::ReleasePlacement( CPlacement *pPl )
 {
-	for ( list<CPlacement*>::iterator it = placementList.begin(); it != placementList.end(); ++it )
+	for ( typename list<CPlacement*>::iterator it = placementList.begin(); it != placementList.end(); ++it )
     if ( (*it) == pPl )
     {
       delete (*it);

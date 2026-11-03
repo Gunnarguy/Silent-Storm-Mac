@@ -9,9 +9,12 @@
 #include "wUnitServer.h"   // CanFight
 #include "wMain.h"
 #include "RPGUnit.h"
-#include "..\DBFormat\DataRPG.h"  // NDb::EShootMode -- BEFORE aiInventory.h (its NDB:: fwd-decl typo)
-#include "..\DBFormat\DataMap.h"  // NDb::DS_ENEMY
+#include "../DBFormat/DataRPG.h"  // NDb::EShootMode -- BEFORE aiInventory.h (its NDB:: fwd-decl typo)
+#include "../DBFormat/DataMap.h"  // NDb::DS_ENEMY
 #include "aiInventory.h"   // CAIInventory::GetBestFireArms (the FindMostDangerousEnemy to-hit metric)
+#include "RPGItemInfo.h"   // NRPG::IWeaponItemInfo
+#include "RPGUnitMission.h"// NRPG::IUnitMission::GetWeaponItem
+#include "RPGItemSet.h"    // NRPG::CInventoryItem
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // SAIUnitState - per-unit threat tracker. See aiUnitState.h for the fidelity/scope notes (event-driven
@@ -23,7 +26,7 @@ namespace NAI
 static bool IsFightable( IAIUnit *p ) { return IsValid( p ) && IsValid( p->GetUnitServer() ) && p->GetUnitServer()->CanFight(); }
 static void RemoveFrom( vector< CPtr<IAIUnit> > *pv, IAIUnit *p )
 {
-	for ( vector< CPtr<IAIUnit> >::iterator i = pv->begin(); i != pv->end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = pv->begin(); i != pv->end(); ++i )
 		if ( (*i).GetPtr() == p ) { pv->erase( i ); return; }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,7 +40,7 @@ IAIUnit *FindNearestUnit( IAIUnit *pSelf, vector< CPtr<IAIUnit> > &units )
 	IAIUnit *pBest = 0;
 	float fBest = 65535.0f;
 	CVec3 me = pSelf->GetUnitServer()->GetPosition().GetCP();
-	for ( vector< CPtr<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = units.begin(); i != units.end(); ++i )
 	{
 		if ( !IsValid( *i ) )
 			continue;
@@ -54,12 +57,12 @@ SAIUnitState::SAIUnitState(): bHelpCalled( false ), bScared( false )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SUnitsAndPositions::IsContain( IAIUnit *pUnit, bool bCheckPosition ) const
 {
-	for ( vector< CPtr<IAIUnit> >::const_iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::const_iterator i = units.begin(); i != units.end(); ++i )
 		if ( (*i).GetPtr() == pUnit )
 		{
 			if ( !bCheckPosition )
 				return true;
-			unordered_map< CPtr<IAIUnit>, SUnitPosition, SPtrHash >::const_iterator pos = positions.find( pUnit );
+			typename unordered_map< CPtr<IAIUnit>, SUnitPosition, SPtrHash >::const_iterator pos = positions.find( pUnit );
 			return pos != positions.end() && pos->second == pUnit->GetUnitPosition();
 		}
 	return false;
@@ -83,7 +86,7 @@ void SUnitsAndPositions::Add( IAIUnit *pUnit )
 void SAIUnitState::Synchronize()
 {
 	// Retail v1.2 0x4b09a0. Do not refresh merely suspected contacts or allies.
-	for ( vector< CPtr<IAIUnit> >::iterator i = enemies.data.units.begin(); i != enemies.data.units.end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = enemies.data.units.begin(); i != enemies.data.units.end(); ++i )
 		if ( IsValid( *i ) )
 			(*i)->Synchronize( false );
 }
@@ -179,7 +182,7 @@ void SAIUnitState::RemoveAlly( IAIUnit *p )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool SAIUnitState::IsKnownCorpse( IAIUnit *p ) const
 {
-	for ( vector< CPtr<IAIUnit> >::const_iterator i = knownCorpses.begin(); i != knownCorpses.end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::const_iterator i = knownCorpses.begin(); i != knownCorpses.end(); ++i )
 		if ( (*i).GetPtr() == p ) return true;
 	return false;
 }
@@ -219,7 +222,7 @@ void SAIUnitState::PrepareEnemies()
 
 	vector< CPtr<IAIUnit> > vanished = enemies.data.units;
 	const list< CPtr<NWorld::CUnitServer> > &visible = pUS->GetTBSVisible();
-	for ( list< CPtr<NWorld::CUnitServer> >::const_iterator i = visible.begin(); i != visible.end(); ++i )
+	for ( typename list< CPtr<NWorld::CUnitServer> >::const_iterator i = visible.begin(); i != visible.end(); ++i )
 	{
 		NWorld::CUnitServer *pSeen = (*i).GetPtr();
 		if ( !IsValid( pSeen ) || !pSeen->CanFight() )
@@ -231,7 +234,7 @@ void SAIUnitState::PrepareEnemies()
 		RemovePossibleEnemy( pAI );
 		AddEnemy( pAI );
 	}
-	for ( vector< CPtr<IAIUnit> >::iterator i = vanished.begin(); i != vanished.end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = vanished.begin(); i != vanished.end(); ++i )
 	{
 		RemoveEnemy( *i );
 		AddPossibleEnemy( *i );
@@ -261,7 +264,7 @@ void SAIUnitState::FindMostDangerousEnemy()
 	if ( IsValid( pUnit ) )
 	{
 		CVec3 me = pUnit->GetPosition().GetCP();
-		for ( vector< CPtr<IAIUnit> >::iterator i = enemies.data.units.begin(); i != enemies.data.units.end(); ++i )
+		for ( typename vector< CPtr<IAIUnit> >::iterator i = enemies.data.units.begin(); i != enemies.data.units.end(); ++i )
 		{
 			if ( !IsFightable( *i ) )
 				continue;
@@ -347,7 +350,7 @@ void SAIUnitState::CheckScared()
 	{
 		list< CPtr<NWorld::CUnitServer> > units;
 		pWorld->GetAllUnits( &units );
-		for ( list< CPtr<NWorld::CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
+		for ( typename list< CPtr<NWorld::CUnitServer> >::iterator i = units.begin(); i != units.end(); ++i )
 		{
 			if ( !IsValid( *i ) || !(*i)->CanFight()
 				|| pWorld->GetDiplomacyState( pSt->pPlayer, (*i)->GetPlayer() ) == NDb::DS_ENEMY )

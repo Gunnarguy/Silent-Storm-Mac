@@ -4,10 +4,10 @@
 #include "GView.h"
 #include "G2DView.h"
 #include "A5Script.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"
+#include "../DBFormat/DataFormat.h"
 #include "Interface.h"
 #include "UIWrap.h"
 #include "UIBaseCtrls.h"
@@ -27,7 +27,7 @@ static const wstring& GetConsoleCommand( int nNum )
 {
 	ASSERT( nNum >= 0 );
 	ASSERT( nNum < consoleCommands.size() );
-	list<wstring>::const_iterator iTemp = consoleCommands.begin();
+	typename list<wstring>::const_iterator iTemp = consoleCommands.begin();
 	for ( int nTemp = 0; nTemp < nNum; nTemp++ )
 		iTemp++;
 
@@ -93,7 +93,7 @@ void CTextView::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 
 	int nHeight = GetSize().y;
 	int nLineCount = 0;
-	list<SConsoleLine>::iterator iLine = consoleLines.begin();
+	typename list<SConsoleLine>::iterator iLine = consoleLines.begin();
 	if ( nScroll > 0 )
 	{
 		for ( int nTemp = 0; nTemp < nScroll; nTemp++ )
@@ -179,7 +179,7 @@ bool CConsole::ProcessMessage( const SEvent &sEvent )
 						if ( resultList.size() > 1 )
 						{
 							csSystem << CC_BLUE << L"Commands( " << (int)resultList.size() << L" ):" << endl;
-							for ( list<wstring>::const_iterator iTemp = resultList.begin(); iTemp != resultList.end(); iTemp++ )
+							for ( typename list<wstring>::const_iterator iTemp = resultList.begin(); iTemp != resultList.end(); iTemp++ )
 								csSystem << L"\t" << (*iTemp) << endl;
 						}
 						else if ( resultList.size() == 1 )

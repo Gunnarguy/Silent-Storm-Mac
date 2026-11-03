@@ -13,10 +13,10 @@ namespace NDb
 {
 	class CGeometry;
 	class CSkeleton;
-	enum EWeaponType;
-	enum ESlot;
-	enum EItemPlace;
-	enum EItemSubType;
+	enum EWeaponType : int;
+	enum ESlot : int;
+	enum EItemPlace : int;
+	enum EItemSubType : int;
 	class CRPGPers;
 	class CRPGClass;
 	class CSide;
@@ -31,7 +31,7 @@ namespace NAnimation
 namespace NAI
 {
 	class IAIMap;
-	enum EBlowHeight;
+	enum EBlowHeight : int;
 }
 namespace NRPG
 {
@@ -123,7 +123,7 @@ private:
 	NAnimation::CAnimator* PutOnTerrain( NAnimation::CAnimator *pAnim );
 	void Move( const NAI::SUnitPosition &prevPos, 
 		const NAI::SUnitPosition &cmdPos, const NAI::SUnitPosition &nextPos, bool bEnd, bool bInterGrid );
-	void StandStill( CVec2 &pos, float fAngle, bool bNeedStrafe = false );
+	void StandStill( const CVec2 &pos, float fAngle, bool bNeedStrafe = false );
 	void Stand( const NAI::SUnitPosition &cmdPos, bool bNeedStrafe = false );
 	void HealOn( const NAI::SUnitPosition &cmdPos, const char *pszParams );
 	void IdleOn( const NAI::SUnitPosition &cmdPos );

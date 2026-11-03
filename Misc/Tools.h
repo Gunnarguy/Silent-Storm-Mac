@@ -207,11 +207,19 @@ inline TYPE Sign( const TYPE x )
 	else
 		return 0;
 }
+// MMX state: the portable build emulates MMX in C (port/platform/include/s2mmx.h), so emms is a no-op there
+#if defined(_M_IX86)
+#define S2_EMMS() __asm emms
+#else
+#include "s2mmx.h"
+#define S2_EMMS()
+#endif
 // calculates sign for integer variable, returns -1, 0, 1. template specialization
 //#pragma warning( disable: 4035 ) // compiler can and does produce wrong code in this case with optimisations turned on
 template <>
 inline int Sign<int>( const int nVal )
 {
+#if defined(_M_IX86)
 	int nRes;
 	_asm
 	{
@@ -224,10 +232,14 @@ inline int Sign<int>( const int nVal )
 		mov nRes, eax
 	}
 	return nRes;
+#else
+	return ( nVal > 0 ) - ( nVal < 0 );
+#endif
 }
 template <>
 inline short int Sign<short int>( const short int nVal )
 {
+#if defined(_M_IX86)
 	short int nRes;
 	_asm
 	{
@@ -240,6 +252,9 @@ inline short int Sign<short int>( const short int nVal )
 		mov nRes, ax
 	}
 	return nRes;
+#else
+	return (short int)( ( nVal > 0 ) - ( nVal < 0 ) );
+#endif
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // radian <=> degree conversion functions
@@ -269,6 +284,7 @@ inline float SignumNormalizeAngleInRadian( const float angle )
 // обнуление участка памяти, состоящего из DWORD'ов
 inline void MemSetDWord( void *lpData, const DWORD value, const int nCount )
 {
+#if defined(_M_IX86)
 	_asm
 	{
 		mov ecx, nCount
@@ -276,12 +292,17 @@ inline void MemSetDWord( void *lpData, const DWORD value, const int nCount )
 		mov eax, value
 		rep stosd
 	}
+#else
+	DWORD *p = (DWORD*)lpData;
+	for ( int i = 0; i < nCount; ++i ) p[i] = value;
+#endif
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ** float-to-int преобразование с текущим состоянием процессора
 // very fast float-to-int conversion. uses current FPU rounding state
 int __forceinline Float2Int( const float fpVar )
 {
+#if defined(_M_IX86)
 	int nRet;
 	__asm 
 	{
@@ -289,6 +310,9 @@ int __forceinline Float2Int( const float fpVar )
 		fistp nRet
 	}
 	return nRet;
+#else
+	return (int)lrintf( fpVar );  // fistp rounds with the current mode, round-to-nearest by default
+#endif
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ** всевозможные бастрые функции типа 'x' @ 'y' ? 'val1' : 'val2'
@@ -547,6 +571,7 @@ inline const TYPE Max( const TYPE val1, const TYPE val2 )
 template<>
 inline const float Min<float>( const float a, const float b )
 {
+#if defined(_M_IX86)
 	float fpRet;
 	_asm
 	{
@@ -565,11 +590,15 @@ inline const float Min<float>( const float a, const float b )
 		mov			[fpRet], eax
 	}
 	return fpRet;
+#else
+	return b < a ? b : a;
+#endif
 }
 // returns minimum of two float values
 template<>
 inline const float Max<float>( const float a, const float b )
 {
+#if defined(_M_IX86)
 	float fpRet;
 	_asm
 	{
@@ -588,6 +617,9 @@ inline const float Max<float>( const float a, const float b )
 		mov			[fpRet], eax
 	}
 	return fpRet;
+#else
+	return a < b ? b : a;
+#endif
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template <class TYPE>
@@ -768,6 +800,7 @@ const DWORD CPUID_SSE_FEATURE_PRESENT = 0x02000000;
 #define GET_CPUID __asm _emit 0x0f __asm _emit 0xa2
 inline DWORD GetCPUID()
 {
+#if defined(_M_IX86)
 	DWORD dwRes;
 	_asm
 	{
@@ -790,6 +823,9 @@ inline DWORD GetCPUID()
 		popa
 	}
 	return dwRes;
+#else
+	return 0;  // no MMX/SSE on arm64: callers take the portable path
+#endif
 }
 #undef GET_CPUID
 ////////////////////////////////////////////////////////////////////////////////////////////////////

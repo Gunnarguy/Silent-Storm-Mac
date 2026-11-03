@@ -5,9 +5,9 @@
 #include "RectLayout.h"
 #include "GView.h"
 #include "G2DView.h"
-#include "..\Misc\StrProc.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"
 #include "UIWrap.h"
 #include "UIBaseCtrls.h"
@@ -73,7 +73,7 @@ void CText::SetText( const wstring &_wsText, bool bProcessTAGs )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CText::GetVal( const wstring &szID, wstring *pVal )
 {
-	unordered_map<wstring,wstring>::const_iterator iTemp = valuesMap.find( szID );
+	typename unordered_map<wstring,wstring>::const_iterator iTemp = valuesMap.find( szID );
 	if ( iTemp == valuesMap.end() )
 		return false;
 

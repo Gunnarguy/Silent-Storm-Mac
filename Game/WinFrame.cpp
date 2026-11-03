@@ -1,9 +1,9 @@
 #include "StdAfx.h"
 #include "WinFrame.h"
 #include "resource.h"
-#include "..\Misc\StrProc.h"
-#include "..\Misc\HPTimer.h"
-#include "..\Misc\Win32Helper.h"
+#include "../Misc/StrProc.h"
+#include "../Misc/HPTimer.h"
+#include "../Misc/Win32Helper.h"
 #include <strstream>
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 using namespace NWinFrame;

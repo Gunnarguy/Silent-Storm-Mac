@@ -47,7 +47,7 @@ class CUnitArea: public CObjectBase
 	SPathPlace                place;        // centre
 	int                       nAPRadius;
 	int                       wishPose;     // EPose the flood assumes (stored for fidelity)
-	unordered_map<unsigned long, int> places; // in-area set keyed on GetHash (release hash_map<ulong,int> @+0x1c, tag 6)
+	unordered_map<DWORD, int> places; // in-area set keyed on GetHash (release hash_map<ulong,int> @+0x1c, tag 6)
 	ZEND int operator&( CStructureSaver &f );
 public:
 	CUnitArea(): nAPRadius( 0 ), wishPose( 0 ) {}

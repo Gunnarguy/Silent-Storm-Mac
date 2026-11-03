@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 //
-#include "..\DBFormat\DataRPG.h" // NDb::EShootMode (aiInventory.h decls reference it)
+#include "../DBFormat/DataRPG.h" // NDb::EShootMode (aiInventory.h decls reference it)
 #include "aiUnit.h"
 #include "aiInventory.h"      // NAI::CAIInventory: IsItemNecessary / GetMostNecessaryItem
 #include "aiWeapon.h"         // NAI::CAIFireArmsWeapon (the IAIInventoryItem to drop)
@@ -54,7 +54,7 @@ void CAILootAction::GetInfoInner( const SPlaceWithAP &, SInfo *pInfo ) const
 	list< CPtr<CObjectBase> > known;
 	pPlayer->GetVisibleObjects( &known );
 	list< CPtr<NWorld::CDFrozenItem> > wanted;
-	for ( list< CPtr<CObjectBase> >::iterator i = known.begin(); i != known.end(); ++i )
+	for ( typename list< CPtr<CObjectBase> >::iterator i = known.begin(); i != known.end(); ++i )
 	{
 		CDynamicCast<NWorld::CDFrozenItem> pItem( i->GetPtr() );
 		if ( !pItem )
@@ -68,7 +68,7 @@ void CAILootAction::GetInfoInner( const SPlaceWithAP &, SInfo *pInfo ) const
 	}
 	// keep the wanted items within 4m whose GROUND -> BACKPACK move the unit would accept (i.e. that fit).
 	CVec3 ptOwn = pU->GetPosition().GetCP();
-	for ( list< CPtr<NWorld::CDFrozenItem> >::iterator it = wanted.begin(); it != wanted.end(); )
+	for ( typename list< CPtr<NWorld::CDFrozenItem> >::iterator it = wanted.begin(); it != wanted.end(); )
 	{
 		NWorld::CDFrozenItem *pItem = it->GetPtr();
 		if ( !IsValid( pItem ) || fabs( pItem->GetPos() - ptOwn ) > 4.0f )
@@ -102,7 +102,7 @@ void CAILootAction::GetInfoInner( const SPlaceWithAP &, SInfo *pInfo ) const
 	if ( !IsValid( path ) || path->points.empty() )
 		return;
 	CVec3 ptDest = GetUnitPos( path->points.back(), pNet ).GetCP();
-	for ( list< CPtr<NWorld::CDFrozenItem> >::const_iterator it = wanted.begin(); it != wanted.end(); ++it )
+	for ( typename list< CPtr<NWorld::CDFrozenItem> >::const_iterator it = wanted.begin(); it != wanted.end(); ++it )
 		if ( *it != pInfo->pItem && NWorld::IsWithinHumanReach( ptDest, (*it)->GetPos(), 0.625f ) )
 			pInfo->otherItem.push_back( *it );
 	pInfo->bCanDo = true;
@@ -125,7 +125,7 @@ void CAILootAction::Do( CAILog *pLog ) const                            // @0x63
 			*pLog << new CAILogDropItem( pU, drops[i].GetPtr() );
 	EPose pose = pU->GetUnitServer()->IsWearingPK() ? WALK : wishPose;
 	*pLog << new CAILogPickUpItem( pU, info.pItem, pose );
-	for ( list< CPtr<NWorld::CDFrozenItem> >::const_iterator it = info.otherItem.begin(); it != info.otherItem.end(); ++it )
+	for ( typename list< CPtr<NWorld::CDFrozenItem> >::const_iterator it = info.otherItem.begin(); it != info.otherItem.end(); ++it )
 	{
 		IAIInventoryItem *pToDrop = 0;
 		// Previous records have already updated the simulated inventory.

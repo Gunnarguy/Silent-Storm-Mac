@@ -6,7 +6,7 @@
 #include "DiscretePos.h"
 #include "GCombiner.h"
 #include "GShadowVolume.h"
-#include "..\Misc\2DArray.h"
+#include "../Misc/2DArray.h"
 #include "Render.h"
 //#include "GMaterial.h"
 //#include "GScene.h"
@@ -285,7 +285,7 @@ public:
 static int CountParts( const list<SRenderPartSet> &l )
 {
 	int nRes = 0;
-	for ( list<SRenderPartSet>::const_iterator i = l.begin(); i != l.end(); ++i )
+	for ( typename list<SRenderPartSet>::const_iterator i = l.begin(); i != l.end(); ++i )
 		nRes += i->pParts->size();
 	return nRes;
 }
@@ -316,7 +316,7 @@ static void RenderStuff( CPartsRender &pr, IRender *pRender, CTransformStack *pT
 	int nIDCounter = 0;
 	int nFloorMask = 0;
 	bool bFirst = true;
-	for ( list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
+	for ( typename list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
 	{
 		SRenderPartSet &rps = *i;
 		if ( rps.nFloorMask != nFloorMask )
@@ -397,10 +397,10 @@ void GeneratePartList( IRender *pRender, const CVec3 &vCenter, float fRadius,
 		CObj<CHZBuffer> pHZ = pr.BuildHZ();
 
 		int nID = 0;
-		for ( list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
+		for ( typename list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
 		{
 			SRenderPartSet &rps = *i, *pDst = 0;
-			for ( list<SRenderPartSet>::iterator k = pRes->begin(); k != pRes->end(); ++k )
+			for ( typename list<SRenderPartSet>::iterator k = pRes->begin(); k != pRes->end(); ++k )
 			{
 				if ( k->pNode == rps.pNode )
 				{
@@ -472,10 +472,10 @@ void MakeInvisibleElementsList( IRender *pRender, CTransformStack *pTS,
 	*pHZBuffer = pHZ;
 
 	int nID = 0;
-	for ( list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
+	for ( typename list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
 	{
 		SRenderPartSet &rps = *i;
-		CIgnorePartsHash::iterator res = pIgnore->end();
+		typename CIgnorePartsHash::iterator res = pIgnore->end();
 		const vector<SSphere> &bounds = rps.pGeometry->pVertices->GetBounds();
 		for ( int k = 0; k < rps.pParts->size(); ++k )
 		{
@@ -520,10 +520,10 @@ void MakeInvisibleElementsListFast( IRender *pRender, CTransformStack *pTS,
 	*pHZBuffer = pHZ;
 
 	int nID = 0;
-	for ( list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
+	for ( typename list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
 	{
 		SRenderPartSet &rps = *i;
-		CIgnorePartsHash::iterator res = pIgnore->end();
+		typename CIgnorePartsHash::iterator res = pIgnore->end();
 		const vector<SSphere> &bounds = rps.pGeometry->pVertices->GetBounds();
 		for ( int k = 0; k < rps.pParts->size(); ++k )
 		{
@@ -593,7 +593,7 @@ public:
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int CShadowVolumeBuilder::AddPoint( const CVec3 &a )
 {
-	CPointHash::iterator i = pointHash.find( a );
+	typename CPointHash::iterator i = pointHash.find( a );
 	if ( i != pointHash.end() )
 		return i->second;
 	int nRes = resPoints.size();
@@ -727,13 +727,13 @@ struct SEdgeTracker
 	void AddEdge( int n1, int n2 )
 	{
 		SEdge e( n1, n2 ), eBack( n2, n1 );
-		CEdgesHash::iterator k = edges.find( eBack );
+		typename CEdgesHash::iterator k = edges.find( eBack );
 		if ( k != edges.end() )
 		{
 			--k->second;
 			return;
 		}
-		CEdgesHash::iterator i = edges.find( e );
+		typename CEdgesHash::iterator i = edges.find( e );
 		if ( i == edges.end() )
 			edges[e] = 1;
 		else
@@ -765,7 +765,7 @@ void CShadowVolumeBuilder::BuildResult()
 		edges.AddEdge( t.i2, t.i3 );
 		edges.AddEdge( t.i3, t.i1 );
 	}
-	for ( CEdgesHash::iterator i = edges.edges.begin(); i != edges.edges.end(); ++i )
+	for ( typename CEdgesHash::iterator i = edges.edges.begin(); i != edges.edges.end(); ++i )
 	{
 		for ( int k = 0; k < i->second; ++k )
 			AddEdge( i->first.nStart, i->first.nFinish );
@@ -818,7 +818,7 @@ void MakeShadowVolumes( IRender *pRender, CTransformStack *pTS, const CVec3 &vCe
 		GeneratePartList( pRender, vCenter, fRadius, &listParts, eType, mask );
 		if ( pIgnore )
 		{
-			for ( list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
+			for ( typename list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
 			{
 				SRenderPartSet &rps = *i;
 				// if there are skipped parts, fill them with 1
@@ -840,7 +840,7 @@ void MakeShadowVolumes( IRender *pRender, CTransformStack *pTS, const CVec3 &vCe
 	//pList->clear();
 	//pVertices->clear();
 	//pCoverFaces->clear();
-	for ( list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
+	for ( typename list<SRenderPartSet>::iterator i = listParts.begin(); i != listParts.end(); i++ )
 	{
 		SRenderPartSet &rps = *i;
 		for ( int k = 0; k < rps.pParts->size(); ++k )

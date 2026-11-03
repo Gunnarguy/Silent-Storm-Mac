@@ -6,7 +6,7 @@
 #include "aiVoxelRender.h"
 #include "aiMap.h"             // NAI::IAIMapTracker (base of the retail CExplosionCube) + IAIMap
 #include "wInterface.h"        // NWorld::IExplosionMaster (base of the retail CExplosionMaster)
-#include "..\Misc\HPTimer.h"
+#include "../Misc/HPTimer.h"
 #include "wExplosionPerks.h"   // NWorld::SPerkMineModifiers (explosive-perk damage modifiers)
 
 namespace NAI
@@ -266,7 +266,7 @@ public:
 	CPtr<CExplosionSpace> pSpace;
 	ZEND int operator&( CStructureSaver &f ) { f.Add(2,&grid); f.Add(3,&nGCx); f.Add(4,&nGCy); f.Add(5,&nGCz); f.Add(6,&pExplCube); f.Add(7,&pIndexCube); f.Add(8,&pSpace); return 0; }   // retail @0x35c150
 	//
-	C3DLookupTable(): nGCx( 0x7fffffff ), nGCy( 0 ), nGCz( 0 ) {}   // retail @0x3594f0 ("no cube cached" sentinel armed)
+	C3DLookupTable(): nGCx( 0x7fffffff ), nGCy( 0 ), nGCz( 0 ) {}   // retail @0x3594f0 ("no cube cached" marker armed)
 	C3DLookupTable( CExplosionSpace *pSpace );                      // retail @0x35a0d0 (cache registration + 64x64x8 grid)
 	//
 	// retail @0x3583d0: refill *pRes with one entry per non-null grid cell, z/y/x order
@@ -277,7 +277,7 @@ public:
 	// voxel>>4; on a resolve-cache miss FetchCube the explosion cube + lazily create the 16^3
 	// CIndexCube grid slot. Returns *pObj = the cube's rasterised voxel value (0 empty, 1 terrain,
 	// >1 blast-object id) and *ppCell = a WRITABLE pointer into CIndexCube::data (the cell the
-	// flood-fill marks with the wave number / the 0xFFFF touched sentinel).
+	// flood-fill marks with the wave number / the 0xFFFF touched marker).
 	void GetObject( int nX, int nY, int nZ, unsigned short *pObj, unsigned short **ppCell );
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////

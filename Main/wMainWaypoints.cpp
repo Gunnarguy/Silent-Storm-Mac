@@ -4,8 +4,8 @@ namespace NWorld { class CWorld; }          // aiRoute.h's CAIRoute(NWorld::CWor
 #include "mapBuild.h"
 #include "aiPosition.h"
 #include "aiRoute.h"
-#include "..\Misc\StrProc.h"          // NStr::ToLower
-#include "..\MiscDll\LogStream.h"     // csSystem / CC_RED / endl
+#include "../Misc/StrProc.h"          // NStr::ToLower
+#include "../MiscDll/LogStream.h"     // csSystem / CC_RED / endl
 //
 #include "wMainWaypoints.h"
 //
@@ -40,7 +40,7 @@ void CWaypointsHolder::AddWaypoint( CMapWaypoint *pWaypoint, const CVec3 &ptShif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWaypointsHolder::LoadWaypoints( const list< CObj<CMapWaypoint> > &_waypoints, const CVec3 &ptShift )
 {
-	for ( list< CObj<CMapWaypoint> >::const_iterator
+	for ( typename list< CObj<CMapWaypoint> >::const_iterator
 		i = _waypoints.begin(); i != _waypoints.end(); ++i )
 	{
 		if ( (*i)->bExists )
@@ -66,7 +66,7 @@ void CWaypointsHolder::GetAIViewerWaypoints( vector<CVec3> *pOrigins, vector<CVe
 {
 	vector<CVec3>().swap( *pOrigins );
 	vector<CVec3>().swap( *pPoints );
-	for ( unordered_map< string, CObj<NAI::CAIRouteWaypoint> >::iterator
+	for ( typename unordered_map< string, CObj<NAI::CAIRouteWaypoint> >::iterator
 		i = waypoints.begin(); i != waypoints.end(); ++i )
 	{
 		NAI::CAIRouteWaypoint *pW = i->second;

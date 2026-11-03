@@ -99,7 +99,7 @@ bool CItemsMap::Place( CTPoint<int> point, IInventoryItem *item )
 // captured at Place time). If no record matches, no-op (the dev ASSERTed; the release simply returns).
 void CItemsMap::Take( IInventoryItem *item )
 {
-	for ( vector<SMapItem>::iterator it = itemsSet.begin(); it != itemsSet.end(); ++it )
+	for ( typename vector<SMapItem>::iterator it = itemsSet.begin(); it != itemsSet.end(); ++it )
 	{
 		if ( it->pItem.GetPtr() != item )
 			continue;

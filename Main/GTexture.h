@@ -44,6 +44,9 @@ class CFileTexture : public CResourceLoader<STextureKey, NGfx::CTexture>
 	typedef CResourceLoader<STextureKey, NGfx::CTexture> TParent;
 	bool bIsFakeTexture;
 	CObj<CFileRequest> pRequest;
+#if defined(__APPLE__)
+	unsigned textureGeneration = TextureSourceGeneration();
+#endif
 protected:
 	virtual void Recalc();
 	virtual bool NeedUpdate();

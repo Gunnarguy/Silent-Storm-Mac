@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "wUnitServer.h"
 #include "aiPosition.h"
-#include "..\Misc\2Darray.h"
+#include "../Misc/2Darray.h"
 
 // =====================================================================================
 // wCheckTooMuchCorpses -- the corpse-density failsafe ("Too much corpses (%d) detected,
@@ -63,13 +63,13 @@ void Push( vector< T > &dst, const vector< T > &src )
 void RemoveOldestCorpse( vector< CObj< CUnitServer > > &corpses )
 {
 	CUnitServer *pBest = 0;
-	unsigned long nBest = 0;
+	DWORD nBest = 0;
 	for ( int i = 0; i < (int)corpses.size(); ++i )
 	{
 		CUnitServer *pUS = corpses[i];
 		if ( !pUS->IsAddedToVisitor() )
 			continue;
-		unsigned long nTs = pUS->GetDeathTime();		// retail +0x228
+		DWORD nTs = pUS->GetDeathTime();		// retail +0x228
 		if ( nBest == 0 || nTs < nBest )
 		{
 			pBest = pUS;
@@ -138,7 +138,7 @@ void FillQuantities( int nXSize, int nYSize, const CVec3 &ptMin,
 				buckets[y][x].clear();
 	}
 	counts.FillZero();
-	for ( list< CObj< CUnitServer > >::const_iterator it = units.begin(); it != units.end(); ++it )
+	for ( typename list< CObj< CUnitServer > >::const_iterator it = units.begin(); it != units.end(); ++it )
 	{
 		CUnitServer *pUS = *it;
 		if ( !pUS->IsAddedToVisitor() )

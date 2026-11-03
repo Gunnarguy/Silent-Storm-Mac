@@ -18,16 +18,16 @@
 #include "RectsDBCmd.h"
 #include "FinDBCmd.h"
 #include "CtrlObjectInspector.h"
-#include "..\FileIO\BasicChunk1.h"
-#include "..\Main\TerrainInfo.h"
-#include "..\Main\Grid.h"
-#include "..\Misc\BasicShare.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataTerrain.h"
+#include "../FileIO/BasicChunk1.h"
+#include "../Main/TerrainInfo.h"
+#include "../Main/Grid.h"
+#include "../Misc/BasicShare.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataTerrain.h"
 #include "MESerialize.h"
 #include "iWysiwyg.h"
-#include "..\Main\aiWaypoint.h"
+#include "../Main/aiWaypoint.h"
 #include "ObjectMgr.h"
 #include "WaypointDB.h"
 
@@ -1022,31 +1022,31 @@ void CPlacement::GetModelSize( CVec2 *pptSize, CVec2 *pptCenter, int nObjectID,
 	const CPropMap *pOProps = pOItems->GetPropList( nObjectID );
 	if ( !pOProps )
 				return;
-	CPropMap::const_iterator cit = pOProps->find( "Model0" );
+	typename CPropMap::const_iterator cit = pOProps->find( "Model0" );
 	if ( pOProps->end() == cit )
 				return;
 	const int nConID = cit->second->GetValue();
 	const CPropMap *pCProps = pCItems->GetPropList( nConID );
 	if ( !pCProps )
 				return;
-	CPropMap::const_iterator mit = pCProps->find( "ModelID" );
+	typename CPropMap::const_iterator mit = pCProps->find( "ModelID" );
 	if ( pCProps->end() == mit )
 				return;
 	const int nModelID = mit->second->GetValue();
 	const CPropMap *pMProps = pMItems->GetPropList( nModelID );
 	if ( !pMProps )
 				return;
-	CPropMap::const_iterator git = pMProps->find( "GeometryID" );
+	typename CPropMap::const_iterator git = pMProps->find( "GeometryID" );
 	if ( pMProps->end() == git )
 				return;
 	const CPropMap *pGProps = pGItems->GetPropList( git->second->GetValue() );
 	if ( !pGProps )
 				return;
-	CPropMap::const_iterator xit = pGProps->find( "SizeX" );
-	CPropMap::const_iterator yit = pGProps->find( "SizeY" );
-	CPropMap::const_iterator cxit = pGProps->find( "CenterX" );
-	CPropMap::const_iterator cyit = pGProps->find( "CenterY" );
-	CPropMap::const_iterator e = pGProps->end();
+	typename CPropMap::const_iterator xit = pGProps->find( "SizeX" );
+	typename CPropMap::const_iterator yit = pGProps->find( "SizeY" );
+	typename CPropMap::const_iterator cxit = pGProps->find( "CenterX" );
+	typename CPropMap::const_iterator cyit = pGProps->find( "CenterY" );
+	typename CPropMap::const_iterator e = pGProps->end();
 	if ( e == xit || e == yit || e == cxit || e == cyit )
 		return;
 	pptSize->x = float( xit->second->GetValue() ) / FP_GRID_STEP;
@@ -1943,7 +1943,7 @@ bool CPlacement::Save() const
 		if ( !pRooms )
 			continue;
 		const CFloorPlan::CCellInfo* pcells = pRooms->GetFloor();
-		for ( CFloorPlan::CCellInfo::const_iterator it = pcells->begin(); it != pcells->end(); ++it )
+		for ( typename CFloorPlan::CCellInfo::const_iterator it = pcells->begin(); it != pcells->end(); ++it )
 		{
 			for ( int k = 0; k < it->second.size(); ++k )
 			{
@@ -2161,14 +2161,14 @@ BYTE CPlacement::GetObjRoomID( int nFloor, int objID )  const
 	if ( -1 == ind )
 		return false;
 	SFinElement *pObj = finobjs[Floor2Ind( nFloor )].objs[ind];
-	CPropMap::const_iterator it = pObj->props.find( "RoomParamID" );
+	typename CPropMap::const_iterator it = pObj->props.find( "RoomParamID" );
 	if ( it == pObj->props.end() )
 		return 0;
 		
 	CVariant val = it->second->GetValue();
 	int nRoomID = val.GetType() == CVariant::VT_NULL ? 0 : val;
 	
-	unordered_map<int, SRoom>::const_iterator itR = roomParams.find( nRoomID );
+	typename unordered_map<int, SRoom>::const_iterator itR = roomParams.find( nRoomID );
 	if ( roomParams.end() == itR )
 	{
 		if ( -1 == (char)nRoomID)
@@ -2199,7 +2199,7 @@ bool CPlacement::SetObjRoomID( int nFloor, int objID, BYTE nRoomID )
 
 	const vector<int> &rv = roomIDs[Floor2Ind(nFloor)];	
 	int rid;
-	vector<int>::const_iterator it = find_if( rv.begin(), rv.end(), CRoomPred( nRoomID, roomParams ) );
+	typename vector<int>::const_iterator it = find_if( rv.begin(), rv.end(), CRoomPred( nRoomID, roomParams ) );
 	if ( it == rv.end() )
 	{
 		if ( 0 == nRoomID || -1 == (char)nRoomID )
@@ -2225,10 +2225,10 @@ CVec3 CPlacement::GetObjScale( int nFloor, int nObjID ) const
 	if ( -1 == ind )
 		return res;
 	SFinElement *pObj = finobjs[Floor2Ind( nFloor )].objs[ind];
-	CPropMap::const_iterator ix = pObj->props.find( "ScaleX" );
-	CPropMap::const_iterator iy = pObj->props.find( "ScaleY" );
-	CPropMap::const_iterator iz = pObj->props.find( "ScaleZ" );
-	CPropMap::const_iterator ie = pObj->props.end();
+	typename CPropMap::const_iterator ix = pObj->props.find( "ScaleX" );
+	typename CPropMap::const_iterator iy = pObj->props.find( "ScaleY" );
+	typename CPropMap::const_iterator iz = pObj->props.find( "ScaleZ" );
+	typename CPropMap::const_iterator ie = pObj->props.end();
 	if ( ix == ie || iy == ie || iz == ie )
 		return res;
 
@@ -2356,7 +2356,7 @@ bool CPlacement::GetRoomParams( int nFloor, vector<SRoom> *pRooms ) const
 	const vector<int> &rooms = roomIDs[Floor2Ind(nFloor)];
 	for ( int i = 0; i < rooms.size(); ++i )
 	{
-		unordered_map<int, SRoom>::const_iterator it = roomParams.find( rooms[i] );
+		typename unordered_map<int, SRoom>::const_iterator it = roomParams.find( rooms[i] );
 		if ( it != roomParams.end() )
 			pRooms->push_back( it->second );
 	}
@@ -2367,7 +2367,7 @@ bool CPlacement::SetRoomColor( int nFloor, int nRoomID, DWORD dwColor )
 {
 	vector<int> &rv = roomIDs[Floor2Ind(nFloor)];
 
-	vector<int>::iterator it = find_if( rv.begin(), rv.end(), CRoomPred( nRoomID, roomParams ) );
+	typename vector<int>::iterator it = find_if( rv.begin(), rv.end(), CRoomPred( nRoomID, roomParams ) );
 	if ( it != rv.end() )
 	{
 		SRoom &room = roomParams[*it];
@@ -2435,7 +2435,7 @@ bool CPlacement::GetRoom( SRoom *pRoom, int nFloor, int nRoomID )
 {
 	const vector<int> &rv = roomIDs[Floor2Ind(nFloor)];
 
-	vector<int>::const_iterator it = find_if( rv.begin(), rv.end(), CRoomPred( nRoomID, roomParams ) );
+	typename vector<int>::const_iterator it = find_if( rv.begin(), rv.end(), CRoomPred( nRoomID, roomParams ) );
 	if ( it == rv.end() )
 		return false;
 	*pRoom = roomParams[*it];

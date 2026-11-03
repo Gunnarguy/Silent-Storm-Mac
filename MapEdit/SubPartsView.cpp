@@ -89,9 +89,9 @@ void CSabPartsDlg::SetConstructionPart( int nID )
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nID );
 	if ( !pProps )
 		return;
-	CPropMap::const_iterator ix = pProps->find( "SizeX" );
-	CPropMap::const_iterator iy = pProps->find( "SizeY" );
-	CPropMap::const_iterator im = pProps->find( "SubPartMask" );
+	typename CPropMap::const_iterator ix = pProps->find( "SizeX" );
+	typename CPropMap::const_iterator iy = pProps->find( "SizeY" );
+	typename CPropMap::const_iterator im = pProps->find( "SubPartMask" );
 	if ( pProps->end() == ix || pProps->end() == iy || pProps->end() == im )
 		return;
 	const int nSizeX = Min( (int)NDb::CConstructionPart::N_SUBPARTS, (int)ix->second->GetValue() );

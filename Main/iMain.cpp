@@ -7,12 +7,12 @@
 #include "GScene.h"
 #include "G2DView.h"
 #include "A5Script.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\Misc\BasicShare.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"
+#include "../Misc/BasicShare.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
 #include "iSaveManager.h"
 #include "iExitMenu.h"
 #include "Interface.h"
@@ -248,7 +248,7 @@ void CICLoad::Exec()
 		// front->OnLoad(bSilent) (vtbl+0x18, CICLoad::Exec @0x1f5fd0 -> CMission::OnLoad @0x1fb8e0 =
 		// loading-bar counters only) -- retail restores NO world state here and in particular never
 		// restarts the turn; the deserialized TBS state resumes as saved.
-		for ( list< CObj<IInterfaceBase> >::iterator i = interfaces.begin(); i != interfaces.end(); ++i )
+		for ( typename list< CObj<IInterfaceBase> >::iterator i = interfaces.begin(); i != interfaces.end(); ++i )
 			if ( IsValid( *i ) )
 				(*i)->OnSnapshotRestored();
 	}
@@ -401,7 +401,7 @@ void CICLoadFile::Exec()
 
 		// the snapshot resumes in place (no Initialize): let each interface rebuild its
 		// runtime-only caches (building shells, camera terrain height source, ...)
-		for ( list< CObj<IInterfaceBase> >::iterator i = interfaces.begin(); i != interfaces.end(); ++i )
+		for ( typename list< CObj<IInterfaceBase> >::iterator i = interfaces.begin(); i != interfaces.end(); ++i )
 			if ( IsValid( *i ) )
 				(*i)->OnSnapshotRestored();
 	}
@@ -544,7 +544,10 @@ static void LoadSavedGame( const string &szID, const vector<wstring> &szParams, 
 		return;
 	}
 
+	// macOS port: a slot name can hold spaces ("AutoSave(Begin mission)"), and the console splits on them
 	string szName( NStr::ToAscii( szParams[0].c_str() ) );
+	for ( int i = 1; i < (int)szParams.size(); ++i )
+		szName += " " + NStr::ToAscii( szParams[i].c_str() );
 
 	csSystem << "loading slot " << szName << "..." << endl;
 	Command( new CICLoad( szName ) );
@@ -559,7 +562,10 @@ static void SaveGame( const string &szID, const vector<wstring> &szParams, void 
 		return;
 	}
 
+	// macOS port: a slot name can hold spaces, as in LoadSavedGame
 	string szName( NStr::ToAscii( szParams[0].c_str() ) );
+	for ( int i = 1; i < (int)szParams.size(); ++i )
+		szName += " " + NStr::ToAscii( szParams[i].c_str() );
 
 	csSystem << "saving slot " << szName << "..." << endl;
 	Command( new CICSave( szName ) );

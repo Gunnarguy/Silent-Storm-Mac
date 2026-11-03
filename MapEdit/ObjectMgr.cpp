@@ -153,7 +153,7 @@ void CObjectMgr::AddProperty( int type, int viewType, const char *szPropName, CO
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CObjectMgr::SetRelation( const char *szPropName, int nTableID )
 {
-	CPropMap::iterator i = pattern.find( szPropName );
+	typename CPropMap::iterator i = pattern.find( szPropName );
 	if ( i != pattern.end() )
 	{
 		i->second->SetRelation( nTableID );
@@ -166,7 +166,7 @@ void CObjectMgr::MergeWith( CPropMap *pProps, int nObjectID ) const
 {
 	vector<CObjectDB::SValue> vals;
 
-	for ( CPropMap::const_iterator i = pattern.begin(); i != pattern.end(); ++i )
+	for ( typename CPropMap::const_iterator i = pattern.begin(); i != pattern.end(); ++i )
 	{
 		if ( pProps->find( i->first ) != pProps->end() )
 			continue;
@@ -185,7 +185,7 @@ void CObjectMgr::MergeWith( CPropMap *pProps, int nObjectID ) const
 	for ( int i = 0; i < vals.size(); ++i )
 	{
 		const CObjectDB::SValue &val = vals[i];
-		CPropMap::iterator it = pProps->find( val.szColumn );
+		typename CPropMap::iterator it = pProps->find( val.szColumn );
 		if ( it == pProps->end() )
 			continue;
 		CObjectProperty *prop = dynamic_cast<CObjectProperty*>( it->second.GetPtr() );
@@ -198,7 +198,7 @@ void CObjectMgr::Intersect( CPropMap *pDstProps, const CPropMap *pSrcProps )
 {
 	if ( pDstProps->empty() )
 	{
-		for ( CPropMap::const_iterator i = pSrcProps->begin(); i != pSrcProps->end(); ++i )
+		for ( typename CPropMap::const_iterator i = pSrcProps->begin(); i != pSrcProps->end(); ++i )
 		{
 			CProp *p = i->second;
 			CObjectPropertyContainer *pc = new CObjectPropertyContainer( i->first, p->GetID(), p->GetType(), p->GetViewType(), p->GetDefValue(), p->IsReadOnly() );
@@ -210,15 +210,15 @@ void CObjectMgr::Intersect( CPropMap *pDstProps, const CPropMap *pSrcProps )
 		return;
 	}
 	//
-	for ( CPropMap::iterator i = pDstProps->begin(); i != pDstProps->end(); )
+	for ( typename CPropMap::iterator i = pDstProps->begin(); i != pDstProps->end(); )
 	{
 		CObjectPropertyContainer *p = dynamic_cast<CObjectPropertyContainer*>( i->second.GetPtr() );
 		if ( !p )
 			continue;
-		CPropMap::const_iterator it = pSrcProps->find( i->first );
+		typename CPropMap::const_iterator it = pSrcProps->find( i->first );
 		if ( it == pSrcProps->end() || it->second->GetViewType() != p->GetViewType() || it->second->GetRelation() != p->GetRelation() )
 		{
-			CPropMap::iterator temp = i;
+			typename CPropMap::iterator temp = i;
 			++i;
 			pDstProps->erase( temp );
 			continue;
@@ -231,7 +231,7 @@ void CObjectMgr::Intersect( CPropMap *pDstProps, const CPropMap *pSrcProps )
 void CObjectMgr::SetObjectProps( int nDstObject, const CPropMap *pSrcProps ) const
 {
 	CPropMap props;
-	for ( CPropMap::const_iterator i = pattern.begin(); i != pattern.end(); ++i )
+	for ( typename CPropMap::const_iterator i = pattern.begin(); i != pattern.end(); ++i )
 	{
 		CObjectProperty *pProp = dynamic_cast<CObjectProperty*>( i->second->Clone() );
 		if ( !pProp )
@@ -243,9 +243,9 @@ void CObjectMgr::SetObjectProps( int nDstObject, const CPropMap *pSrcProps ) con
 		props.insert( CPropMap::value_type( i->first, pProp ) );
 	}
 	//
-	for ( CPropMap::const_iterator i = props.begin(); i != props.end(); ++i )
+	for ( typename CPropMap::const_iterator i = props.begin(); i != props.end(); ++i )
 	{
-		CPropMap::const_iterator it = pSrcProps->find( i->first );
+		typename CPropMap::const_iterator it = pSrcProps->find( i->first );
 		if ( it != pSrcProps->end() )
 			i->second->SetValue( it->second->GetValue() );
 	}
@@ -253,7 +253,7 @@ void CObjectMgr::SetObjectProps( int nDstObject, const CPropMap *pSrcProps ) con
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CObjectMgr::AddString( const char *szPropName, const char *pszString )
 {
-	CPropMap::iterator it = pattern.find( szPropName );
+	typename CPropMap::iterator it = pattern.find( szPropName );
 
 	if ( it == pattern.end() )
 		return;

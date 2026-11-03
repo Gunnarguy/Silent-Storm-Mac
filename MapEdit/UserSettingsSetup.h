@@ -4,15 +4,15 @@
 #pragma once
 #endif // _MSC_VER > 1000
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "..\Main\Camera.h"
+#include "../Main/Camera.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NBuilding
 {
 	struct SRawMaterialApply;
 }
-enum EEditMode;
-enum EMoveMode;
-enum EBrushType;
+enum EEditMode : int;
+enum EMoveMode : int;
+enum EBrushType : int;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 enum EMessage
 {
@@ -27,7 +27,7 @@ struct SMessage
 	EBrushType brush;
 	DWORD data;
 };
-enum EMaterialSet
+enum EMaterialSet : int
 {
 	MSET_FIRST = 0,
 	MSET_SECOND,

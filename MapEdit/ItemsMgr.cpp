@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 #include "ItemsMgr.h"
-#include "..\Misc\StrProc.h"
+#include "../Misc/StrProc.h"
 
 #include "TreeDBCmd.h"
 #include "ItemsDBCmd.h"
@@ -58,7 +58,7 @@ bool CItemsMgr::Load()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CItemsMgr::Clear()
 {
-  for ( list<CPropMap*>::iterator lit = allocatedMaps.begin(); lit != allocatedMaps.end(); ++lit )
+  for ( typename list<CPropMap*>::iterator lit = allocatedMaps.begin(); lit != allocatedMaps.end(); ++lit )
     if ( *lit )
       delete (*lit);
       
@@ -588,7 +588,7 @@ void CItemsMgr::DeleteVariant(int nItemID, int nVariantID  )
   pDB->DeleteItem();
 	
 	vector<int> vec = itemList[ind].variants;
-	vector<int>::iterator i = find( vec.begin(), vec.end(), nVariantID );
+	typename vector<int>::iterator i = find( vec.begin(), vec.end(), nVariantID );
 	ASSERT( i != vec.end() );  // не должно быть, т.к. уже была проверка HasVariant()
   vec.erase( i );
 	pDB->Close();
@@ -802,7 +802,7 @@ inline bool CItemsMgr::HasVariant( int nItemIndex, int nVariantID )
 	vector<int> &vec = itemList[nItemIndex].variants;
 	if ( vec.empty() )
 		GetItemVariants( itemList[nItemIndex].nID, &vec );
-	vector<int>::iterator i = find( vec.begin(), vec.end(), nVariantID );
+	typename vector<int>::iterator i = find( vec.begin(), vec.end(), nVariantID );
 	return vec.end() != i;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -816,7 +816,7 @@ int CItemsMgr::FindVariant( int nVariantID )
 		if ( vec.empty() )
 			GetItemVariants( itemList[i].nID, &vec );
 
-		vector<int>::iterator it = find( vec.begin(), vec.end(), nVariantID );
+		typename vector<int>::iterator it = find( vec.begin(), vec.end(), nVariantID );
 		if ( vec.end() != it )
 			return itemList[i].nID;
 	}
@@ -879,11 +879,11 @@ const CPropMap* CItemsMgr::GetPropList( int nItemID, int nVariantID )
 	//
 #ifdef _DEBUG
 	vector<string> strs;
-	for ( CPropMap::const_iterator it = pProps->begin(); it != pProps->end(); ++it )
+	for ( typename CPropMap::const_iterator it = pProps->begin(); it != pProps->end(); ++it )
 		strs.push_back( it->first );
 #endif
   pDB->ReadProps( pProps );
-  for ( CPropMap::iterator it = pProps->begin(); it != pProps->end(); ++it )
+  for ( typename CPropMap::iterator it = pProps->begin(); it != pProps->end(); ++it )
 	{
 	  CDynamicCast<CListProp> plist(it->second.GetPtr());
 		if (plist)
@@ -907,7 +907,7 @@ const CPropMap* CItemsMgr::GetPropList( int nItemID, int nVariantID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CItemsMgr::ReleasePropList( const CPropMap* pPropMap )
 {
-  for ( list<CPropMap*>::iterator it = allocatedMaps.begin(); it != allocatedMaps.end(); ++it )
+  for ( typename list<CPropMap*>::iterator it = allocatedMaps.begin(); it != allocatedMaps.end(); ++it )
     if ( (*it) == pPropMap )
     {
       delete (*it);
@@ -948,7 +948,7 @@ bool CItemsMgr::SetValue( SOwner itemID, const string &szPropName, const CVarian
     const CPropMap *pProps = GetPropList( itemID.nItemID, itemID.nVariantID );
 		if ( !pProps )
 			return false;
-    CPropMap::const_iterator i = pProps->find( szPropName );
+    typename CPropMap::const_iterator i = pProps->find( szPropName );
     if ( i == pProps->end() )
       return false;
     i->second->SetValue( value, false );
@@ -1013,7 +1013,7 @@ bool CItemsMgr::SetVariantProps( int nItemID, int nVarID, const CPropMap *pProps
 // Связать св-во szPropName с таблицей nTableID
 bool CItemsMgr::SetRelation( const char *szPropName, int nTableID )
 {
-  CPropMap::iterator it = propMap.find( szPropName );
+  typename CPropMap::iterator it = propMap.find( szPropName );
 
   if ( it == propMap.end() )
     return false;
@@ -1022,7 +1022,7 @@ bool CItemsMgr::SetRelation( const char *szPropName, int nTableID )
     return false;
 /*
   // проверям на повторяющиеся связи
-  for ( CPropMap::const_iterator cit = propMap.begin(); cit != propMap.end(); ++cit )
+  for ( typename CPropMap::const_iterator cit = propMap.begin(); cit != propMap.end(); ++cit )
     if ( cit->second->GetRelation() == nTableID )
     {
       cit->second->SetGroup( nTableID );
@@ -1038,7 +1038,7 @@ bool CItemsMgr::SetRelation( const char *szPropName, int nTableID )
 // Выставить директорию-префикс для browse-свойства
 bool CItemsMgr::SetPrefix( const char *szPropName, const char *szStr )
 {
-  CPropMap::iterator it = propMap.find( szPropName );
+  typename CPropMap::iterator it = propMap.find( szPropName );
   if ( it == propMap.end() )
     return false;
   it->second->SetPrefix( szStr );
@@ -1047,7 +1047,7 @@ bool CItemsMgr::SetPrefix( const char *szPropName, const char *szStr )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CItemsMgr::SetTip( const char *szPropName, const char *szStr )
 {
-  CPropMap::iterator it = propMap.find( szPropName );  
+  typename CPropMap::iterator it = propMap.find( szPropName );  
   if ( it == propMap.end() )
     return false;
   it->second->SetTip( szStr );
@@ -1065,7 +1065,7 @@ bool CItemsMgr::SetTip( const char *szPropName, int nResStrID )
 // Добавление строки в комбобокс св-ва
 bool CItemsMgr::AddString( const char *szPropName, const char *szStr )
 {
-  CPropMap::iterator it = propMap.find( szPropName );
+  typename CPropMap::iterator it = propMap.find( szPropName );
   
   if ( it == propMap.end() )
     return false;
@@ -1118,7 +1118,7 @@ string CItemsMgr::GetFolderPath( int nFolderID ) const
 		nFolderID = GetParentID( nFolderID );
 	}
 	string szPath;
-	for ( vector<string>::reverse_iterator rit = path.rbegin(); rit != path.rend(); ++rit )
+	for ( typename vector<string>::reverse_iterator rit = path.rbegin(); rit != path.rend(); ++rit )
 		szPath += *rit;
 	return szPath;	
 }
@@ -1206,7 +1206,7 @@ bool CItemsMgr::SetVariantFlags( int nVariantID, const vector<unordered_map<int,
 	string szFlags;
 	for ( int i = 0; i < flags.size(); ++i )
 	{
-		for ( unordered_map<int, bool>::const_iterator j = flags[i].begin(); j != flags[i].end(); ++j )
+		for ( typename unordered_map<int, bool>::const_iterator j = flags[i].begin(); j != flags[i].end(); ++j )
 			if ( j->second )
 				szFlags += IToA( j->first ) + ',';
 		NStr::TrimRight( szFlags, ',' );

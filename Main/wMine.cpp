@@ -1,9 +1,9 @@
 #include "StdAfx.h"
 #include "wMine.h"
-#include "..\Misc\RandomGen.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataGeometry.h"
+#include "../Misc/RandomGen.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataGeometry.h"
 #include "wMain.h"
 #include "wUnitServer.h"   // complete NWorld::CUnitServer before CMinesWorld forces the CWorld TBS template instantiation
 #include "Transform.h"
@@ -22,7 +22,7 @@ CMine::CMine( CWorld *_pWorld, const CVec3 &_vPlace, NDb::CRPGMine *_pMine, int 
 {
 	SRand rnd;
 	pModel = pMine->pItem->pModel->CreateModel( &rnd );
-	// retail @0x37ead0: -111111 sentinel -> random facing, else degrees * pi/180
+	// retail @0x37ead0: -111111 marker -> random facing, else degrees * pi/180
 	fAngle = _nAngle == MINE_ANGLE_RANDOM ? random.GetFloat( 0, FP_2PI ) : ToRadian( (float)_nAngle );
 	bindGlobal.Link( pWorld->GetUnits(), this );
 	pWorld->AddMine( this );
@@ -54,7 +54,7 @@ void CMine::Visit( IAIVisitor *p )
 	p->AddHull( pModel->pGeometry->pAIGeometry, pos, pModel->pRPGArmor, nFloor, nMask );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// retail @0x37e580: a hit just sets the mine off and reports the -1 "no damage" sentinel
+// retail @0x37e580: a hit just sets the mine off and reports the -1 "no damage" marker
 // (disasm 0x77e58e: {nDmg=-1, RD_UNKNOW}). Dev returned 0.
 int CMine::ProcessAttack( NWorld::IWorld *pWorld, int nUserID, NRPG::CAttackPortion *pAttack,
 	const CVec3 &vDir, NDb::CRPGArmor *pArmor )
@@ -138,10 +138,10 @@ void CMineTracker::AddMine( CMine *p, const CVec3 &_vPlace )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CMineTracker::RemoveMine( CMine *p )
 {
-	for ( CPlaceMinesHash::iterator i = mines.begin(); i != mines.end(); )
+	for ( typename CPlaceMinesHash::iterator i = mines.begin(); i != mines.end(); )
 	{
 		CMineSet &ms = i->second;
-		CMineSet::iterator k = find( ms.begin(), ms.end(), p );
+		typename CMineSet::iterator k = find( ms.begin(), ms.end(), p );
 		if ( k != ms.end() )
 			ms.erase( k );
 		if ( ms.empty() )
@@ -157,7 +157,7 @@ bool CMineTracker::GetMines( const vector<CVec3> &places, vector<CPtr<CMine> > *
 	for ( int k = 0; k < places.size(); ++k )
 	{
 		CVec3 v( GetNormalized( places[k] ) );
-		CPlaceMinesHash::const_iterator i = mines.find( v );
+		typename CPlaceMinesHash::const_iterator i = mines.find( v );
 		if ( i != mines.end() )
 		{
 			const CMineSet &m = i->second;
@@ -202,7 +202,7 @@ void CMinesWorld::GetMinesNear( const CVec3 &pos, list<CPtr<IMine> > *pRes, floa
 	// retail @0x37b840: collect live, armed mines within fRadius, pruning dead/null
 	// nodes in passing; the radius test is a STRICT squared-distance compare.
 	pRes->clear();
-	for ( list< CPtr<IMine> >::iterator i = trappedObjects.begin(); i != trappedObjects.end(); )
+	for ( typename list< CPtr<IMine> >::iterator i = trappedObjects.begin(); i != trappedObjects.end(); )
 	{
 		IMine *pMine = *i;
 		if ( IsValid(pMine) )

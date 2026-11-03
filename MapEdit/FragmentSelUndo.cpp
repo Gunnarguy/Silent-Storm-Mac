@@ -1,8 +1,8 @@
 #include "StdAfx.h"
-#include "..\Main\BuildingInfo.h"
+#include "../Main/BuildingInfo.h"
 #include "FragmentSelUndo.h"
-#include "..\Misc\BasicShare.h"
-#include "..\DBFormat\DataMap.h"
+#include "../Misc/BasicShare.h"
+#include "../DBFormat/DataMap.h"
 #include "MESerialize.h"
 #include "weInterface.h"
 namespace NGScene
@@ -150,7 +150,7 @@ static NBuilding::SBuildFragment* FindFragment( int nID, vector<NBuilding::SBuil
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static bool DeleteFragment( int nID, vector<NBuilding::SBuildFragment> *pFrags )
 {
-	for ( vector<NBuilding::SBuildFragment>::iterator i = pFrags->begin(); i != pFrags->end(); ++i )
+	for ( typename vector<NBuilding::SBuildFragment>::iterator i = pFrags->begin(); i != pFrags->end(); ++i )
 		if ( i->nID == nID )
 		{
 			pFrags->erase( i );

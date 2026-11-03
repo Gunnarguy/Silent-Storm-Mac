@@ -8,7 +8,7 @@
 #include "CtrlObjectInspector.h"
 #include "TreeSelItemDlg.h"
 #include "PlacableItemsDlg.h"
-#include "..\dbFormat\DataConst.h"
+#include "../dbFormat/DataConst.h"
 #include "ExportScenario.h"
 #include "ExpImpDialogs.h"
 
@@ -137,7 +137,7 @@ void SetGreandeView( int nID, int nVarID )
 	const CPropMap *pGProps = pGrenadeTree->pItemsTree->GetPropList( nID );
 	if ( pGProps )
 	{
-		CPropMap::const_iterator it = pGProps->find( "ItemID" );
+		typename CPropMap::const_iterator it = pGProps->find( "ItemID" );
 		if ( it != pGProps->end() )
 		{
 			const CPropMap *pIProps = pItemsTree->pItemsTree->GetPropList( it->second->GetValue() );
@@ -2076,7 +2076,7 @@ bool LoadResources()
 		theApp.resTreesHash[res.nTreeID] = res;
 	}
 	// загрузка
-	for ( unordered_map<int, SResTree>::iterator i = theApp.resTreesHash.begin(); i != theApp.resTreesHash.end(); ++i )
+	for ( typename unordered_map<int, SResTree>::iterator i = theApp.resTreesHash.begin(); i != theApp.resTreesHash.end(); ++i )
 		i->second.pTreeDlg = new CTreeSelItemDlg( vector<SResTree>( 1, i->second ) );
 	// комбинированные ресурсы
 	{
@@ -2102,7 +2102,7 @@ bool LoadResources()
 void ReleaseResources()
 {
 	const unordered_map<int, SResTree> &resTreesHash = theApp.GetResTrees();
-	for ( unordered_map<int, SResTree>::const_iterator i = resTreesHash.begin(); i != resTreesHash.end(); ++i )
+	for ( typename unordered_map<int, SResTree>::const_iterator i = resTreesHash.begin(); i != resTreesHash.end(); ++i )
 	{
 		if ( i->second.pTreeDlg )
 			delete i->second.pTreeDlg;

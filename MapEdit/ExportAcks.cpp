@@ -5,7 +5,7 @@
 #include "ItemsMgr.h"
 #include "TreeSelItemDlg.h"
 #include "Export.h"
-#include "..\Misc\StrProc.h"
+#include "../Misc/StrProc.h"
 #include "ExportAcks.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int ExportPersAcks( const string &szPath, int nPersID );
@@ -205,7 +205,7 @@ string CAckInfoDB::GetInfoString()
 	string szRet="";
 	if ( pProps )
 	{
-		const CPropMap::const_iterator i = pProps->find( "String" );
+		const typename CPropMap::const_iterator i = pProps->find( "String" );
 		if ( i != pProps->end() )
 			szRet = (string)i->second->GetValue();
 		pTree->pItemsTree->ReleasePropList( pProps );
@@ -220,7 +220,7 @@ string GetSound( int nID )
 	string szRet="";
 	if ( pProps )
 	{
-		const CPropMap::const_iterator i = pProps->find( "SrcName" );
+		const typename CPropMap::const_iterator i = pProps->find( "SrcName" );
 		if ( i != pProps->end() )
 			szRet = (string)i->second->GetValue();
 		tree.pItemsTree->ReleasePropList( pProps );
@@ -412,7 +412,7 @@ int ExportPersAcks( const string &szPath, int nPersID )
 	const CPropMap *pProps = pPersTree->pItemsTree->GetPropList( nPersID );
 	if ( !pProps )
 		return 0;
-	CPropMap::const_iterator iMaxAck = pProps->find( "MaxAck" );
+	typename CPropMap::const_iterator iMaxAck = pProps->find( "MaxAck" );
 	if ( iMaxAck == pProps->end() )
 		return 0;
 
@@ -439,8 +439,8 @@ string GetAckName( int nPersID )
 	if ( !pProps )
 		return "";
 	string szName = pPersTree->pItemsTree->GetItemName( nPersID );
-	CPropMap::const_iterator iside = pProps->find( "Side" );
-	CPropMap::const_iterator inat = pProps->find( "NationalityID" );
+	typename CPropMap::const_iterator iside = pProps->find( "Side" );
+	typename CPropMap::const_iterator inat = pProps->find( "NationalityID" );
 	if ( iside == pProps->end() || inat == pProps->end() )
 		return "";
 	string szSide =iside->second->GetValue();
@@ -458,7 +458,7 @@ string GetAckName( int nPersID )
 	const CPropMap *pNatProps = pNatTree->pItemsTree->GetPropList( nNatID );
 	if ( pNatProps )
 	{
-		CPropMap::const_iterator i = pNatProps->find( "Shortcut" );
+		typename CPropMap::const_iterator i = pNatProps->find( "Shortcut" );
 		if ( i != pNatProps->end() )
 			szNat = (string)i->second->GetValue();
 		pNatTree->pItemsTree->ReleasePropList( pNatProps );
@@ -469,7 +469,7 @@ string GetAckName( int nPersID )
 string ReplaceApo( const string &str )
 {
 	string ret;
-	for ( string::const_iterator i = str.begin(); i != str.end(); ++i )
+	for ( typename string::const_iterator i = str.begin(); i != str.end(); ++i )
 		if ( *i == '\'' )
 			ret += '`';
 		else
@@ -605,7 +605,7 @@ static bool ExportRecord( const CExcelAckAccessor &data, int nPersID, const stri
 		if ( !pSndProps )
 			continue;
 		freeStrings.push_back( ackinfo.m_nStringID );
-		const CPropMap::const_iterator isndsrc = pSndProps->find( "SrcName" );
+		const typename CPropMap::const_iterator isndsrc = pSndProps->find( "SrcName" );
 		if ( isndsrc == pSndProps->end() )
 			return false;
 		ao.szText = str;
@@ -703,7 +703,7 @@ int AddString( int nFolder, const string &szName, const string &szText )
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nStringID );
 	if ( pProps )
 	{
-		CPropMap::const_iterator it = pProps->find( "String" );
+		typename CPropMap::const_iterator it = pProps->find( "String" );
 		if ( it == pProps->end() )
 			return -1;
 		it->second->SetValue( szText );
@@ -719,7 +719,7 @@ int AddSound( int nFolder, const string &szName, const string &szSrc )
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nID );
 	if ( pProps )
 	{
-		CPropMap::const_iterator it = pProps->find( "SrcName" );
+		typename CPropMap::const_iterator it = pProps->find( "SrcName" );
 		if ( it == pProps->end() )
 			return -1;
 		it->second->SetValue( szSrc );
@@ -761,7 +761,7 @@ int GetFolder( int nTreeID, int nRootFolder, const string &szPath )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int GetFolder( int nTreeID, int nRootFolder, const string &szPath, CFolderHash &fhash )
 {
-	CFolderHash::const_iterator i = fhash.find( szPath );
+	typename CFolderHash::const_iterator i = fhash.find( szPath );
 	if ( i != fhash.end() )
 		return i->second;
 	int nRet = GetFolder( nTreeID, nRootFolder, szPath );
@@ -778,7 +778,7 @@ void ExportAcksTexts( CItemsMgr *pItems, vector<int> nItemIDs, bool bForceExport
 		const CPropMap *pProps = pItems->GetPropList( nPersID );
 		if ( !pProps )
 			continue;
-		CPropMap::const_iterator it = pProps->find( "SrcAcksFile" );
+		typename CPropMap::const_iterator it = pProps->find( "SrcAcksFile" );
 		if ( it == pProps->end() )
 		{
 			ASSERT(0);

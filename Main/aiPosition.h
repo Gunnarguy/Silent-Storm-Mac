@@ -4,7 +4,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "..\Misc\2Darray.h"
+#include "../Misc/2Darray.h"
 namespace NAI
 {
 class CPathNetwork;
@@ -35,7 +35,7 @@ enum EPassable
 	AIP_DOOR         = 4,
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum ETransitionType
+enum ETransitionType : int
 {
 	TT_NO_WAY,
 	TT_SAME,
@@ -81,7 +81,7 @@ enum EMoveType
 	N_MOVE_TYPES
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EFindPathParams
+enum EFindPathParams : int
 {
 	PF_DEFAULT = 0,
 	PF_USE_DIR = 1,
@@ -93,7 +93,8 @@ externA5 int nMoveShift[][2];
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 struct SPathPlace
 {
-private:
+// public: MSVC never enforced access on these anonymous-union bitfields, and aiSmoothPath.cpp reads them directly
+public:
 	union
 	{
 		struct  
@@ -188,7 +189,7 @@ struct SObjectPosition
 	int operator&( CStructureSaver &f );
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EPose	// DO NOT REORDER! This is tied to AP calculation!
+enum EPose : int	// DO NOT REORDER! This is tied to AP calculation!
 {
 	CRAWL = 0,	// prone (crawling)
 	CROUCH,		// crouched
@@ -196,11 +197,11 @@ enum EPose	// DO NOT REORDER! This is tied to AP calculation!
 	RUN			// running
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EDirection
+enum EDirection : int
 {
 	RIGHT= 0, UPRIGHT, UP, UPLEFT, LEFT, DOWNLEFT, DOWN, DOWNRIGHT, NONE
 };
-enum EHitLocation
+enum EHitLocation : int
 {
 	HL_ANY = -1,
 	HL_BODY = 0,
@@ -211,7 +212,7 @@ enum EHitLocation
 	HL_LLEG,
 	N_HL
 };
-enum ETileHitLocation
+enum ETileHitLocation : int
 {
 	THL_LOWER = 0,
 	THL_MIDDLE,
@@ -238,7 +239,7 @@ struct SUnitPosition
 	int operator&( CStructureSaver &f );
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EBlowHeight // Close combat
+enum EBlowHeight : int // Close combat
 {
 	BH_TOP,
 	BH_MIDDLE,

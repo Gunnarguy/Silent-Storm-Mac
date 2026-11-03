@@ -4,12 +4,12 @@
 #include "G2DView.h"
 #include "RPGGlobal.h"
 #include "wInterface.h"
-#include "..\DBFormat\DataDifficulty.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
-#include "..\DBFormat\DataScenario.h"
+#include "../DBFormat/DataDifficulty.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
+#include "../DBFormat/DataScenario.h"
 #include "Interface.h"
 #include "iCommonUI.h"
 #include "UIBaseCtrls.h"
@@ -187,10 +187,10 @@ public:
 	CClueLine( const SWindowInfo &sInfo, NGame::IMission *pMission,
 			   const NScenario::SGoalDescription &goal, bool bDoubleLine );	// @0x21eaf0
 
-	// retail @0x2208b0: 1=CWindow base, 2=pMission, 3=goal (retail raw-DataChunks the whole
-	// SGoalDescription value, 0x14 bytes, pointers and all -- the dev POD fallback path does the
-	// same over the dev struct), 4=pType, 5=pState, 6=pBackgroundImage, 7=pDescription, 8=bDoubleLine
-	int operator&( CStructureSaver &f ) { f.Add(1,(CWindow*)this); f.Add(2,&pMission); f.Add(3,&goal); f.Add(4,&pType); f.Add(5,&pState); f.Add(6,&pBackgroundImage); f.Add(7,&pDescription); f.Add(8,&bDoubleLine); return 0; }
+	// retail @0x2208b0: 1=CWindow base, 2=pMission, 3=goal, 4=pType, 5=pState, 6=pBackgroundImage, 7=pDescription, 8=bDoubleLine.
+	// Retail wrote tag 3 as the raw bytes of the value, pointers and all, so a save made with this window open came back with
+	// dead pointers and crashed when the row was destroyed. The port writes the goal field by field as tag 9 and never reads 3.
+	int operator&( CStructureSaver &f ) { f.Add(1,(CWindow*)this); f.Add(2,&pMission); f.Add(9,&goal); f.Add(4,&pType); f.Add(5,&pState); f.Add(6,&pBackgroundImage); f.Add(7,&pDescription); f.Add(8,&bDoubleLine); return 0; }
 
 	bool ProcessMessage( const SEvent &sEvent );	// @0x21eb90
 };
@@ -277,9 +277,9 @@ public:
 	CTaskLine( const SWindowInfo &sInfo, NGame::IMission *pMission,
 			   const NScenario::STaskDescription &task, int nNumber, bool bDoubleLine );	// @0x21ea80
 
-	// retail @0x220970: 1=CWindow base, 2=nNumber, 3=pMission, 4=task (raw 8-byte DataChunk over
-	// the STaskDescription value, as retail), 5=pState, 6=pBackgroundImage, 7=pDescription, 8=bDoubleLine
-	int operator&( CStructureSaver &f ) { f.Add(1,(CWindow*)this); f.Add(2,&nNumber); f.Add(3,&pMission); f.Add(4,&task); f.Add(5,&pState); f.Add(6,&pBackgroundImage); f.Add(7,&pDescription); f.Add(8,&bDoubleLine); return 0; }
+	// retail @0x220970: 1=CWindow base, 2=nNumber, 3=pMission, 4=task, 5=pState, 6=pBackgroundImage, 7=pDescription, 8=bDoubleLine.
+	// Tag 4 was the same raw write as CClueLine's tag 3: tag 9 replaces it.
+	int operator&( CStructureSaver &f ) { f.Add(1,(CWindow*)this); f.Add(2,&nNumber); f.Add(3,&pMission); f.Add(9,&task); f.Add(5,&pState); f.Add(6,&pBackgroundImage); f.Add(7,&pDescription); f.Add(8,&bDoubleLine); return 0; }
 
 	bool ProcessMessage( const SEvent &sEvent );	// @0x21f020
 };
@@ -403,7 +403,7 @@ bool CShowObjectivesUI::ProcessMessage( const SEvent &sEvent )
 
 			int nCount = 0;
 			CObj<CTextDraw> pTextCalc = new CTextDraw;
-			for ( vector< NScenario::SGoalDescription >::const_iterator iGoal = goals.begin(); iGoal != goals.end(); ++iGoal )
+			for ( typename vector< NScenario::SGoalDescription >::const_iterator iGoal = goals.begin(); iGoal != goals.end(); ++iGoal )
 			{
 				// Retail v1.2 0x61fe41..0x61fea2 measures at 489 virtual pixels wide;
 				// text taller than 20 pixels uses the double-line frame and background.
@@ -592,9 +592,16 @@ CICShowObjectives::CICShowObjectives( const CICShowObjectives &src )
 //   Guard on the zone (IsValid == not null + not being deleted, the retail byte[pZone+7]&0x80 destroyed
 //   check), then build + initialize + push the modal objectives screen.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+IMission* GetRunningMission();	// iMission.cpp
 void CICShowObjectives::Exec()
 {
 	if ( !IsValid( pZone ) )
+		return;
+
+	// macOS port: scriptScenario.cpp's ShowObjectives passes no mission and the window then read through null
+	if ( !IsValid( pMission ) )
+		pMission = GetRunningMission();
+	if ( !IsValid( pMission ) )
 		return;
 
 	CShowObjectivesInterface *pRes = new CShowObjectivesInterface();

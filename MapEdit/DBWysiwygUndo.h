@@ -60,7 +60,7 @@ public:
 			return;
 		}
 		//
-		for ( CDBUndoList::iterator i = dbundolist.begin(); i != dbundolist.end(); )
+		for ( typename CDBUndoList::iterator i = dbundolist.begin(); i != dbundolist.end(); )
 		{
 			if ( !IsValid( *i ) )
 			{

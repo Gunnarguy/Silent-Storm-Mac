@@ -64,7 +64,7 @@ int CTmplTreeWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	const unordered_map<int, SResTree> &resTrees = theApp.GetResTrees();
 
 	bool bActivateTab = false;
-	for ( unordered_map<int, SResTree>::const_iterator i = resTrees.begin(); i != resTrees.end(); ++i )
+	for ( typename unordered_map<int, SResTree>::const_iterator i = resTrees.begin(); i != resTrees.end(); ++i )
   {
     STreeTab tab;
     const SResTree &tree = i->second;
@@ -239,7 +239,7 @@ void CTmplTreeWnd::SetVisibleTabs( const unordered_map<string, bool> &layout )
 		ASSERT( tabList[i].pTree );
 		if ( !tabList[i].pTree )
 			continue;
-    unordered_map<string, bool>::const_iterator it = layout.find( tabList[i].szTabName );
+    typename unordered_map<string, bool>::const_iterator it = layout.find( tabList[i].szTabName );
     if ( it == layout.end() || it->second  )
     {
       if ( !m_tabWnd.FindTab( tabList[i].pTree, ind ) )

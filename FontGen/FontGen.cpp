@@ -1,8 +1,8 @@
 #include "stdafx.h"
 
-#include "..\Image\image.h"
-#include "..\Image\imageTGA.h"
-#include "..\Misc\StrProc.h"
+#include "../Image/image.h"
+#include "../Image/imageTGA.h"
+#include "../Misc/StrProc.h"
 #include "FontFormat.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 const int N_LEADING_PIXELS = 2;
@@ -26,7 +26,7 @@ struct SFontInfo
 	//
 	WORD Translate( WORD code ) const
 	{
-		std::unordered_map<WORD, WORD>::const_iterator pos = translate.find( code );
+		typename std::unordered_map<WORD, WORD>::const_iterator pos = translate.find( code );
 		ASSERT( pos != translate.end() );
 		if ( pos == translate.end() )
 		{
@@ -433,7 +433,7 @@ int __cdecl main( int argc, char *argv[] )
   std::string szFaceName = "Times New Roman", szDstFile, szDstPngFile;
 	int nOrdinaryParamCount = 0;
   // -h20 -w400 -it -russian -aa -variable "Times New Roman"
-  for ( std::vector<std::string>::const_iterator pos = szParams.begin(); pos != szParams.end(); ++pos )
+  for ( typename std::vector<std::string>::const_iterator pos = szParams.begin(); pos != szParams.end(); ++pos )
   {
     if ( charsets.find(*pos) != charsets.end() )
       dwCharSet = charsets[*pos];

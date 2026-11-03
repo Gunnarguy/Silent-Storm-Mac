@@ -1,16 +1,16 @@
 #include "StdAfx.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #include <dinput.h>
-#include "..\Misc\basic2.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\Misc\Win32Helper.h"
-#include "..\FileIO\Streams.h"
-#include "..\FileIO\BasicChunk1.h"
-#include "..\Input\Input.h"
-#include "..\Input\Bind.h"
-#include "..\Input\BindInternal.h"
+#include "../Misc/basic2.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"
+#include "../Misc/Win32Helper.h"
+#include "../FileIO/Streams.h"
+#include "../FileIO/BasicChunk1.h"
+#include "../Input/Input.h"
+#include "../Input/Bind.h"
+#include "../Input/BindInternal.h"
 using namespace NStr;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NInput
@@ -64,8 +64,11 @@ void SetSection( const string &_szSection, bool bUpdate )
 		UpdateBinds();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void Bind( EMappingType eType, const string &sCmd, const string &szSection, const vector<string> &szControlsSet )
+void Bind( EMappingType eType, const string &sCmdIn, const string &szSection, const vector<string> &szControlsSet )
 {
+	// macOS port: the wheel gets its own zoom command (Camera.cpp), so one notch can be a small fixed step while the
+	// keyboard and Alt-drag zoom keep the original curve. Nothing in input.cfg changes.
+	const string sCmd = ( sCmdIn == "camera_zoom" && szControlsSet.size() == 1 && szControlsSet[0] == "MOUSE_AXIS_Z" ) ? string( "camera_zoom_wheel" ) : sCmdIn;
 	SMapping sMapping;
 	TActionsMap &sActions = GetActions();
 	TCommandsMap &sCommandsMap = GetCommands();
@@ -118,12 +121,12 @@ void Unbind( const string &szCmd )
 {
 	TCommandsMap &sCommandsMap = GetCommands();
 
-	TCommandsMap::iterator iTemp = sCommandsMap.find( szCmd );
+	typename TCommandsMap::iterator iTemp = sCommandsMap.find( szCmd );
 	if ( iTemp == sCommandsMap.end() )
 		return;
 
 	SCommand &sCommand = iTemp->second;
-	for ( list<SMapping>::iterator iMapping = sCommand.mappingsList.begin(); iMapping != sCommand.mappingsList.end(); )
+	for ( typename list<SMapping>::iterator iMapping = sCommand.mappingsList.begin(); iMapping != sCommand.mappingsList.end(); )
 	{
 		if ( !szSection.empty() && ( iMapping->szSection != szSection ) )
 			continue;
@@ -139,7 +142,7 @@ void UnbindAll()
 {
 	TCommandsMap &sCommandsMap = GetCommands();
 
-	for ( TCommandsMap::iterator iTemp = sCommandsMap.begin(); iTemp != sCommandsMap.end(); iTemp++ )
+	for ( typename TCommandsMap::iterator iTemp = sCommandsMap.begin(); iTemp != sCommandsMap.end(); iTemp++ )
 		Unbind( iTemp->first );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,7 +157,7 @@ void GetBind( const string &szCmd, list<SBind> *pRes )
 		return;
 
 	SCommand &sCommand = sCommandsMap[szCmd];
-	for ( list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
+	for ( typename list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
 	{
 		SBind &sBind = *( pRes->insert( pRes->end(), SBind()) );
 		sBind.eType = iTempMapping->mType;
@@ -172,18 +175,18 @@ void UpdateBinds()
 {
 	TCommandsMap &sCommandsMap = GetCommands();
 
-	for ( unordered_map<string, SCommand>::iterator iTempCommand = sCommandsMap.begin(); iTempCommand != sCommandsMap.end(); ++iTempCommand )
+	for ( typename unordered_map<string, SCommand>::iterator iTempCommand = sCommandsMap.begin(); iTempCommand != sCommandsMap.end(); ++iTempCommand )
 	{
 		SCommand &sCommand = iTempCommand->second;
-		for ( list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
+		for ( typename list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
 			iTempMapping->blockingGroupsSet.clear();
 	}
 
-	for ( unordered_map<string, SCommand>::iterator iTempCommand = sCommandsMap.begin(); iTempCommand != sCommandsMap.end(); ++iTempCommand )
+	for ( typename unordered_map<string, SCommand>::iterator iTempCommand = sCommandsMap.begin(); iTempCommand != sCommandsMap.end(); ++iTempCommand )
 	{
 		SCommand &sCommand = iTempCommand->second;
 
-		for ( list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
+		for ( typename list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
 		{
 			iTempMapping->bDisabled = false;
 
@@ -192,18 +195,18 @@ void UpdateBinds()
 		}
 	}
 
-	for ( unordered_map<string, SCommand>::iterator iTempCommand1 = sCommandsMap.begin(); iTempCommand1 != sCommandsMap.end(); ++iTempCommand1 )
+	for ( typename unordered_map<string, SCommand>::iterator iTempCommand1 = sCommandsMap.begin(); iTempCommand1 != sCommandsMap.end(); ++iTempCommand1 )
 	{
 		SCommand &sCommand1 = iTempCommand1->second;
-		unordered_map<string, SCommand>::iterator iNext = iTempCommand1;
+		typename unordered_map<string, SCommand>::iterator iNext = iTempCommand1;
 		iNext++;
-		for ( unordered_map<string, SCommand>::iterator iTempCommand2 = iNext; iTempCommand2 != sCommandsMap.end(); ++iTempCommand2 )
+		for ( typename unordered_map<string, SCommand>::iterator iTempCommand2 = iNext; iTempCommand2 != sCommandsMap.end(); ++iTempCommand2 )
 		{
 			SCommand &sCommand2 = iTempCommand2->second;
 
-			for ( list<SMapping>::iterator iTempMapping1 = sCommand1.mappingsList.begin(); iTempMapping1 != sCommand1.mappingsList.end(); ++iTempMapping1 )
+			for ( typename list<SMapping>::iterator iTempMapping1 = sCommand1.mappingsList.begin(); iTempMapping1 != sCommand1.mappingsList.end(); ++iTempMapping1 )
 			{
-				for ( list<SMapping>::iterator iTempMapping2 = sCommand2.mappingsList.begin(); iTempMapping2 != sCommand2.mappingsList.end(); ++iTempMapping2 )
+				for ( typename list<SMapping>::iterator iTempMapping2 = sCommand2.mappingsList.begin(); iTempMapping2 != sCommand2.mappingsList.end(); ++iTempMapping2 )
 				{
 					if ( iTempMapping1->bDisabled || iTempMapping2->bDisabled )
 						continue;
@@ -226,7 +229,7 @@ float GetControlCoeff( const string &szControl )
 	if ( nAction == -1 )
 		return 1.0f;
 
-	TActionsMap::iterator iTemp = sActions.find( nAction );
+	typename TActionsMap::iterator iTemp = sActions.find( nAction );
 	if ( iTemp == sActions.end() )
 		return 1.0f;
 
@@ -254,7 +257,7 @@ void SetControlCoeff( const string &szControl, float fCoeff )
 void SetCommandCoeff( const string &szCommand, float fCoeff )
 {
 	TCommandsMap &sCommandsMap = GetCommands();
-	TCommandsMap::iterator i = sCommandsMap.find( szCommand );
+	typename TCommandsMap::iterator i = sCommandsMap.find( szCommand );
 	if ( i != sCommandsMap.end() )
 		i->second.fCoeff = fCoeff;
 }
@@ -283,7 +286,7 @@ void PostEvent( const string &szEvent )
 {
 	SEvent eEvent;
 
-	TBindCommandsMap::iterator iTemp = GetBindCommands().find( szEvent );
+	typename TBindCommandsMap::iterator iTemp = GetBindCommands().find( szEvent );
 	if ( iTemp != GetBindCommands().end() )
 		eEvent.commands.push_back( &(iTemp->second) );
 
@@ -350,14 +353,14 @@ static void Update( DWORD dwTime )
 	TCommandsMap &sCommands = GetCommands();
 	TBindCommandsMap &sBindCommands = GetBindCommands();
 	
-	for ( TCommandsMap::iterator iTempCommand = sCommands.begin(); iTempCommand != sCommands.end(); ++iTempCommand )
+	for ( typename TCommandsMap::iterator iTempCommand = sCommands.begin(); iTempCommand != sCommands.end(); ++iTempCommand )
 	{
 		SCommand &sCommand = iTempCommand->second;
 		SBindCommand &sBindCommand = sBindCommands[iTempCommand->first];
 		
 		bool bActive = false;
 		int64 nValue = 0;
-		for( list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
+		for( typename list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
 		{
 			if ( iTempMapping->bDisabled )
 				continue;
@@ -391,7 +394,7 @@ static bool IsBindActive( const SMapping &sMapping )
 
 	if ( bSetActive )
 	{
-		for( list<vector<int> >::const_iterator iTempSet = sMapping.blockingGroupsSet.begin(); iTempSet != sMapping.blockingGroupsSet.end(); iTempSet++ )
+		for( typename list<vector<int> >::const_iterator iTempSet = sMapping.blockingGroupsSet.begin(); iTempSet != sMapping.blockingGroupsSet.end(); iTempSet++ )
 		{
 			int nBlockingCount = 0;
 			const vector<int> &sBlockingSet = *iTempSet;
@@ -431,12 +434,12 @@ static void ProcessMessage( const NInput::SMessage &mMsg )
 	sEvent.commands.clear();
 	sEvent.mMessage = mMsg;
 		
-	for ( unordered_map<string, SCommand>::iterator iTempCommand = sCommands.begin(); iTempCommand != sCommands.end(); ++iTempCommand )
+	for ( typename unordered_map<string, SCommand>::iterator iTempCommand = sCommands.begin(); iTempCommand != sCommands.end(); ++iTempCommand )
 	{
 		SCommand &sCommand = iTempCommand->second;
 		SBindCommand &sBindCommand = sBindCommands[iTempCommand->first];
 
-		for ( list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
+		for ( typename list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
 		{
 			if ( iTempMapping->bDisabled || iTempMapping->actionsSet.empty() )
 				continue;
@@ -477,7 +480,7 @@ static bool ProcessCommandMessage( const NInput::SMessage &mMsg, SCommand &sComm
 {
 	TActionsMap &sActions = GetActions();
 
-	for( list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
+	for( typename list<SMapping>::iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
 	{
 		if ( iTempMapping->bDisabled || iTempMapping->actionsSet.empty() )
 			continue;
@@ -527,11 +530,11 @@ static bool ProcessCommandMessage( const NInput::SMessage &mMsg, SCommand &sComm
 //! Crossover detection
 static bool IsMappingBSubsetA( const SMapping &mSetA, const SMapping &mSetB )
 {
-	for ( vector<int>::const_iterator iTempB = mSetB.actionsSet.begin(); iTempB != mSetB.actionsSet.end(); ++iTempB )
+	for ( typename vector<int>::const_iterator iTempB = mSetB.actionsSet.begin(); iTempB != mSetB.actionsSet.end(); ++iTempB )
 	{
 		bool bInSet = false;
 		
-		for ( vector<int>::const_iterator iTempA = mSetA.actionsSet.begin(); iTempA != mSetA.actionsSet.end(); ++iTempA )
+		for ( typename vector<int>::const_iterator iTempA = mSetA.actionsSet.begin(); iTempA != mSetA.actionsSet.end(); ++iTempA )
 		{
 			if ( *iTempB == *iTempA )
 				bInSet = true;
@@ -556,7 +559,7 @@ void PurgeEvents()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static bool IsSameMappingExist( const SCommand &sCommand, const SMapping &sMapping )
 {
-	for ( list<SMapping>::const_iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
+	for ( typename list<SMapping>::const_iterator iTempMapping = sCommand.mappingsList.begin(); iTempMapping != sCommand.mappingsList.end(); ++iTempMapping )
 	{
 		if ( ( sMapping.mType != iTempMapping->mType ) || ( sMapping.nPower != iTempMapping->nPower ) || ( sMapping.bActive != iTempMapping->bActive ) || ( sMapping.szSection != iTempMapping->szSection ) )
 			continue;
@@ -564,7 +567,7 @@ static bool IsSameMappingExist( const SCommand &sCommand, const SMapping &sMappi
 			continue;
 
 		int nSameActionsCount = 0;
-		for ( vector<int>::const_iterator iTempAction = iTempMapping->actionsSet.begin(); iTempAction != iTempMapping->actionsSet.end(); iTempAction++ )
+		for ( typename vector<int>::const_iterator iTempAction = iTempMapping->actionsSet.begin(); iTempAction != iTempMapping->actionsSet.end(); iTempAction++ )
 		{
 			if ( find( sMapping.actionsSet.begin(), sMapping.actionsSet.end(), *iTempAction ) != sMapping.actionsSet.end() )
 				nSameActionsCount++;
@@ -618,7 +621,7 @@ static void CommandBind( const string &szID, const vector<wstring> &_paramsSet, 
 		return;
 	}
 
-	vector<wstring>::const_iterator iTemp = paramsSet.begin();
+	typename vector<wstring>::const_iterator iTemp = paramsSet.begin();
 
 	string szCommand( NStr::ToAscii( *paramsSet.begin() ) );
 	paramsSet.erase( paramsSet.begin() );
@@ -646,7 +649,7 @@ static void CommandBind( const string &szID, const vector<wstring> &_paramsSet, 
 
 	vector<string> controlsSet;
 	controlsSet.reserve( paramsSet.size() );
-	for ( vector<wstring>::const_iterator iTemp = paramsSet.begin(); iTemp != paramsSet.end(); iTemp++ )
+	for ( typename vector<wstring>::const_iterator iTemp = paramsSet.begin(); iTemp != paramsSet.end(); iTemp++ )
 	{
 		if ( iTemp->compare( L"+" ) == 0 )
 			continue;
@@ -713,7 +716,7 @@ static void CommandShowBind( const string &szID, const vector<wstring> &paramsSe
 	NInput::GetBind( NStr::ToAscii( paramsSet.front() ), &bindsList );
 
 	csSystem << "Bind '" << paramsSet.front() << "' :" << endl;
-	for ( list<NInput::SBind>::const_iterator iTemp = bindsList.begin(); iTemp != bindsList.end(); iTemp++ )
+	for ( typename list<NInput::SBind>::const_iterator iTemp = bindsList.begin(); iTemp != bindsList.end(); iTemp++ )
 	{
 		for ( int nTemp = 0; nTemp < iTemp->controlsSet.size(); nTemp++ )
 			csSystem << iTemp->controlsSet[nTemp] << " ";

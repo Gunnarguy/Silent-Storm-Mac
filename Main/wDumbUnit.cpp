@@ -3,14 +3,14 @@
 #include "wUnitServer.h"     // NWorld::CUnitServer (Die's retail server arg -- cross-cast from this)
 #include "wMain.h"
 #include "wUICommands.h"     // BUG 5: NWorld::CUICmdUnitCamera (death-beauty auto-focus, ProcessAttack)
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataGeometry.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataGeometry.h"
 #include "RPGGame.h"
 #include "RPGItem.h"
 #include "RPGUnit.h"
 #include "RPGUnitMission.h"
 #include "RPGToHit.h"
-#include "..\misc\RandomGen.h"
+#include "../misc/RandomGen.h"
 #include "GAnimation.h"
 #include "InventoryUnit.h"
 #include "wMisc.h"
@@ -18,18 +18,18 @@
 #include "wAckBase.h"
 #include "aiCollider.h"
 #include "aiInterval.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\DBFormat\DataTerrain.h"
-#include "..\DBFormat\DataAI.h"
-#include "..\DBFormat\DataTerrain.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataSound.h"
+#include "../MiscDll/LogStream.h"
+#include "../DBFormat/DataTerrain.h"
+#include "../DBFormat/DataAI.h"
+#include "../DBFormat/DataTerrain.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataSound.h"
 #include "aiMap.h"
 #include "aiNearestPosition.h"   // NAI::GetNearestPosition (corpse logical-place re-snap @0x350960)
 #include "aiLocker.h"
 #include "GSceneUtils.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Misc\EventsBase.h"
+#include "../MiscDll/Commands.h"
+#include "../Misc/EventsBase.h"
 #include "eventUnit.h"
 #include "RPGCritical.h" // for bleeding only
 #include "wDecal.h"
@@ -183,7 +183,7 @@ void CDumbUnitServer::Visit( IRenderVisitor *p )
 	if ( IsValid( pHandModel ) || IsValid( pHandEffect ) )
 	{
 		bool bFound = false;
-		for ( vector<IRenderVisitor::SBoundMesh>::iterator i = boundMeshes.begin(); i != boundMeshes.end(); ++i )
+		for ( typename vector<IRenderVisitor::SBoundMesh>::iterator i = boundMeshes.begin(); i != boundMeshes.end(); ++i )
 			if ( i->pszBindBone && strcmp( i->pszBindBone, "Item" ) == 0 )
 			{
 				if ( IsValid( pHandModel ) )
@@ -221,7 +221,7 @@ void CDumbUnitServer::Visit( IRenderVisitor *p )
 	// release @0x752380 (AttachEffectToUnitBone): play each script-attached effect on the unit. The position
 	// func is the root bone (the dev's own idiom -- cf. the hiding flare below) and the skeleton animator is
 	// passed so the effect's glue-to-bone instances attach to the unit's bones.
-	for ( vector<IRenderVisitor::SBoundEffect>::iterator i = attachedEffects.begin(); i != attachedEffects.end(); ++i )
+	for ( typename vector<IRenderVisitor::SBoundEffect>::iterator i = attachedEffects.begin(); i != attachedEffects.end(); ++i )
 		if ( IsValid( i->pEffect ) )
 			p->AddParticleEffect( i->tBegin, i->pEffect, nFloor,
 				new NAnimation::CAddBoneFilter( animator.GetSkeletonAnimator(), 0 ), animator.GetSkeletonAnimator() );
@@ -453,7 +453,7 @@ void CDumbUnitServer::SetPosition( const NAI::SUnitPosition &dst )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CDumbUnitServer::AddMiscObjects( vector<IVisObj*> *pRes )
 {
-	for ( list<CObj<IDynamicObject> >::const_iterator i = miscObjects.begin(); i != miscObjects.end(); ++i )
+	for ( typename list<CObj<IDynamicObject> >::const_iterator i = miscObjects.begin(); i != miscObjects.end(); ++i )
 		pRes->push_back( CDynamicCast<IVisObj>( i->GetPtr() ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -916,7 +916,7 @@ void CDumbUnitServer::Segment()
 		{
 			NAI::SPosition nearest = NAI::GetNearestPosition( ptReal, position.pos.GetNetwork() );
 			// A failed physical snap must not replace the last valid logical
-			// place with the invalid sentinel (which GetFloor cannot resolve).
+			// place with the invalid marker (which GetFloor cannot resolve).
 			if ( nearest.p.GetData() != NAI::SPathPlace().GetData() && IsValid( nearest.pNet ) && nearest.IsValid() )
 			{
 				position.pos = nearest;

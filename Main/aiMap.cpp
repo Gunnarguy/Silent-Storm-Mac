@@ -2,12 +2,12 @@
 #include "aiTerrain.h"
 #include "aiTrace.h"
 #include "aiCollider.h"
-#include "..\Misc\BasicShare.h"
+#include "../Misc/BasicShare.h"
 #include "GAnimFormat.h"
-#include "..\DBFormat\DataGeometry.h"
-#include "..\DBFormat\DataAnimation.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataGeometry.h"
+#include "../DBFormat/DataAnimation.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataRPG.h"
 #include "GSceneUtils.h"
 #include "Transform.h"
 #include "ocTree.h"
@@ -106,7 +106,7 @@ public:
 	// left empty is dropped from the map (also drops a pre-existing empty entry when pHull absent).
 	void RemoveHull( CObjectBase *pUser, CConvexHull *pHull )
 	{
-		unordered_map< CPtr<CObjectBase>, vector< CPtr<CConvexHull> >, SPtrHash >::iterator iTemp = data.find( CPtr<CObjectBase>( pUser ) );
+		typename unordered_map< CPtr<CObjectBase>, vector< CPtr<CConvexHull> >, SPtrHash >::iterator iTemp = data.find( CPtr<CObjectBase>( pUser ) );
 		if ( iTemp == data.end() )
 			return;
 		vector< CPtr<CConvexHull> > &hulls = iTemp->second;
@@ -127,7 +127,7 @@ public:
 	void GetHulls( CObjectBase *pUser, vector<CConvexHull*> *pRes, bool bFilter )
 	{
 		pRes->clear();
-		unordered_map< CPtr<CObjectBase>, vector< CPtr<CConvexHull> >, SPtrHash >::iterator iTemp = data.find( CPtr<CObjectBase>( pUser ) );
+		typename unordered_map< CPtr<CObjectBase>, vector< CPtr<CConvexHull> >, SPtrHash >::iterator iTemp = data.find( CPtr<CObjectBase>( pUser ) );
 		if ( iTemp == data.end() )
 			return;
 		vector< CPtr<CConvexHull> > &hulls = iTemp->second;
@@ -199,12 +199,12 @@ static void Convert( SObjectInfo *pRes, const SConvexHull &h )
 static void Convert( list<SObjectInfo> *pRes, const SHullSet &h )
 {
 	SObjectInfo r;
-	for ( vector<SConvexHull>::const_iterator i = h.objects.begin(); i != h.objects.end(); ++i )
+	for ( typename vector<SConvexHull>::const_iterator i = h.objects.begin(); i != h.objects.end(); ++i )
 	{
 		Convert( &r, *i );
 		pRes->push_back( r );
 	}
-	for ( vector<SConvexHull>::const_iterator i = h.terrain.begin(); i != h.terrain.end(); ++i )
+	for ( typename vector<SConvexHull>::const_iterator i = h.terrain.begin(); i != h.terrain.end(); ++i )
 	{
 		Convert( &r, *i );
 		pRes->push_back( r );
@@ -225,7 +225,7 @@ static void SelectPieces( SHullSet *pRes, const TTest &f, CConvexHull *pHull, co
 		CGeometryInfo *pGeom = pHull->pGeometry->GetValue();
 		if ( pHull->pieces.empty() )
 		{
-			for ( CGeometryInfo::CPieceMap::const_iterator i = pGeom->pieces.begin(); i != pGeom->pieces.end(); ++i )
+			for ( typename CGeometryInfo::CPieceMap::const_iterator i = pGeom->pieces.begin(); i != pGeom->pieces.end(); ++i )
 			{
 				//if ( !i->second.pBSPTree && bBreak )
 				//	__debugbreak();
@@ -242,7 +242,7 @@ static void SelectPieces( SHullSet *pRes, const TTest &f, CConvexHull *pHull, co
 			for ( int i = 0; i < pHull->pieces.size(); ++i )
 			{
 				const CConvexHull::SMap &m = pHull->pieces[i];
-				CGeometryInfo::CPieceMap::const_iterator k = pGeom->pieces.find( m.nPieceID );
+				typename CGeometryInfo::CPieceMap::const_iterator k = pGeom->pieces.find( m.nPieceID );
 				if ( k != pGeom->pieces.end() )
 				{
 					//if ( !k->second.pBSPTree && bBreak )
@@ -285,7 +285,7 @@ void GetGeometry( list<SObjectInfo> *pRes, vector<SMassSphere> *pSpheres, int nA
 	if ( pbClosed )
 	{
 		*pbClosed = true;
-		for ( CGeometryInfo::CPieceMap::iterator i = pGInfo->pieces.begin(); i != pGInfo->pieces.end(); ++i )
+		for ( typename CGeometryInfo::CPieceMap::iterator i = pGInfo->pieces.begin(); i != pGInfo->pieces.end(); ++i )
 			*pbClosed = pbClosed && i->second.edges.IsClosed();
 	}
 }
@@ -448,7 +448,7 @@ private:
 			pNode->GetBound( &t );
 			if ( !f( t.ptCenter, t.fRadius ) )
 				return;
-			for ( CVolumeNode::CElemList::iterator i = pNode->hulls.begin(); i != pNode->hulls.end(); ++i )
+			for ( typename CVolumeNode::CElemList::iterator i = pNode->hulls.begin(); i != pNode->hulls.end(); ++i )
 			{
 				CConvexHull *pHull = i->pHull;
 				if ( pHull )
@@ -516,7 +516,7 @@ void CConvexHull::AssignUserID( int nUserID )
 {
 	pGeometry.Refresh();
 	CGeometryInfo &g = *pGeometry->GetValue();
-	for ( CGeometryInfo::CPieceMap::const_iterator i = g.pieces.begin(); i != g.pieces.end(); ++i )
+	for ( typename CGeometryInfo::CPieceMap::const_iterator i = g.pieces.begin(); i != g.pieces.end(); ++i )
 		pieces.push_back( SMap( i->first, nUserID ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -588,7 +588,7 @@ bool CVolumeNode::IsEmpty()
 			else
 				++i;
 		}*/
-		for ( list<STrackerDescr>::iterator i = trackers.begin(); i != trackers.end(); )
+		for ( typename list<STrackerDescr>::iterator i = trackers.begin(); i != trackers.end(); )
 		{
 			if ( !IsValid( i->pTracker ) )
 				i = trackers.erase( i );
@@ -685,7 +685,7 @@ void CVolumeNode::CallCachedInforms()
 {
 	if ( nInformMask == 0 )
 		return;
-	for ( list<STrackerDescr>::iterator i = trackers.begin(); i != trackers.end(); )
+	for ( typename list<STrackerDescr>::iterator i = trackers.begin(); i != trackers.end(); )
 	{
 		if ( (nInformMask & i->nMask) != 0 )
 		{
@@ -719,7 +719,7 @@ void CVolumeNode::InformTrackers( const SBound &b, int nMask, bool bDoorFlipped 
 	if ( !DoesIntersect( b, bInternal ) )
 		return;
 
-	for ( list<STrackerDescr>::iterator i = trackers.begin(); i != trackers.end(); )
+	for ( typename list<STrackerDescr>::iterator i = trackers.begin(); i != trackers.end(); )
 	{
 		if ( (nMask & i->nMask) != 0 )
 		{
@@ -1081,7 +1081,7 @@ void CAIMap::Sync( ESyncType st )
 	++nSlowVolumeWalk;
 	if ( IsValid( pRoot ) )
 		pRoot->Walk();
-	for ( list<CPtr<CDynamicConvexHull> >::iterator i = dynamicHulls.begin(); i != dynamicHulls.end(); )
+	for ( typename list<CPtr<CDynamicConvexHull> >::iterator i = dynamicHulls.begin(); i != dynamicHulls.end(); )
 	{
 		CDynamicConvexHull *pHull = *i;
 		if ( !IsValid( pHull ) )
@@ -1140,7 +1140,7 @@ void CAIMap::SelectHullPointers( vector< CPtr<CObjectBase> > *pRes, const SBound
 	bNode.SphereInit( t.ptCenter, t.fRadius );
 	if ( !DoesIntersect( b, bNode ) )
 		return;
-	for ( CVolumeNode::CElemList::iterator i = pNode->hulls.begin(); i != pNode->hulls.end(); ++i )
+	for ( typename CVolumeNode::CElemList::iterator i = pNode->hulls.begin(); i != pNode->hulls.end(); ++i )
 	{
 		CConvexHull *pHull = i->pHull;
 		if ( !pHull )
@@ -1171,12 +1171,12 @@ void TraceEntities( SHullSet &res, T *pRes, IAIMap::ESplitTerrainHGroups shg )
 {
 	if ( shg == IAIMap::STH_SPLIT_TERR_HG )
 	{
-		for ( vector<SConvexHull>::iterator i = res.terrain.begin(); i != res.terrain.end(); ++i )
+		for ( typename vector<SConvexHull>::iterator i = res.terrain.begin(); i != res.terrain.end(); ++i )
 			pRes->TraceEntity( *i, true );
 	}
 	else
 		pRes->TraceEntity( res.terrain, true );
-	for ( vector<SConvexHull>::iterator i = res.objects.begin(); i != res.objects.end(); ++i )
+	for ( typename vector<SConvexHull>::iterator i = res.objects.begin(); i != res.objects.end(); ++i )
 	{
 		pRes->TraceEntity( *i, false );
 	}
@@ -1249,7 +1249,7 @@ void CAIMap::TraceVisionGrid( CVisionVoxelRenderer *pRes, int nMask, const CFloo
 		CTracer trace( *pIntersections );
 		trace.InitProjection( r );
 		SelectPieces( &res, STestSphere<CTracer>(&trace), pHull, bound );
-		for ( vector<SConvexHull>::iterator i = res.objects.begin(); i != res.objects.end(); ++i )
+		for ( typename vector<SConvexHull>::iterator i = res.objects.begin(); i != res.objects.end(); ++i )
 			trace.TraceEntity( *i, false );
 		SortIntervals( pIntersections );
 	}
@@ -1263,7 +1263,7 @@ void CAIMap::TraceUnit( CFastRenderer *pRes, CObjectBase *pTarget )
 	{
 		SHullSet res;
 		SelectPieces( &res, STestSphere<CFastRenderer>(pRes), pHull, bound );
-		for ( vector<SConvexHull>::iterator i = res.objects.begin(); i != res.objects.end(); ++i )
+		for ( typename vector<SConvexHull>::iterator i = res.objects.begin(); i != res.objects.end(); ++i )
 			pRes->TraceEntity( *i, false );
 	}
 }*/
@@ -1315,7 +1315,7 @@ void CAIMap::GetAccessibleUnitHL( vector<int> *pRes, const CVec3 &ptFrom, CObjec
 		return;
 	pHull->pGeometry.Refresh();
 	CGeometryInfo *pGeom = pHull->pGeometry->GetValue();
-	for ( CGeometryInfo::CPieceMap::const_iterator i = pGeom->pieces.begin(); i != pGeom->pieces.end(); ++i )
+	for ( typename CGeometryInfo::CPieceMap::const_iterator i = pGeom->pieces.begin(); i != pGeom->pieces.end(); ++i )
 	{
 		const CGeometryInfo::SPiece &piece = i->second;
 		SSphere s;
@@ -1384,14 +1384,14 @@ bool CAIMap::CalcIntersection( const CVec3 &vCenter, float fRadius, int nMask, C
 {
 	SHullSet res;
 	SelectFloorSet( &res, CFloorsSet(), nMask, SSphereSphere( vCenter, fRadius ) );
-	for ( vector<SConvexHull>::iterator i = res.objects.begin(); i != res.objects.end(); ++i )
+	for ( typename vector<SConvexHull>::iterator i = res.objects.begin(); i != res.objects.end(); ++i )
 	{
 		if ( pIgnoreUser && pIgnoreUser == i->src.pUserData )
 			continue;
 		if ( CalcModelSphereIntersection( *i, vCenter, fRadius ) )
 			return true;
 	}
-	for ( vector<SConvexHull>::iterator i = res.terrain.begin(); i != res.terrain.end(); ++i )
+	for ( typename vector<SConvexHull>::iterator i = res.terrain.begin(); i != res.terrain.end(); ++i )
 	{
 		if ( pIgnoreUser && pIgnoreUser == i->src.pUserData )
 			continue;
@@ -1415,9 +1415,9 @@ void CAIMap::PrepareCollider( IPrepareCollider *pRes, const SBound &bound, float
 	pRes->SetBoundAndResolution( bound, fElementSize );
 	SHullSet res;
 	SelectFloorSet( &res, CFloorsSet(), nMask, SSphereSphere( bound.s.ptCenter, bound.s.fRadius ), bSelect2DoorHulls );
-	for ( vector<SConvexHull>::iterator i = res.objects.begin(); i != res.objects.end(); ++i )
+	for ( typename vector<SConvexHull>::iterator i = res.objects.begin(); i != res.objects.end(); ++i )
 		pRes->AddConvexHull( *i );
-	for ( vector<SConvexHull>::iterator i = res.terrain.begin(); i != res.terrain.end(); ++i )
+	for ( typename vector<SConvexHull>::iterator i = res.terrain.begin(); i != res.terrain.end(); ++i )
 		pRes->AddConvexHull( *i );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1427,7 +1427,7 @@ void CAIMap::FlipDoorWindow( CObjectBase *pWhat, bool bOpen, CVolumeNode *pNode 
 		return;
 	int nDoorFlag = bOpen? NWorld::TS_STATE_OPEN : NWorld::TS_STATE_CLOSED,
 			nFullFlag = NWorld::TS_STATE_OPEN | NWorld::TS_STATE_CLOSED;
-	for ( CVolumeNode::CElemList::iterator i = pNode->hulls.begin(); i != pNode->hulls.end(); ++i )
+	for ( typename CVolumeNode::CElemList::iterator i = pNode->hulls.begin(); i != pNode->hulls.end(); ++i )
 	{
 		CConvexHull *pHull = i->pHull;
 		if ( IsValid( pHull ) )

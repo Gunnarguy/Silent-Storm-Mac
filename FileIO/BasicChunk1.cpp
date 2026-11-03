@@ -22,7 +22,7 @@ void SaveLoadDiag( const char *szFmt, ... )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // [HARNESS] wire audit -- see BasicChunk1.h. Findings are aggregated per (class, kind, tag path)
 // and dumped once per load so 45k-object saves don't spam the log.
-bool g_bWireAudit = false;
+bool g_bWireAudit = getenv( "S2_WIRE_AUDIT" ) != 0;   // macOS port: env switch for the audit below
 #include <map>
 #include <string>
 namespace NWireAudit
@@ -56,7 +56,7 @@ namespace NWireAudit
 		FILE *pF = fopen( "_wireaudit.log", "a" );
 		if ( !pF )
 			return;
-		for ( std::map<std::string, int>::const_iterator i = findings.begin(); i != findings.end(); ++i )
+		for ( typename std::map<std::string, int>::const_iterator i = findings.begin(); i != findings.end(); ++i )
 			fprintf( pF, "%s x%d\n", i->first.c_str(), i->second );
 		fprintf( pF, "WIRE-AUDIT-DONE (%d distinct findings)\n", (int)findings.size() );
 		fclose( pF );
@@ -405,12 +405,19 @@ void CStructureSaver::DataChunkString( stdWString &str )
 		CChunkLevel &res = chunks.back();
 		if ( g_bWireAudit && !NWireAudit::frames.empty() )
 			NWireAudit::frames.back().bRaw = true;
-		const wchar_t *pStr = (wchar_t*) ( data.GetBuffer() + res.nStart );
-		str.assign( pStr, res.nLength / 2 );
+		// strings are stored as UTF-16LE (Windows wchar_t); widen code unit by code unit on platforms
+		// whose wchar_t is 32-bit so game.db, resources and saves stay byte-compatible
+		const unsigned short *pStr = (const unsigned short*) ( data.GetBuffer() + res.nStart );
+		str.resize( res.nLength / 2 );
+		for ( int i = 0; i < res.nLength / 2; ++i )
+			str[i] = (wchar_t)pStr[i];
 	}
 	else
 	{
-		WriteRawData( str.data(), str.size() * 2 );
+		std::vector<unsigned short> utf16( str.size() );
+		for ( size_t i = 0; i < str.size(); ++i )
+			utf16[i] = (unsigned short)str[i];
+		WriteRawData( utf16.empty() ? 0 : &utf16[0], (int)str.size() * 2 );
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -434,16 +441,18 @@ void CStructureSaver::StoreObject( CObjectBase *pObject )
 		toStore.push_back( pObject );
 		storedObjects[pObject] = true; // it is important to assign something
 	}
-	RawData( &pObject, 4 );
+	unsigned int nKey = ObjectKey( pObject );
+	RawData( &nKey, 4 );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CObjectBase* CStructureSaver::LoadObject()
 {
-	void *pServerPtr = 0;
-	RawData( &pServerPtr, 4 );
+	unsigned int nKey = 0;
+	RawData( &nKey, 4 );
+	void *pServerPtr = KeyPtr( nKey );
 	if ( pServerPtr != 0 )
 	{
-		CObjectsHash::iterator pFound = objects.find( pServerPtr );
+		typename CObjectsHash::iterator pFound = objects.find( pServerPtr );
 		if ( pFound != objects.end() )
 			return pFound->second;
 		ASSERT(0);
@@ -506,9 +515,9 @@ void CStructureSaver::FinishChunk()
 				}
 				if ( nPos == cur.nLength )
 				{
-					for ( std::map<char, int>::const_iterator i = present.begin(); i != present.end(); ++i )
+					for ( typename std::map<char, int>::const_iterator i = present.begin(); i != present.end(); ++i )
 					{
-						std::map<char, int>::const_iterator c = fr.consumed.find( i->first );
+						typename std::map<char, int>::const_iterator c = fr.consumed.find( i->first );
 						int nCons = ( c == fr.consumed.end() ) ? 0 : c->second;
 						if ( nCons < i->second )
 							NWireAudit::Finding( "UNREAD", i->first, firstLen[i->first], i->second - nCons );
@@ -590,10 +599,11 @@ void CStructureSaver::Start( bool bRead )
 		while ( obj.GetPosition() < obj.GetSize() )
 		{
 			int nTypeID = 0;
-			void *pServer = 0;
+			unsigned int nKey = 0;
 			bool bValid;
 			obj.Read( &nTypeID, 4 );
-			obj.Read( &pServer, 4 );
+			obj.Read( &nKey, 4 );
+			void *pServer = KeyPtr( nKey );
 			obj.Read( &bValid,1 );
 			CObjectBase *pObject = pSSClasses->CreateObject( nTypeID );
 			ASSERT( pObject );
@@ -625,11 +635,11 @@ void CStructureSaver::Start( bool bRead )
 		{
 			for ( int i = 0; i < nCount; i++ )
 			{
-				void *pServer = 0;
+				unsigned int nKey = 0;
 				CObjectBase *pObject;
 				StartChunk( (chunk_id) 1, i + 1 );
-				DataChunk( 0, &pServer, 4, 1 );
-				pObject = objects[pServer];
+				DataChunk( 0, &nKey, 4, 1 );
+				pObject = objects[KeyPtr( nKey )];
 				ASSERT( pObject );
 				if ( pObject )
 				{
@@ -682,12 +692,13 @@ void CStructureSaver::Finish()
 			int nTypeID = pSSClasses->GetObjectTypeID( pObject );
 			bool bValid = IsValid( pObject );
 			ASSERT( nTypeID != -1 );
+			unsigned int nKey = ObjectKey( pObject );
 			obj.Write( &nTypeID, 4 );
-			obj.Write( &pObject, 4 );
+			obj.Write( &nKey, 4 );
 			obj.Write( &bValid, 1 );
 			// save object data
 			StartChunk( (chunk_id) 1, nObject );
-			DataChunk( 0, &pObject, 4, 1 );
+			DataChunk( 0, &nKey, 4, 1 );
 			//
 			if ( StartChunk( 1, 1 ) )
 			{
@@ -718,6 +729,8 @@ void CStructureSaver::Finish()
 		g_bSaveLoadTeardown = true;
 	objects.clear();
 	storedObjects.clear();
+	saveKeys.clear();
+	nNextSaveKey = 0;
 	toStore.clear();
 	chunks.clear();
 	if ( bWasReading )

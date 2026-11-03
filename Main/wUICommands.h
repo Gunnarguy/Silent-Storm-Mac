@@ -5,10 +5,10 @@
 #endif // _MSC_VER > 1000
 //
 #include "camera.h"
-#include "..\DBFormat\DataSound.h"		// NDb::CSound complete (CUICmdPlaySound's CDBPtr saveload uses typeid)
-#include "..\DBFormat\DataFormat.h"		// NDb::CTEffect complete (CUICmdPlayEffect's CDBPtr saveload uses typeid)
-#include "..\DBFormat\DataLight.h"		// NDb::CTAmbientLight complete (CUICmdSetAmbient's CDBPtr saveload uses typeid)
-#include "..\DBFormat\DataMisc.h"		// NDb::CUIHint complete (CUICmdShowHint's CDBPtr saveload uses typeid)
+#include "../DBFormat/DataSound.h"		// NDb::CSound complete (CUICmdPlaySound's CDBPtr saveload uses typeid)
+#include "../DBFormat/DataFormat.h"		// NDb::CTEffect complete (CUICmdPlayEffect's CDBPtr saveload uses typeid)
+#include "../DBFormat/DataLight.h"		// NDb::CTAmbientLight complete (CUICmdSetAmbient's CDBPtr saveload uses typeid)
+#include "../DBFormat/DataMisc.h"		// NDb::CUIHint complete (CUICmdShowHint's CDBPtr saveload uses typeid)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NScenario
 {
@@ -411,7 +411,7 @@ public:
 // CUICmdPointCamera (retail wMain.obj, 0x34 bytes, saveload id 0x71007380) -- "focus the camera on
 // this world point" (explosions; retail also produces it from the AI sound ping). Producers: both
 // CWorld::AddGrenadeExplosion overloads (PR_EXPLOSION, bUseSloMo = fWaveRadius > 2.99, prob =
-// fWaveRadius - 2, 3 s dwell, nFloor -100 = "resolve the current cut floor" sentinel). Consumed by
+// fWaveRadius - 2, 3 s dwell, nFloor -100 = "resolve the current cut floor" marker). Consumed by
 // the mission's pExecLocator arbitration -> CUICmdExplosionCameraExec.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class CUICmdPointCamera: public CUICmdCameraLocator
@@ -424,7 +424,7 @@ public:
 	float fSloMoIncrProbability;        // +0x24
 	bool  bNoZoom;                      // +0x28  carried for parity (no reader found in the retail exec)
 	int   nExecTime;                    // +0x2c  dwell, seconds
-	int   nFloor;                       // +0x30  -100 sentinel -> exec resolves the current cut floor
+	int   nFloor;                       // +0x30  -100 marker -> exec resolves the current cut floor
 	// retail operator& @0x3702e0 chunk order
 	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CUICmdCameraLocator*)this); f.Add(2,&ptExplosion); f.Add(3,&bUseSloMo); f.Add(4,&fSloMoIncrProbability); f.Add(5,&bNoZoom); f.Add(6,&nExecTime); f.Add(7,&nFloor); return 0; }
 	//

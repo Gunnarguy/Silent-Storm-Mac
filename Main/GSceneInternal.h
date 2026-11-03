@@ -342,7 +342,7 @@ public:
 		}
 		bool IsEmpty() const
 		{
-			for ( list<CPtr<CCombinedPart> >::const_iterator i = elements.begin(); i != elements.end(); ++i )
+			for ( typename list<CPtr<CCombinedPart> >::const_iterator i = elements.begin(); i != elements.end(); ++i )
 			{
 				ASSERT( IsValid( *i ) );
 				if ( (*i)->GetCombiner()->GetSize() != 0 )

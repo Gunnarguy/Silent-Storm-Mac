@@ -70,7 +70,7 @@ bool CScenGraph::PlaceClue( CZone &zone, CClue* clue )
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenGraph::GenerateFullGraph()
 {
-	for ( unordered_map<string,CClue>::iterator k = clues.begin(); k != clues.end(); ++k )
+	for ( typename unordered_map<string,CClue>::iterator k = clues.begin(); k != clues.end(); ++k )
 	{
 		CClue &clue = k->second;
 		clue.isPlaced = true;
@@ -95,7 +95,7 @@ CClue &CScenGraph::GetClue( CClueP clueName )
 void CScenGraph::FindChildZones( CZoneP zoneName, list<CZoneP> *childZones, bool bUseProcessed )
 {
 	CZone &zone = GetZone( zoneName );
-	for ( vector<CClueP>::iterator clue = zone.placed_clues.begin(); clue != zone.placed_clues.end(); ++clue )
+	for ( typename vector<CClueP>::iterator clue = zone.placed_clues.begin(); clue != zone.placed_clues.end(); ++clue )
 		FindZonesOpenedByClue( *clue, childZones, zone.code, bUseProcessed );
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,10 +105,10 @@ void CScenGraph::FindZonesOpenedByClue( CClueP clueName, list<CZoneP> *OpenedZon
 		return;
 	//
 	CClue &clue = GetClue( clueName );
-	for ( vector<CObjective>::iterator objective = clue.objectives.begin(); objective != clue.objectives.end(); ++objective )
+	for ( typename vector<CObjective>::iterator objective = clue.objectives.begin(); objective != clue.objectives.end(); ++objective )
 	{
 		// заносим зоны
-		for ( vector<CZoneP>::iterator zone = (*objective).zone2open.begin(); zone != (*objective).zone2open.end(); ++zone )
+		for ( typename vector<CZoneP>::iterator zone = (*objective).zone2open.begin(); zone != (*objective).zone2open.end(); ++zone )
 		{
 			CZone &childZone = GetZone( *zone );
 			if ( !childZone.bProcessed || !bUseProcessed )
@@ -134,7 +134,7 @@ void CScenGraph::GetPath( CZoneP start, list<CZoneP> *path, bool (* IsFinal)( CZ
 	//
 	CZoneP finish;
 	// иниацилизация
-	for ( unordered_map<string,CZone>::iterator i = zones.begin(); i != zones.end(); ++i )
+	for ( typename unordered_map<string,CZone>::iterator i = zones.begin(); i != zones.end(); ++i )
 	{
 		i->second.bProcessed = false;
 		i->second.pComeFrom = "";
@@ -149,14 +149,14 @@ void CScenGraph::GetPath( CZoneP start, list<CZoneP> *path, bool (* IsFinal)( CZ
 	{
 		list<CZoneP> NewWaveFront;
 		// заносим каждого потомка в новый фронт волны
-		for ( list<CZoneP>::iterator zone = WaveFront.begin(); zone != WaveFront.end(); ++zone )
+		for ( typename list<CZoneP>::iterator zone = WaveFront.begin(); zone != WaveFront.end(); ++zone )
 			FindChildZones( *zone, &NewWaveFront );
 		//
 		WaveFront.clear();
 		WaveFront = NewWaveFront;
 		NewWaveFront.clear();
 		//
-		for ( list<CZoneP>::iterator zone = WaveFront.begin(); zone != WaveFront.end(); ++zone )
+		for ( typename list<CZoneP>::iterator zone = WaveFront.begin(); zone != WaveFront.end(); ++zone )
 			if ( IsFinal( GetZone( *zone ) ) )
 			{
 				bFinishReached = true;
@@ -179,12 +179,12 @@ bool CScenGraph::FindUnprocessedBranch( CZoneP *start, CZoneP *finish )
 {
 	for ( int i = 0; i < 16; ++i )
 	{
-		for ( unordered_map<string,CZone>::iterator zone = zones.begin(); zone != zones.end(); ++zone )
+		for ( typename unordered_map<string,CZone>::iterator zone = zones.begin(); zone != zones.end(); ++zone )
 			if ( zone->second.bDifCalculated && zone->second.nDifficulty == i )
 			{
 				list<CZoneP> childZones;
 				FindChildZones( zone->second.code, &childZones, false );
-				for ( list<CZoneP>::iterator childZone = childZones.begin(); childZone != childZones.end(); ++childZone )
+				for ( typename list<CZoneP>::iterator childZone = childZones.begin(); childZone != childZones.end(); ++childZone )
 					if ( !GetZone( *childZone ).bDifCalculated )
 					{
 						*start = zone->second.code;
@@ -207,7 +207,7 @@ void CScenGraph::SetPathDifficulties( const list<CZoneP> &path )
 	float fEnd = max ( 0.f, (float)GetZone( path.back() ).nDifficulty );
 	float fStep = ( fEnd - fBegin ) / float( path.size() - 1 );
 	float fCurrent = fBegin;
-	for ( list<CZoneP>::const_iterator zone = path.begin(); zone != path.end(); ++zone )
+	for ( typename list<CZoneP>::const_iterator zone = path.begin(); zone != path.end(); ++zone )
 	{
 		GetZone( *zone ).nDifficulty = (int)fCurrent;
 		GetZone( *zone ).bDifCalculated = true;
@@ -217,14 +217,14 @@ void CScenGraph::SetPathDifficulties( const list<CZoneP> &path )
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CScenGraph::IsBeginZone( CZoneP zoneName )
 {
-	for ( unordered_map<string,CClue>::iterator clue = clues.begin(); clue != clues.end(); ++clue )
+	for ( typename unordered_map<string,CClue>::iterator clue = clues.begin(); clue != clues.end(); ++clue )
 	{
 		if ( !clue->second.isPlaced )
 			continue;
 		//
 		list<CZoneP> childZones;
 		FindZonesOpenedByClue( clue->second.code, &childZones, "", false );
-		for ( list<CZoneP>::iterator childZone = childZones.begin(); childZone != childZones.end(); ++childZone )
+		for ( typename list<CZoneP>::iterator childZone = childZones.begin(); childZone != childZones.end(); ++childZone )
 			if ( *childZone == zoneName )
 				return false;
 		childZones.clear();
@@ -235,7 +235,7 @@ bool CScenGraph::IsBeginZone( CZoneP zoneName )
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CScenGraph::InitDifficulties()
 {
-	for ( unordered_map<string,CZone>::iterator zone = zones.begin(); zone != zones.end(); ++zone )
+	for ( typename unordered_map<string,CZone>::iterator zone = zones.begin(); zone != zones.end(); ++zone )
 	{
 		if ( IsBeginZone( zone->second.code ) )
 		{
@@ -293,7 +293,7 @@ void CScenGraph::CalculateDifficulties()
 void CScenGraph::GenerateCorrectGraph()
 {
 	// Reset clues
-	for ( unordered_map<string,CClue>::iterator k = clues.begin(); k != clues.end(); ++k )
+	for ( typename unordered_map<string,CClue>::iterator k = clues.begin(); k != clues.end(); ++k )
 		k->second.isPlaced = false;
 	unordered_map<string,CZone> saved_zones(zones);
 	unordered_map<string,CClue> saved_clues(clues);
@@ -315,7 +315,7 @@ extern int nHoldrand;
 void CScenGraph::GenerateGraph()
 {
 	nRandomSeed = nHoldrand = GetTickCount(); // 20615562
-	for ( unordered_map<string,CClue>::iterator i = clues.begin(); i != clues.end(); ++i )
+	for ( typename unordered_map<string,CClue>::iterator i = clues.begin(); i != clues.end(); ++i )
 		i->second.ResetTmpDerClues();
 	for ( bool bCanPlace = true; bCanPlace; )
 	{
@@ -420,19 +420,19 @@ void CScenGraph::SaveZones( fstream &file )
 		 << " node[shape=record];\n";
 	if ( bUniteZones )
 	{
-		for ( unordered_map< string, vector<CZoneP> >::iterator l = byLocation.begin(); l != byLocation.end(); ++l )
+		for ( typename unordered_map< string, vector<CZoneP> >::iterator l = byLocation.begin(); l != byLocation.end(); ++l )
 		{
 			file << " subgraph cluster" << l->first << "\n\t{\n";
 			file << "\tlabel = \"" << l->first << "\";" << endl;
 			file << "\tcolor = green;" << endl;
-			for ( vector<CZoneP>::iterator i = l->second.begin(); i != l->second.end(); ++i )
+			for ( typename vector<CZoneP>::iterator i = l->second.begin(); i != l->second.end(); ++i )
 				SaveOneZone( file, *GZ(*i), '\t' );
 			file << "\t}" << endl;
 		}
 	}
 	else
 	{
-		for ( unordered_map<string,CZone>::iterator i = zones.begin(); i != zones.end(); ++i )
+		for ( typename unordered_map<string,CZone>::iterator i = zones.begin(); i != zones.end(); ++i )
 			SaveOneZone( file, i->second );
 		printf( "Saved %i zones\n", zones.size() );
 	}
@@ -454,7 +454,7 @@ void CScenGraph::SaveSeparateGraph( string fileName )
 	SaveZones(file);
 	file << " node[shape=ellipse,color=black, style=solid];\n";
 	file << " edge[color=black];\n";
-	for ( unordered_map<string,CZone>::iterator i = zones.begin(); i != zones.end(); ++i )
+	for ( typename unordered_map<string,CZone>::iterator i = zones.begin(); i != zones.end(); ++i )
 	{
 		CZone &zone = i->second;
 //		WriteZoneColor( file, zone );
@@ -466,7 +466,7 @@ void CScenGraph::SaveSeparateGraph( string fileName )
 	}
 	file << " node[shape=ellipse,color=black];\n";
 	int nKKK = 0;
-	for ( unordered_map<string,CClue>::iterator k = clues.begin(); k != clues.end(); ++k, ++nKKK )
+	for ( typename unordered_map<string,CClue>::iterator k = clues.begin(); k != clues.end(); ++k, ++nKKK )
 	{
 		CClue &clue = k->second;
 		if ( clue.IsClueOpened() && ( clue.nDerClues > 0 || clue.isPlaced ) )
@@ -504,7 +504,7 @@ void CScenGraph::SaveGraph( string fileName )
 	file << "digraph g\n{\n";
 	SaveZones(file);
 
-	for ( unordered_map<string,CZone>::iterator i = zones.begin(); i != zones.end(); ++i )
+	for ( typename unordered_map<string,CZone>::iterator i = zones.begin(); i != zones.end(); ++i )
 	{
 		CZone &zone = i->second;
 		WriteZoneColor( file, zone );
@@ -767,20 +767,20 @@ void CScenGraph::PushZoneLinks( CZone &zone, stack<CZone*> &links )
 }
 bool CScenGraph::Check()
 {
-	for ( unordered_map<string,CZone>::iterator i = zones.begin(); i != zones.end(); ++i )
+	for ( typename unordered_map<string,CZone>::iterator i = zones.begin(); i != zones.end(); ++i )
 	{
 		i->second.bUnachievable = true;
 		i->second.nDistance = N_NOWAY_ZONE;
 		i->second.pComeFrom = "";
 		i->second.isInShortPath = false;
 	}
-	for ( unordered_map<string,CClue>::iterator i = clues.begin(); i != clues.end(); ++i )
+	for ( typename unordered_map<string,CClue>::iterator i = clues.begin(); i != clues.end(); ++i )
 	{
 		i->second.nMaxDistToOpen = 0;
 		i->second.ResetTmpDerClues();
 	}
-	unordered_map<string,CZone>::iterator iStart= zones.find("Base");
-	unordered_map<string,CZone>::iterator iFinish= zones.find("FFight");
+	typename unordered_map<string,CZone>::iterator iStart= zones.find("Base");
+	typename unordered_map<string,CZone>::iterator iFinish= zones.find("FFight");
 	if ( iStart == zones.end() || iFinish == zones.end() )
 		return false;
 	CZone &start = iStart->second;

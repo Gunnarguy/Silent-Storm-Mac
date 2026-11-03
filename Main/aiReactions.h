@@ -4,14 +4,11 @@
 #pragma once
 #endif // _MSC_VER > 1000
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Concrete AI reactions. Only the framework-driving ones are ported so far:
+// The Normal, Empty and Retreat reactions; Fear, Assassin, Guard, Defence and Script have their own files.
 //   CAIEmptyReaction  - the null reaction; Update() does nothing.
 //   CAINormalReaction - the default: enemy in view -> CAIAttackLogic; once combat is over ->
 //                       CAIAfterCombatLogic; never-fought + no enemy -> idle. (CAINormalReaction::Update
-//                       @0x0047f190; the scared/Defence/Assassin/Guard/Retreat/Fear escalations need the
-//                       absent SAIUnitState threat tracker + event system and are deferred.)
-// Fear/Assassin/Guard/Retreat/Defence/Script reactions exist in the release (each its own aiXxxReaction.obj)
-// and plug in here once the threat tracker lands.
+//                       @0x0047f190, with the scared, Defence, Assassin and hunt rungs.)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "aiReaction.h"
 #include "aiPosition.h"   // SPathPlace (CAIRetreatReaction member)

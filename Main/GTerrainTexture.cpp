@@ -6,13 +6,16 @@
 #include "GTerrainTexture.h"
 #include "GSceneUtils.h"
 #include "Grid.h"
-#include "..\Misc\RandomGen.h"
-#include "..\DBFormat\DataTerrain.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../Misc/RandomGen.h"
+#include "../DBFormat/DataTerrain.h"
+#include "../DBFormat/DataFormat.h"
 #include "GGrass.h"
-#include "..\Misc\HPTimer.h"
-#include "..\MiscDll\Commands.h"      // REGISTER_VAR_EX (gfx_terrain_565)
-#include "..\FileIO\BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
+#include "../Misc/HPTimer.h"
+#include "../MiscDll/Commands.h"      // REGISTER_VAR_EX (gfx_terrain_565)
+#include "../FileIO/BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
+#if defined(__APPLE__)
+int S2TerrainNearResolution();   // port/platform/src/settings.mm
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
 {
@@ -97,9 +100,25 @@ public:
 //			ASSERT( !best.pTexture.IsValid() ); // CRAP
 		}
 		NGfx::CTexture *pRes;
+		int nRes = nResolution, nMips = 5;
+#if defined(__APPLE__)
+		// macOS port: the near terrain bake can be 512 or 1024 (retail 256), so ground tiles keep their source
+		// detail; the bake renders a fixed 256-unit virtual space at whatever size its target has
+		if ( nResolution == 256 )
+		{
+			nRes = ::S2TerrainNearResolution();
+			nMips = 5 + ( nRes >= 512 ) + ( nRes >= 1024 );
+		}
+		if ( IsValid( best.pTexture ) )
+		{
+			CDynamicCast<NGfx::I2DBuffer> pOld( best.pTexture.GetPtr() );
+			if ( pOld->GetXSize() != nRes )
+				best.pTexture = 0;   // the setting changed: rebuild this slot at the new size
+		}
+#endif
 		if ( !IsValid( best.pTexture ) )
 		{
-			pRes = NGfx::MakeTexture( nResolution, nResolution, 5, NGfx::SPixel8888::ID, NGfx::REGULAR, NGfx::CLAMP );
+			pRes = NGfx::MakeTexture( nRes, nRes, nMips, NGfx::SPixel8888::ID, NGfx::REGULAR, NGfx::CLAMP );
 			best.pTexture = pRes;
 		}
 		else
@@ -119,7 +138,7 @@ static CTerrainTexturesCache cache256( 70, 256 );
 #endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static CObj<NGfx::CTexture> pGreenTexture, pDefaultBump;
-static NGfx::CTexture* GetGenericBuffer( CObj<NGfx::CTexture> *pBuf, NGfx::SPixel8888 &color )
+static NGfx::CTexture* GetGenericBuffer( CObj<NGfx::CTexture> *pBuf, const NGfx::SPixel8888 &color )
 {
 	if ( IsValid(*pBuf) )
 		return *pBuf;
@@ -371,7 +390,7 @@ bool CTerrainTexture::CalcNewTexture( int nSize )
 	vector<CSWRectLayout::ERectOrient> vRandomTextureOrients( nrRegion.Width() );
 
 	//for ( unordered_map<int, NDb::CTerrainTile*>::const_iterator iTempTile = tiles.begin(); iTempTile != tiles.end(); iTempTile++ )
-	for ( vector<NDb::CTerrainTile*>::const_iterator iTempTile = tilesList.begin(); iTempTile != tilesList.end(); iTempTile++ )
+	for ( typename vector<NDb::CTerrainTile*>::const_iterator iTempTile = tilesList.begin(); iTempTile != tilesList.end(); iTempTile++ )
 	{
 		NDb::CTerrainTile *pTile = *iTempTile;
 		int nTileIndex = pTile->GetRecordID();
@@ -669,9 +688,15 @@ void CTerrainTexture::Recalc()
 // report whether either changed. All the LOD / dual-resolution logic lives in CTerrainTextureBlend.
 bool CTerrainTexture::NeedUpdate()
 {
+	bool bSources = false;
+#if defined(__APPLE__)
+	const unsigned generation = TextureSourceGeneration();
+	bSources = textureGeneration != generation;
+	textureGeneration = generation;
+#endif
 	bool bInfo = pInfo.Refresh();
 	bool bRegion = pUpdateRegion.Refresh();
-	return bRegion || bInfo;
+	return bSources || bRegion || bInfo;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // @0x17b2f0: single cached slot now.

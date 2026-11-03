@@ -1,83 +1,55 @@
-# Silent Storm
+# Silent Storm for Mac
 
-*Русский | [English](README.en.md)*
+A native macOS port of **Silent Storm** (2003), the turn-based tactics game by **Nival**. It runs on Apple silicon with no Wine or emulation: Metal for graphics, Core Audio for sound, and a small companion app, Silent Storm Gold, to launch it and explore the game's data.
 
-Исходники Silent Storm принадлежат Nival, оригинальный репозиторий: 
-https://github.com/nival/Silent-Storm
+This is a non-commercial fan project. It contains no game files: you need your own copy of Silent Storm (GOG or Steam).
 
-В этом репозитории ведется доработка исходников с конечной целью -
-получение behaviour-equivalent версии Silent Storm v1.2, путём анализа
-.pdb файлов версии v1.1 (RussianPatch1) и декомпиляции v1.2.
+## Credits
 
-Текущий статус (18.10.2026): игра собирается и запускается на файлах Steam версии,
-была успешно пройдена от начала и до конца кампания союзников[^1], могут присутствовать
-различной заметности баги и расхождения с релизной версией.
+All of the game belongs to **Nival**. This port exists only because:
 
-[^1]: Этот репозиторий не исправляет проблемы самих LUA скриптов и ассетов игры, и, например,
-чтобы пройти последнюю миссию на Steam версии, всё еще нужно устанавливать неофициальный патч.
+- **Nival** released the Silent Storm source code for study and modification: [nival/Silent-Storm](https://github.com/nival/Silent-Storm). Thank you, Nival.
+- **Nikita Metelkov ([met-nikita](https://github.com/met-nikita))** rebuilt that source into a behaviour-equivalent version of Silent Storm v1.2, from the v1.1 debug symbols and the v1.2 executable: [met-nikita/Silent-Storm-Reconstruction](https://github.com/met-nikita/Silent-Storm-Reconstruction). Nearly 300 commits of careful reconstruction. Everything here is built on that work, and its history is kept in spirit: the engine code outside `port/` and `hub/` is theirs and Nival's. Their own README is kept as [README.reconstruction.md](README.reconstruction.md) ([Русский](README.reconstruction.ru.md)).
+- **Drikus Roor** translated the reconstruction's README into English.
+- Bundled libraries: zlib, libpng and squish, each under its own licence in `third_party/`. The FMOD, Bink and LifeStudio headers there are interface headers from the reconstruction project.
 
-<div align="center">
-  <table>
-    <tr>
-      <td colspan="3" align="center">
-        <img width="300" alt="image" src="https://github.com/user-attachments/assets/38ed17a9-1eb2-49c8-a3e5-37e54a1365c7" />
-      </td>
-    </tr>
-    <tr>
-      <td colspan="3" align="center">
-        <img width="300" alt="image" src="https://github.com/user-attachments/assets/33eb9149-4716-4c9a-931a-e8c2102f9761" />
-        <img width="300" alt="image" src="https://github.com/user-attachments/assets/5ac5fc48-9e68-4551-a1ff-022f59d13c3b" />
-      </td>
-    </tr>
-  </table>
-</div>
+The macOS work is the `port/` folder (the Metal renderer, Core Audio, input, the Mac window and Settings), the companion app in `hub/`, and changes through the engine where the port needed them.
 
----
+## Licence
 
-## Изменения относительно оригинальной игры
-Здесь перечислены самые заметные отличия этого кода от оригинала:
+The game, its source and its identity belong to Nival and are used under Nival's licence ([LICENSE.md](LICENSE.md), copied from [nival/Silent-Storm](https://github.com/nival/Silent-Storm/blob/main/LICENSE.md)): **non-commercial use only**. That applies to this repository too. Please don't sell builds, bundle it with anything paid, or attach donations to it. Nival can withdraw that licence; if they do, this repository comes down.
 
-- Поддержка всех разрешений, как в Sentinels (без обрезанных букв)
-- Поддержка Ctrl+V из системного буфера обмена в консоль
-- Исправлен баг с высоким уровнем сглаживания на высоких разрешениях экрана
+This project is not affiliated with or endorsed by Nival.
 
-## Сборка
+## What the Mac version adds
 
-### Требования
-- **Windows** с **Visual Studio 2022** (нужен компонент "Разработка классических
-  приложений на C++", MSVC v143, Windows SDK 10) или новее. Проверено на VS 2026.
-- **CMake 3.21+**
-- Сборка **только Win32 / x86**.
-- *Необязательно:* **DirectX SDK June 2010** (https://www.microsoft.com/en-us/download/details.aspx?id=6812) - нужен
-  только для сборки инструмента `ShaderCompiler`; если его нет, инструмент
-  пропускается автоматически.
+- Native Apple silicon build, Metal renderer, Retina and HDR displays, VSync and frame pacing
+- **Original / Enhanced** graphics, switched live with **F9** or **⌘G**: the 2003 look, or ambient occlusion, bloom, higher-resolution shadows and supersampling
+- A native **Settings** window (**⌘,**) with every option described, including ones the original game hid
+- **F1** or **⌘/** shows every key, read from your own key bindings
+- **MacBook keys**: Command stands in for keys a laptop lacks (⌘8/5/4/6/1/3 aim like the numpad, ⌘↑/⌘↓ change floors, ⌘S and ⌘L quick save and load, and more)
+- **Faster enemy and ally turns**: 2×, 3× or 4× with **F2** or **⌘T**. The other sides decide exactly as at normal speed; your own turns stay normal
+- **Weapon comparison on hover**: a gun's tooltip compares it with the one in the soldier's hands, using the game's own hit formula for that soldier (skills, perks, wounds, pose, familiarity) at three ranges. Hold Shift for every stat
+- Silent Storm Gold: launch the game, read your live squad, and browse every character, voice line, weapon, perk, mission, sound, model, texture and database table
 
-### Сборка
-Запустите **`build.bat`** или выполните в терминале из папки репозитория:
+## Building
 
-```
-cmake -S . -B build -A Win32
-cmake --build build --config Release
+Requirements: Apple silicon, Xcode with its command-line tools, CMake 3.24 or later and Ninja. The game runs on macOS 14 or later; the companion app needs macOS 26 and Swift 6.2.
+
+```bash
+cmake -S port -B build -G Ninja
+cmake --build build
 ```
 
-Результаты появятся в **`build\Release\`** - `Game.exe` и инструменты (`DataImport`,
-`PkgBuilder`, `FontGen`, `TexConv`, `TexMipStrip`, `ShaderCompiler`, `LSConverter`).
+The game is `build/Silent Storm.app`. On first launch it asks for your Silent Storm folder (from GOG or Steam) and copies the game data into `~/Library/Application Support/Silent Storm`.
 
-Для отладки запустите **`build-debug.bat`** (собирает конфигурацию `RelWithDebInfo`),
-откройте **`build\A5.sln`** в Visual Studio и запустите отладку проекта `Game`.
-CMake попытается подсунуть вашу папку с игрой в рабочий каталог отладчика, если
-у него это не получится, то нужно указать её вручную. Правой кнопкой по проекту
-`Game` - Свойства - Отладчик - Рабочий каталог. Пример 
-`E:/SteamLibrary/steamapps/common/Silent Storm`
+The companion app:
 
-### Запуск игры
-Поместите Game.exe (можно переименовать, чтобы не заменить оригинал) в папку с игрой
-(пример: `E:/SteamLibrary/steamapps/common/Silent Storm`). 
-Запустите Game.exe.
+```bash
+cd hub
+swift build -c release
+```
 
-### Примечания
-- импортируемые проприетарные библиотеки fmod / Bink / LifeStudio **генерируются во время сборки** из
-  зафиксированных таблиц экспорта `.def` в каталоге `third_party/` - оригинальные SDK не требуются.
-- `MapEdit`, `Scintilla`, `OpenDynamix` оставлены в репозитории, но **не
-  собираются** (по тем или иным причинам, с MapEdit там вообще всё сложно); их списки 
-  исходников сохранены в `sources.cmake`.
+## Status
+
+The Allied campaign plays, as it does in the reconstruction it builds on. Some behaviour may still differ from the 2003 release; reports are welcome as issues.

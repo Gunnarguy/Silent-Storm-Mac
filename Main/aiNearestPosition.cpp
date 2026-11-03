@@ -92,7 +92,7 @@ NAI::SPosition GetNearestPosition( CVec3 ptPos, IPathNetwork *_pPathNetwork, boo
 		SSphere sSphere( ptPos, fRadius );
 		vector<SPathPlace> vNearestPlaces;
 		pPathNetwork->GetNearPlaces( sSphere, &vNearestPlaces );
-		for ( vector<SPathPlace>::iterator p = vNearestPlaces.begin(); p != vNearestPlaces.end(); ++p )
+		for ( typename vector<SPathPlace>::iterator p = vNearestPlaces.begin(); p != vNearestPlaces.end(); ++p )
 		{
 			// retail RealGetNearestPosition @0x7e830: the NATIVE snap accepts every place that is not
 			// hard-impassable -- GetPassability(p) != AIP_NOT_PASSABLE -- so fundamentally-walkable but

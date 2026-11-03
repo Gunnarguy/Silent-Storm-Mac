@@ -7,12 +7,12 @@
 #include "RPGUnitInfo.h"
 #include "RPGUnit.h"
 #include "RPGItemSet.h"
-#include "..\Misc\StrProc.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataAck.h"
-#include "..\DBFormat\DataInterface.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../Misc/StrProc.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataAck.h"
+#include "../DBFormat/DataInterface.h"
+#include "../DBFormat/DataRPG.h"
 #include "Sound.h"
 #include "iMission.h"
 #include "Interface.h"
@@ -169,7 +169,7 @@ public:
 
 protected:
 	enum { N_ANY_VALUE = -1 };
-	enum ESlot
+	enum ESlot : int
 	{
 		SLOT_R1C1	= 0,
 		SLOT_R1C2	= 1,

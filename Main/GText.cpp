@@ -5,10 +5,10 @@
 #include "G2DView.h"
 #include "GLocale.h"
 #include "GText.h"
-#include "..\Misc\StrProc.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\MiscDll\LogStream.h"   // csSystem (font-load diagnostics)
+#include "../Misc/StrProc.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
+#include "../MiscDll/LogStream.h"   // csSystem (font-load diagnostics)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
 {
@@ -304,7 +304,7 @@ void CTextFormater::GenerateLine()
 
 					int nSpaceCount = 0;
 					float fSpaceWordsWidth = 0;
-					for ( list<SChunk>::const_iterator iTemp = chunksList.begin(); iTemp != chunksList.end(); iTemp++ )
+					for ( typename list<SChunk>::const_iterator iTemp = chunksList.begin(); iTemp != chunksList.end(); iTemp++ )
 					{
 						if ( iTemp->eType == CHAR_SPACE )
 						{
@@ -320,7 +320,7 @@ void CTextFormater::GenerateLine()
 		}
 	}
 
-	for ( list<SChunk>::const_iterator iTemp = chunksList.begin(); iTemp != chunksList.end(); iTemp++ )
+	for ( typename list<SChunk>::const_iterator iTemp = chunksList.begin(); iTemp != chunksList.end(); iTemp++ )
 	{
 		SFontInfo sFontInfo;
 		GetFontFormatInfo( iTemp->sState.sFont, &sFontInfo );
@@ -333,7 +333,7 @@ void CTextFormater::GenerateLine()
 
 			int nCount = 0;
 			float fShift = fX - ( (int) fX );
-			for ( wstring::const_iterator iChar = iTemp->wsText.begin(); iChar != iTemp->wsText.end(); iChar++ )
+			for ( typename wstring::const_iterator iChar = iTemp->wsText.begin(); iChar != iTemp->wsText.end(); iChar++ )
 			{
 				const STFCharacter &sCharacter = sFontInfo.pInfo->GetChar( *iChar );
 
@@ -468,7 +468,7 @@ void CTextFormater::TagFont( const wstring &wsTag )
 	SplitString( wsTag, &partsList );
 
 	SFont sNewFont( sState.sFont );
-	for ( list<SWString>::iterator iTemp = partsList.begin(); iTemp != partsList.end(); iTemp++ )
+	for ( typename list<SWString>::iterator iTemp = partsList.begin(); iTemp != partsList.end(); iTemp++ )
 	{
 		if ( iTemp->eType != CHAR_ALNUM )
 			continue;
@@ -495,7 +495,7 @@ void CTextFormater::TagFont( const wstring &wsTag )
 			else
 			{
 				WCHAR wsString[128];
-				int nParams = swscanf( iTemp->wsString.c_str(), L"%d%2s", &sNewFont.nSize, wsString );
+				int nParams = swscanf( iTemp->wsString.c_str(), L"%d%2ls", &sNewFont.nSize, wsString );
 
 				if ( nParams > 1 )
 				{
@@ -531,7 +531,7 @@ void CTextFormater::TagColor( const wstring &wsTag )
 	list<SWString> partsList;
 	SplitString( wsTag, &partsList );
 
-	list<SWString>::iterator iTemp = partsList.begin();
+	typename list<SWString>::iterator iTemp = partsList.begin();
 	iTemp++;
 	if ( ( iTemp->eType != CHAR_PUNCTUATION ) || ( iTemp->wsString.compare( L"=" ) != 0 ) )
 		return;

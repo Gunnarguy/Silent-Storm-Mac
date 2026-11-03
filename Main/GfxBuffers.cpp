@@ -2,8 +2,8 @@
 #include <D3D9.h>
 #include "Gfx.h"
 #include "GfxBuffers.h"
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"
 
 //#include "GfxUtils.h"
 //#include "GfxRender.h"
@@ -32,7 +32,7 @@ INew2DTexAllocCallback::~INew2DTexAllocCallback()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static void InformNew2DTextureAlloc()
 {
-	for ( list<INew2DTexAllocCallback*>::iterator i = alloc2Dcallback.begin(); i != alloc2Dcallback.end(); ++i )
+	for ( typename list<INew2DTexAllocCallback*>::iterator i = alloc2Dcallback.begin(); i != alloc2Dcallback.end(); ++i )
 		(*i)->NewTextureWasAllocated();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,7 +50,7 @@ T* RegisterDXBuffer( T *p )
 void FreeLinearBuffers()
 {
 	EraseInvalidRefs( &lockableList );
-	for ( list<CPtr<CLockable> >::iterator i = lockableList.begin(); i != lockableList.end(); )
+	for ( typename list<CPtr<CLockable> >::iterator i = lockableList.begin(); i != lockableList.end(); )
 	{
 		CLockable *p = *i;
 		if ( IsValid( p ) )
@@ -131,7 +131,7 @@ public:
 		//NCache::MRU_TYPE nBestMRU = NCache::MRU_LAST;
 		NCache::CFibElement el;
 		el.nSize = NCache::GetMajorFib( nSize );
-		CCache::SCachePlace best;
+		typename CCache::SCachePlace best;
 		if ( !pCache->GetPlace( el, &best ) )
 		{
 			ASSERT( 0 );
@@ -190,14 +190,14 @@ public:
 	void DrawRU( CTexture *pTarget )
 	{
 		CTextureLock<SPixel8888> tl( pTarget, 0, INPLACE );
-		vector<CCache::SStatePlace> places;
+		vector<typename CCache::SStatePlace> places;
 		pCache->GetState( &places );
 		for ( int y = 0; y < tl.GetYSize(); ++y )
 			for ( int x = 0; x < tl.GetXSize(); ++x )
 				tl[y][x] = SPixel8888( 255,255,255 );
 		for ( int k = 0; k < places.size(); ++k )
 		{
-			const CCache::SStatePlace &p = places[k];
+			const typename CCache::SStatePlace &p = places[k];
 			SPixel8888 color;
 			if ( p.pUser )
 			{
@@ -509,7 +509,7 @@ CTextureLocker::CTextureLocker( IDirect3DSurface9 *_pObj, const CTRect<int> &_re
 	if ( access != INPLACE && access != INPLACE_READONLY )
 	{
 		lockRect.SetRect( 0, 0, rect.Width(), rect.Height() );
-		CFormatRingMap::iterator i = sysTextures.find( format );
+		typename CFormatRingMap::iterator i = sysTextures.find( format );
 		ASSERT( i != sysTextures.end() );
 		pLocker = i->second->GetTexture();
 		pLocker->MarkBusy();
@@ -690,8 +690,11 @@ void GetSurface( CCubeTexture *pTexture, EFace face, int nLevel, NWin32Helper::c
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+static CTB *atlasTransparentTB = 0;   // macOS port diagnostics: S2_ATLAS_LOG=1
 class CTextureCache
 {
+	int nAtlasAllocs = 0;
+	long long nAtlasPixels = 0;
 	typedef NCache::CGatheringCache<NCache::CShortPtrAllocator, NCache::CQuadTreeElement, CTexture> CCache;
 	CObj<CCache> pCache;
 	CPtr<CTB> pBuffer;
@@ -731,13 +734,28 @@ public:
 		if ( !IsValid(pCache) )
 			return 0;
 		NCache::CQuadTreeElement elem;
-		elem.nXSize = GetMSB( nXSize - 1 ) + 1;
-		elem.nYSize = GetMSB( nYSize - 1 ) + 1;
-		CCache::SCachePlace place;
+		// UVs are stored at 1/2048 (N_VEC_FULL_TEX_SIZE), so a 4096 atlas addresses even texels only: a cell of at least 2
+		// keeps every image on an even origin (1x1 images at odd places would read a neighbour)
+		const int nMinCell = pBuffer->GetXSize() > N_VEC_FULL_TEX_SIZE ? 2 : 1;
+		elem.nXSize = GetMSB( Max( nXSize, nMinCell ) - 1 ) + 1;
+		elem.nYSize = GetMSB( Max( nYSize, nMinCell ) - 1 ) + 1;
+		typename CCache::SCachePlace place;
+		static const bool bAtlasLog = getenv( "S2_ATLAS_LOG" ) != 0;
 		if ( !pCache->GetPlace( elem, &place ) )
+		{
+			if ( bAtlasLog )
+				fprintf( stderr, "[atlas] %dx%d FAILED in %dx%d\n", nXSize, nYSize, pBuffer->GetXSize(), pBuffer->GetYSize() );
 			return 0;
+		}
 		CTexture *pRes = new CTexture( pBuffer, CLAMP );
 		pCache->PerformAlloc( pRes, &place );
+		if ( bAtlasLog )
+		{
+			nAtlasAllocs++;
+			nAtlasPixels += (long long)nXSize * nYSize;
+			fprintf( stderr, "[atlas] %s alloc %d: %dx%d at %d,%d, %lld px requested so far of %d\n", pBuffer->GetXSize() ? ( pBuffer == atlasTransparentTB ? "transparent" : "2d" ) : "?",
+				nAtlasAllocs, nXSize, nYSize, (int)place.resPlace.nShiftX, (int)place.resPlace.nShiftY, nAtlasPixels, pBuffer->GetXSize() * pBuffer->GetYSize() );
+		}
 		pRes->region.SetRect( 
 			place.resPlace.nShiftX, place.resPlace.nShiftY,
 			place.resPlace.nShiftX + nXSize, place.resPlace.nShiftY + nYSize
@@ -749,14 +767,14 @@ public:
 	void DrawRUImpl( int nShift )
 	{
 		CTextureLock<TPixel> tl( pTexture, 0, INPLACE );
-		vector<CCache::SStatePlace> places;
+		vector<typename CCache::SStatePlace> places;
 		pCache->GetState( &places );
 		for ( int y = 0; y < tl.GetYSize(); ++y )
 			for ( int x = 0; x < tl.GetXSize(); ++x )
 				tl[y][x] = TPixel( (255 >> nShift),(255 >> nShift),(255 >> nShift) );
 		for ( int k = 0; k < places.size(); ++k )
 		{
-			const CCache::SStatePlace &p = places[k];
+			const typename CCache::SStatePlace &p = places[k];
 			TPixel color;
 			if ( p.pUser )
 			{
@@ -810,7 +828,7 @@ public:
 	void Clear() { textures.clear(); }
 	void Walk()
 	{
-		for ( list<STex>::iterator i = textures.begin(); i != textures.end(); ++i )
+		for ( typename list<STex>::iterator i = textures.begin(); i != textures.end(); ++i )
 		{
 			ASSERT( IsValid( i->pTB ) );
 			if ( !IsValid( i->pTexture ) )
@@ -822,7 +840,7 @@ public:
 		// pick best
 		NCache::MRU_TYPE nBest = nCurrentFrame - 1; //MRU_LAST;
 		STex *pBest = 0;
-		for ( list<STex>::iterator i = textures.begin(); i != textures.end(); ++i )
+		for ( typename list<STex>::iterator i = textures.begin(); i != textures.end(); ++i )
 		{
 			if ( !IsValid( i->pTexture ) )
 			{
@@ -869,6 +887,7 @@ public:
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static __forceinline void ReallyFastShiftingTransfer( const unsigned short *pSrc, int *pDst, int nSize, int nShift )
 {
+#if defined(_M_IX86)
 	_asm
 	{
 		mov esi, pSrc
@@ -918,6 +937,11 @@ last_lp:
 		jnz last_lp
 fff:
 	}
+#else
+	// the MMX loop zero-extends each 16-bit index and adds the vertex-buffer start
+	for ( int i = 0; i < nSize; ++i )
+		pDst[i] = (int)pSrc[i] + nShift;
+#endif
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 struct S32Triangle
@@ -1285,11 +1309,11 @@ void NextFrameBuffes( bool bOnThrashing )
 		EraseInvalidRefs( &lostable );
 		EraseInvalidRefs( &managed );
 	}
-	for ( CRTCache::iterator i = rtCache.begin(); i != rtCache.end(); ++i )
+	for ( typename CRTCache::iterator i = rtCache.begin(); i != rtCache.end(); ++i )
 		i->second.Walk();
-	for ( CCMCache::iterator i = cmCache.begin(); i != cmCache.end(); ++i )
+	for ( typename CCMCache::iterator i = cmCache.begin(); i != cmCache.end(); ++i )
 		i->second.Walk();
-	for ( CGeometryCacheHash::iterator i = geometries.begin(); i != geometries.end(); ++i )
+	for ( typename CGeometryCacheHash::iterator i = geometries.begin(); i != geometries.end(); ++i )
 		i->second->NextFrame( bOnThrashing );
 	textureCache.NextFrame( bOnThrashing );
 	transparentCache.NextFrame( bOnThrashing );
@@ -1307,7 +1331,7 @@ CTexture* GetTextureContainer( CTexture *pTex, STexturePlaceInfo *pPlace )
 	pPlace->size.y = pTex->pTB->GetYSize();
 	if ( pPlace->IsWhole() )
 		return pTex;
-	CTexContainerHash::iterator i = texContainers.find( pTex->pTB );
+	typename CTexContainerHash::iterator i = texContainers.find( pTex->pTB );
 	if ( i != texContainers.end() && IsValid( i->second ) )
 		return i->second;
 	CTexture *pRes = new CTexture( pTex->pTB, CLAMP );
@@ -1325,11 +1349,15 @@ void InitBuffers()
 	// Retail v1.2 0x510fa1: both shared atlases follow the applied texture format.
 	const D3DFORMAT atlasFormat = Is16BitTextures() ? D3DFMT_A4R4G4B4 : D3DFMT_A8R8G8B8;
 	textureCache.Init( new CTB( 1024, 1024, 1, atlasFormat, REGULAR ) );
-	transparentCache.Init( new CTB( 1024, 1024, 4, atlasFormat, REGULAR ) );
+	// macOS port: retail's 1024 atlas was asked for 6.5 million pixels by one level (S2_ATLAS_LOG, 1,558 allocations) and
+	// holds 1.05 million, so particle images evicted each other: bushes and rain read fire and smoke pixels in flickering
+	// bursts. 4096 holds 16.8 million. See the cell size note in Alloc.
+	atlasTransparentTB = new CTB( 4096, 4096, 4, atlasFormat, REGULAR );
+	transparentCache.Init( atlasTransparentTB );
 
-	for (unordered_map<int,int>::iterator i = rtInfo.targets.begin(); i != rtInfo.targets.end(); ++i )
+	for (typename unordered_map<int,int>::iterator i = rtInfo.targets.begin(); i != rtInfo.targets.end(); ++i )
 		rtCache[ i->first ].Init( i->first, i->second );
-	for (unordered_map<int,int>::iterator i = rtInfo.cubeTargets.begin(); i != rtInfo.cubeTargets.end(); ++i )
+	for (typename unordered_map<int,int>::iterator i = rtInfo.cubeTargets.begin(); i != rtInfo.cubeTargets.end(); ++i )
 		cmCache[ i->first ].Init( i->first, i->second );
 	// buffers for dynamic textures
 	sysTextures[D3DFMT_A8R8G8B8] = new CSurfaceRing( D3DFMT_A8R8G8B8, N_SYSMEM_TEXTURES );
@@ -1379,7 +1407,7 @@ static ILinearBuffer* MakeGeometry( int nFormatID, int nSize, EBufferUsage usage
 		usage = STATIC;
 	ASSERT( !bTnLDevice || ( nFormatID != SGeomVecFull::ID && nFormatID != SGeomVecRect::ID ) );
 	ASSERT( bTnLDevice || nFormatID == SGeomVecFull::ID || nFormatID == SGeomVecRect::ID );
-	CGeometryCacheHash::iterator i = geometries.find( SGeometryType(usage, nFormatID) );
+	typename CGeometryCacheHash::iterator i = geometries.find( SGeometryType(usage, nFormatID) );
 	ASSERT( i != geometries.end() );
 	return i->second->Alloc( nSize );
 }
@@ -1624,7 +1652,7 @@ void DrawLineStrip( CGeometry *pGeom )
 int CalcTouchedTextureSize()
 {
 	int nRes = 0;
-	for ( list< CMObj<CObjectBase> >::iterator i = managed.begin(); i != managed.end(); ++i )
+	for ( typename list< CMObj<CObjectBase> >::iterator i = managed.begin(); i != managed.end(); ++i )
 	{
 		CDynamicCast<CTexture> pTexture( *i );
 		if ( IsValid( pTexture ) && pTexture->GetFrameMRU() > nCurrentFrame - N_MAX_PRESENTS_IN_QUEUE - 2 )
@@ -1644,7 +1672,7 @@ static bool IsThrashing( CLinearBuffer<TBuf,TElem> *pLinearBuffer )
 bool IsGeometryThrashing()
 {
 	bool bRes = false;
-	for ( CGeometryCacheHash::iterator i = geometries.begin(); i != geometries.end(); ++i )
+	for ( typename CGeometryCacheHash::iterator i = geometries.begin(); i != geometries.end(); ++i )
 		bRes |= IsThrashing( i->second.GetPtr() );
 	return bRes;
 }
@@ -1689,7 +1717,7 @@ void TypeStats( CLinearBuffer<TBuf,TElem> *pLinearBuffer )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static void ShowCacheStats( const string &szID, const vector<wstring> &szParams, void *pContext )
 {
-	for ( CGeometryCacheHash::iterator i = geometries.begin(); i != geometries.end(); ++i )
+	for ( typename CGeometryCacheHash::iterator i = geometries.begin(); i != geometries.end(); ++i )
 	{
 		csSystem << "type " << i->first.nID;
 		if ( i->first.usage == STATIC )

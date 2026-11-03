@@ -2,7 +2,7 @@
 #include "GInit.h"
 #include "Gfx.h"
 #include "GfxRender.h"
-#include "..\MiscDll\Commands.h"
+#include "../MiscDll/Commands.h"
 
 namespace NGScene
 {
@@ -18,9 +18,8 @@ bool CanCacheLighting() { return bCanCacheLighting; }
 bool CanCalcAmbient() { return bCanCalcAmbient; }
 bool UsePrecisePointShadows() { return bPrecisePointShadows; }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// WIDESCREEN (Sentinels design): gfx_resolution accepts a "WxH" string (Sentinels stores it that
-// way -- its "gfx_resolution" @rdata 0x90b8d0 sits in a cmdline map of L"WxH" values, e.g.
-// "-1280" -> L"1280x960"); a plain number keeps the legacy width whitelist.
+// WIDESCREEN: gfx_resolution accepts a "WxH" string (e.g. L"1280x960"); a plain number keeps the
+// legacy width whitelist.
 void GetConfiguredVideoMode( int *pModeX, int *pModeY )
 {
 	int nModeX = 1024, nModeY = 768;
@@ -75,7 +74,9 @@ bool SetModeFromConfig( bool bRecreate )
 	nCLSkyTextures = Float2Int( NGlobal::GetVar( "gfx_cl_sky_textures", 0 ).GetFloat() );
 	nCLSkyTextures = Max( 0, nCLSkyTextures );
 	nCLSkyTextures = Min( nCLSkyTextures, N_MAX_SKY_TEXTURES );
-	if ( nDepthTexResolution != 1024 )
+	// retail accepts 512 or 1024; the macOS port also allows 2048 and 4096 (the shadow map is an ordinary render
+	// target whose size every user reads back through GetDepthTexResolution)
+	if ( nDepthTexResolution != 1024 && nDepthTexResolution != 2048 && nDepthTexResolution != 4096 )
 		nDepthTexResolution = 512;
 
 	// select feature set
@@ -129,6 +130,14 @@ bool SetModeFromConfig( bool bRecreate )
 	}
 
 	bool bRes = NGfx::SetMode( NGfx::SVideoMode( nModeX, nModeY, nBpp, fullScreen ), rtInfo );
+	if ( !bRes && ( nModeX != 1024 || nModeY != 768 ) )
+	{
+		// macOS port: a size the adapter does not list (typed into config.cfg, or a display that changed) used
+		// to leave gfx_recreate with no device at all (null pDevice in Is3DActive). Fall back to 1024x768, which
+		// every adapter lists, keeping the quality settings, and store it so the next launch starts cleanly.
+		NGlobal::SetVar( "gfx_resolution", NGlobal::CValue( wstring( L"1024x768" ) ) );
+		bRes = NGfx::SetMode( NGfx::SVideoMode( 1024, 768, nBpp, fullScreen ), rtInfo );
+	}
 	if ( !bRes )
 	{
 		// in case of failure try to create device limited to fastest mode

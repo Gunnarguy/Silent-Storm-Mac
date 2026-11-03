@@ -4,10 +4,10 @@
 #include "G2DView.h"
 #include "GSceneUtils.h"
 #include "RectLayout.h"
-#include "..\Misc\StrProc.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"
 #include "UIWrap.h"
 #include "UIBaseCtrls.h"
@@ -252,7 +252,7 @@ void CEdit::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 		CRectLayout sLayout;
 		if ( nCursor < chars.size() )
 		{
-			list<CTRect<float> >::const_iterator iChar = chars.begin();
+			typename list<CTRect<float> >::const_iterator iChar = chars.begin();
 			advance( iChar, nCursor );
 			const CTRect<float> &sRect = *iChar;
 			sLayout.AddRect( sRect.x1, sRect.y1, 2, sRect.Height(), CRectLayout::STextureCoord( CTRect<float>( 0, 0, 0, 0 ) ) );
@@ -317,7 +317,7 @@ void CButton::RemoveState( int nID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CWindow* CButton::GetState( int nID ) const
 {
-	unordered_map<int,CObj<CWindow> >::const_iterator iTemp = statesMap.find( nID );
+	typename unordered_map<int,CObj<CWindow> >::const_iterator iTemp = statesMap.find( nID );
 	if ( iTemp != statesMap.end() )
 		return iTemp->second;
 
@@ -477,7 +477,7 @@ bool CButton::Update( const STime &sTime, NGScene::I2DGameView *pView )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CButton::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 {
-	for ( unordered_map<int,CObj<CWindow> >::iterator iTemp = statesMap.begin(); iTemp != statesMap.end(); iTemp++ )
+	for ( typename unordered_map<int,CObj<CWindow> >::iterator iTemp = statesMap.begin(); iTemp != statesMap.end(); iTemp++ )
 	{
 		if ( iTemp->first == nState )
 			iTemp->second->SetStyle( STYLE_VISIBLE, true );
@@ -1074,7 +1074,7 @@ void CListView::RemoveItem( int nID )
 	if ( nID == nSelectedID )
 		nSelectedID = -1;
 
-	for ( list<SItem>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+	for ( typename list<SItem>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 	{
 		if ( iTemp->nID == nID )
 		{
@@ -1109,7 +1109,7 @@ CWindow* CListView::GetItem( int nID ) const
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CListView::GetItemsList( list<CPtr<CWindow> > *pList ) const
 {
-	for ( list<SItem>::const_iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+	for ( typename list<SItem>::const_iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 		pList->push_back( iTemp->pWindow.GetPtr() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1147,7 +1147,7 @@ bool CListView::ProcessMessage( const SEvent &sEvent )
 					if ( nSelectedID != -1 )
 					{
 						int nPrevID = nSelectedID;
-						for ( list<SItem>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+						for ( typename list<SItem>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 						{
 							if ( iTemp->nID == nSelectedID )
 								SetSelectedItem( nPrevID );
@@ -1164,7 +1164,7 @@ bool CListView::ProcessMessage( const SEvent &sEvent )
 					if ( nSelectedID != -1 )
 					{
 						bool bSelectNext = false;
-						for ( list<SItem>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+						for ( typename list<SItem>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 						{
 							if ( bSelectNext )
 							{
@@ -1206,7 +1206,7 @@ bool CListView::ProcessMessage( const SEvent &sEvent )
 bool CListView::Update( const STime &sTime, NGScene::I2DGameView *pView )
 {
 	int nY = 0, nX = 0;
-	for ( list<SItem>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+	for ( typename list<SItem>::iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 	{
 		// retail @0x714217: hidden rows are forced invisible and skipped in the stacking
 		if ( iTemp->bHidden )
@@ -1231,7 +1231,7 @@ void CListView::OnAction()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CListView::FindItemByID( int nID, SItem *pItem ) const
 {
-	for ( list<SItem>::const_iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+	for ( typename list<SItem>::const_iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 	{
 		if ( iTemp->nID != nID )
 			continue;
@@ -1245,7 +1245,7 @@ bool CListView::FindItemByID( int nID, SItem *pItem ) const
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CListView::FindItemByWindow( CWindow *pWindow, SItem *pItem ) const
 {
-	for ( list<SItem>::const_iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
+	for ( typename list<SItem>::const_iterator iTemp = itemsList.begin(); iTemp != itemsList.end(); iTemp++ )
 	{
 		if ( iTemp->pWindow != pWindow )
 			continue;
@@ -1450,7 +1450,7 @@ bool CComboBoxList::Update( const STime &sTime, NGScene::I2DGameView *pView )
 	list<CPtr<CWindow> > items;
 	GetItemsList( &items );
 	int nWidth = 0;
-	for ( list<CPtr<CWindow> >::const_iterator i = items.begin(); i != items.end(); ++i )
+	for ( typename list<CPtr<CWindow> >::const_iterator i = items.begin(); i != items.end(); ++i )
 		nWidth = max( nWidth, (*i)->GetSize().x );
 	SetSize( SPoint( nWidth, GetSize().y ) );
 	CListView::Update( sTime, pView );
@@ -1622,7 +1622,7 @@ float CProgressBar::GetValue()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CProgressBar::SetValue( float _fValue )
 {
-	fValue = min( max( _fValue, 0 ), 1 );
+	fValue = s2min( s2max( _fValue, 0 ), 1 );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CProgressBar::ProcessMessage( const SEvent &sEvent )

@@ -1,6 +1,6 @@
 #include "stdafx.h"
 //
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataRPG.h"
 //
 #include "aiWeapon.h"
 #include "aiUnit.h"
@@ -172,11 +172,11 @@ bool CAIFireArmsWeaponBase::IsWorseThen( NRPG::CWeaponItem *pCandidate ) const
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GET_WEAPON_OPERATION_AP( Name, RPGName )									\
-int CAIFireArmsWeapon::##Name() const															\
+int CAIFireArmsWeapon::Name() const															\
 {																																	\
 	ASSERT( IsValid( pOwner ) );																		\
 	if ( IsValid( pOwner ) )																				\
-		return pOwner->GetRPGUnit()->##RPGName( GetItem() );					\
+		return pOwner->GetRPGUnit()->RPGName( GetItem() );					\
 	else																														\
 		return N_MAX_AP;																							\
 }
@@ -265,7 +265,7 @@ int CAIFireArmsWeapon::GetAmmoCountPerAP( int _nAP ) const
 	// remember the number of rounds in each magazine
 	list<int> AmmoCount;
 	AmmoCount.push_back( GetCurrentClip()->GetAmmoCount() );
-	for ( vector< CObj<CAIFireArmsWeaponClip> >::const_iterator i = clips.begin(); i != clips.end(); ++i )
+	for ( typename vector< CObj<CAIFireArmsWeaponClip> >::const_iterator i = clips.begin(); i != clips.end(); ++i )
 		AmmoCount.push_back( (*i)->GetAmmoCount() );
 	int nAmmoCount = AmmoCount.front();
 	// count how many rounds we can fire

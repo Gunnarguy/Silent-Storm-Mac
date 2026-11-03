@@ -3,7 +3,7 @@
 //
 #include "Transform.h"
 #include "Render.h"
-#include "..\Misc\2DArray.h"
+#include "../Misc/2DArray.h"
 //
 namespace NDb
 {
@@ -218,7 +218,7 @@ public:
 	void TraceEntity( const vector<SConvexHull> &e, bool bTerrain )	{	ASSERT(0); }
 	void TraceEntity( const SConvexHull &e, bool bTerrain );
 	//
-	friend class CTParent;
+	friend CTParent;
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class CVisionVoxelRenderer : public CTVoxelRenderer<CVisionVoxelRenderer, char>
@@ -250,7 +250,7 @@ public:
 	void TraceEntity( const SConvexHull &e, bool bTerrain );
 	void FillSolid();
 	//
-	friend class CTParent;
+	friend CTParent;
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 }

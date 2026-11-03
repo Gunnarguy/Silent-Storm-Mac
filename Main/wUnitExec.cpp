@@ -13,13 +13,13 @@
 #include "rpgCheatConstants.h"
 #include "wObject.h"
 #include "wAckBase.h"
-#include "..\misc\RandomGen.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\DBFormat\DataPerk.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataAI.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataMap.h"
+#include "../misc/RandomGen.h"
+#include "../MiscDll/LogStream.h"
+#include "../DBFormat/DataPerk.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataAI.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataMap.h"
 #include "wUnitAttackExec.h"
 #include "rpgCheatConstants.h"
 #include "wUnitStates.h"
@@ -232,7 +232,7 @@ public:
 			}
 			//
 			ray.ptOrigin += ray.ptDir * pUS->GetMinClearDistance();
-			for ( vector<NRPG::CAttackPortion>::const_iterator i = attack.begin(); i != attack.end(); ++i )
+			for ( typename vector<NRPG::CAttackPortion>::const_iterator i = attack.begin(); i != attack.end(); ++i )
 			{
 				NRPG::SAttackRayInfo rayInfo;
 				NRPG::MakeAccidentalShot( &rayInfo, pUS, pUS->GetPosition(), *i, ray.ptOrigin, ray.ptDir, 30.0f );
@@ -798,13 +798,13 @@ EUnitCommandResult CExecHide::CanDoIt()
 	//
 	vector< CPtr<CPlayer> > players;
 	pUS->GetWorld()->GetPlayersList( &players );
-	for ( vector< CPtr<CPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
+	for ( typename vector< CPtr<CPlayer> >::iterator i = players.begin(); i != players.end(); ++i )
 	{
 		if ( pUS->GetPlayer() == *i )
 			continue;
 		//
 		const vector< CMObj<CUnitServer> > &units = (*i)->GetPlayerUnits();
-		for ( vector< CMObj<CUnitServer> >::const_iterator u = units.begin(); u != units.end(); ++u )
+		for ( typename vector< CMObj<CUnitServer> >::const_iterator u = units.begin(); u != units.end(); ++u )
 		{
 			if ( (*u)->GetDiplomacyState( pUS ) == NDb::DS_ENEMY && (*u)->IsUnitVisible( pUS ) )
 				return UCR_GENERAL_FAILURE;

@@ -5,20 +5,20 @@
 #include "wUnitCommands.h"
 #include "wUnitGroup.h"
 #include "wOSBase.h"
-#include "..\DBFormat\DataCamera.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\Misc\RandomGen.h"
+#include "../DBFormat/DataCamera.h"
+#include "../MiscDll/LogStream.h"
+#include "../Misc/RandomGen.h"
 #include "rpgGlobal.h"
 #include "scriptPtr.h"
 #include "aiPosition.h"
 #include "aiRoute.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataDifficulty.h"
-#include "..\DBFormat\DataFormat.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataDifficulty.h"
+#include "../DBFormat/DataFormat.h"
 #include "scriptCallLUA.h"
 #include "scriptCommon.h"
 #include "scriptPosition.h"
-#include "..\Script\lstate.h"
+#include "../Script/lstate.h"
 #include "wDebris.h"
 //
 // lua_showlog (retail @0x9c70f8, default 0, saved; registered in the A5Script block)
@@ -197,7 +197,7 @@ static void ShowLuaLog( const string &szFuncName, int nThread, const vector<SLua
 	csScript << CC_GREY << "  LUA(" << szBuf << "):  " << CC_ORANGE << szFuncName.c_str();
 	csScript << "(  ";
 	string szArgs;
-	for ( vector<SLuaParams>::const_iterator i = params.begin(); i != params.end(); ++i )
+	for ( typename vector<SLuaParams>::const_iterator i = params.begin(); i != params.end(); ++i )
 	{
 		if ( IsValid( i->p ) )
 			szArgs += luaOutUserData( i->p.GetPtr(), false ) + ", ";
@@ -344,7 +344,7 @@ static bool luaPushCallParameters( string szName,
   lua_getglobal( pState, szName.c_str() );
 	if ( lua_isfunction( pState, -1 ) )
 	{
-		for ( vector< CObj<CLUACallParam> >::const_iterator i = params.begin(); i != params.end(); ++i )
+		for ( typename vector< CObj<CLUACallParam> >::const_iterator i = params.begin(); i != params.end(); ++i )
 		{
 			switch ( (*i)->type )
 			{

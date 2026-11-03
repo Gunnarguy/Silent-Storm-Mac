@@ -42,7 +42,7 @@ int CAnimator::operator&( CStructureSaver &f )
 bool CASequence::NeedUpdate( STime t )
 {
 	// we assume that STimes are always increasing
-	list< SASegment >::iterator it;
+	typename list< SASegment >::iterator it;
 	for ( it = sequence.begin(); it != sequence.end(); ++it )
 		if ( it->t > t )
 			break;
@@ -65,7 +65,7 @@ bool CASequence::NeedUpdate( STime t )
 void CASequence::GetFrame( STime t, SSkeletonPose *pPose )
 {
 	// we assume that STimes are always increasing
-	list< SASegment >::iterator it;
+	typename list< SASegment >::iterator it;
 	bool bCleared = false;
 	while ( !bCleared )
 	{
@@ -112,7 +112,7 @@ void CASequence::Add( STime tStart, CAnimator *pAnimator )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CASequence::Insert( STime tStart, CAnimator *pAnimator )
 {
-	list< SASegment >::iterator it;
+	typename list< SASegment >::iterator it;
 	for ( it = sequence.begin(); it != sequence.end(); ++it )
 		if ( it->t >= tStart )
 		{
@@ -134,7 +134,7 @@ CAnimator* CASequence::GetAnimator( STime t )
 {
 	if ( sequence.empty() )
 		return 0;
-	list< SASegment >::iterator it;
+	typename list< SASegment >::iterator it;
 	for ( it = sequence.begin(); it != sequence.end(); ++it )
 		if ( it->t > t )
 			break;

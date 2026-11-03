@@ -6,7 +6,7 @@
 #endif // _MSC_VER > 1000
 
 #include "dbDefs.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../DBFormat/DataInterface.h"
 #include "PropMap.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 const TCHAR UICONTROLS_TBL[] = _TEXT( "UIControls" );

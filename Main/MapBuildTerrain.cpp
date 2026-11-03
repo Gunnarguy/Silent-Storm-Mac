@@ -4,10 +4,10 @@
 #include "Grid.h"
 #include "GResource.h"
 #include "Interpolate.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataTerrain.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\Misc\BasicShare.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataTerrain.h"
+#include "../DBFormat/DataFormat.h"
+#include "../Misc/BasicShare.h"
 #include "BuildingInfo.h"
 #include "PolyUtils.h"
 #include "METerrain.h"
@@ -71,9 +71,9 @@ static void GenerateEdges( list<SEdge> *pEdges, const CArray2D<bool> &cellar )
 		}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-list<SEdge>::iterator FindNextEdge( const SEdge &e, list<SEdge> *pEdges )
+typename list<SEdge>::iterator FindNextEdge( const SEdge &e, list<SEdge> *pEdges )
 {
-	list<SEdge>::iterator iret = pEdges->begin();
+	typename list<SEdge>::iterator iret = pEdges->begin();
 	for ( ; iret != pEdges->end(); ++iret )
 		if ( iret->ptStart == e.ptEnd )
 			break;
@@ -85,7 +85,7 @@ void GetNewContour( STerrainHole *pHole, list<SEdge> *pEdges )
 	pHole->bVisible = false;
 	pHole->nHeight  = -200;
 	SEdge last = *pEdges->begin();
-	list<SEdge>::iterator i;
+	typename list<SEdge>::iterator i;
 	for ( i = pEdges->begin(); i != pEdges->end(); i = FindNextEdge( last, pEdges ) )
 	{
 		last = *i;
@@ -146,7 +146,7 @@ static CMETerrainInfo* LoadTerrInfo( int nVarID, SRand *pRand, const vector<int>
 	}
 	return pRet;
 /*
-	CTerrainCache::iterator i = terrCache.find( nVarID );
+	typename CTerrainCache::iterator i = terrCache.find( nVarID );
 	if ( i != terrCache.end() )//IsValid( terrCache[nVarID] ) )
 		return i->second;//terrCache[nVarID];
 	//

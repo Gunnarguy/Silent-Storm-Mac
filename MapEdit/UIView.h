@@ -84,7 +84,7 @@ protected:
 	vector<SRect> rects;
 	vector<int> activeRects;
 	int nUIControlMode;
-	vector<SRect>::iterator GetRect( int nID );
+	typename vector<SRect>::iterator GetRect( int nID );
 	
 	void OnDraw(CDC* pDC);
 	void DrawGrid( CDC *pDC );

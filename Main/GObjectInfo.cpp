@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "DG.h"
 #include "GGeometry.h"
-#include "..\Misc\BasicShare.h"
+#include "../Misc/BasicShare.h"
 #include "Grid.h"
 #include "GScene.h"
 #include "GObjectInfo.h"
@@ -65,7 +65,7 @@ static void StripOppositeFacingPolygons( SFacesVector *pRes, const SFacesVector 
 	{
 		CVec3 vPos( src.points[k].pos );
 		AlignPositionToGrid( &vPos );
-		unordered_map<CVec3, int, SVec3Hash>::iterator i = posHash.find( vPos );
+		typename unordered_map<CVec3, int, SVec3Hash>::iterator i = posHash.find( vPos );
 		if ( i != posHash.end() )
 			posIndices[k] = i->second;
 		else
@@ -491,7 +491,7 @@ struct SClipHelper
 	{
 		SLoadVertex vCross;
 		CalcCross( &vCross, vPrev, vCur, fPrevDot, fCurDot );
-		unordered_map< SLoadVertex, int, SLoadVertexHash >::iterator i = pointHash.find( vCross );
+		typename unordered_map< SLoadVertex, int, SLoadVertexHash >::iterator i = pointHash.find( vCross );
 		if ( i == pointHash.end() )
 		{
 			int n = pRes->points.size();
@@ -557,7 +557,7 @@ static void OptimizeVertices( SFacesVector *pRes, const SFacesVector &src )
 				vertex.tex.u = Float2Int( vertex.tex.u * N_TEXTURE_PRECISION ) * ( 1.0f / N_TEXTURE_PRECISION );
 				vertex.tex.v = Float2Int( vertex.tex.v * N_TEXTURE_PRECISION ) * ( 1.0f / N_TEXTURE_PRECISION );
 
-				unordered_map< SLoadVertex, int, SLoadVertexHash >::iterator i = pointHash.find( vertex );
+				typename unordered_map< SLoadVertex, int, SLoadVertexHash >::iterator i = pointHash.find( vertex );
 				if ( i == pointHash.end() )
 				{
 					int nIndex = pRes->points.size();
@@ -595,7 +595,7 @@ static void SeparateOnPerPlaneFaces(unordered_map<SPlane, SPolygonIndices, SPlan
 			if ( p.Set( v1, v2, v3 ) )
 			{
 				AlignPlaneToGrid( &p );
-				unordered_map<SPlane, SPolygonIndices, SPlaneHash>::iterator k = pRes->find( p );
+				typename unordered_map<SPlane, SPolygonIndices, SPlaneHash>::iterator k = pRes->find( p );
 				SPolygonIndices *pDst;
 				if ( k == pRes->end() )
 				{
@@ -727,7 +727,7 @@ void CAIGeometryConverter::Recalc()
 	objData.geometry.SetTriangles( tris );
 	if ( bTakeAll )
 	{
-		for ( NAI::CGeometryInfo::CPieceMap::const_iterator i = g.pieces.begin(); i != g.pieces.end(); ++i )
+		for ( typename NAI::CGeometryInfo::CPieceMap::const_iterator i = g.pieces.begin(); i != g.pieces.end(); ++i )
 		{
 			const NAI::CGeometryInfo::SPiece &p = i->second;
 			AddPiece( &objData, p );
@@ -737,7 +737,7 @@ void CAIGeometryConverter::Recalc()
 	{
 		for ( int k = 0; k < parts.size(); ++k )
 		{
-			NAI::CGeometryInfo::CPieceMap::const_iterator i = g.pieces.find( parts[k] );
+			typename NAI::CGeometryInfo::CPieceMap::const_iterator i = g.pieces.find( parts[k] );
 			if ( i != g.pieces.end() )
 				AddPiece( &objData, i->second );
 		}
@@ -772,7 +772,7 @@ void CAISkinObjectConverter::Recalc()
 
 	vector<STriangle> tris;
 	objData.geometry.SetTriangles( tris );
-	for ( NAI::CFileSkinPoints::CBodypartsHash::const_iterator i = g.parts.begin(); i != g.parts.end(); ++i )
+	for ( typename NAI::CFileSkinPoints::CBodypartsHash::const_iterator i = g.parts.begin(); i != g.parts.end(); ++i )
 	{
 		const NAI::CFileSkinPoints::SBodypart &p = i->second;
 		ASSERT( p.weights.size() == p.points.size() );
@@ -839,7 +839,7 @@ void CWallObjectInfoClipper::ClipWall()
 	res.polys.Clear();
 	for ( int k = 0; k < visibleParts.size(); ++k )
 	{
-		CPieceMap::const_iterator it = faces.find( visibleParts[k] );
+		typename CPieceMap::const_iterator it = faces.find( visibleParts[k] );
 		if ( it != faces.end() )
 			AddFaces( &res, it->second );
 	}
@@ -862,7 +862,7 @@ void CWallObjectInfoClipper::ClipWall()
 	SeparateOnPerPlaneFaces( &perPlane, res );
 	res1.points = res.points;
 	res1.polys.Clear();
-	for (unordered_map<SPlane,SPolygonIndices,SPlaneHash>::iterator i = perPlane.begin(); i != perPlane.end(); ++i )
+	for (typename unordered_map<SPlane,SPolygonIndices,SPlaneHash>::iterator i = perPlane.begin(); i != perPlane.end(); ++i )
 	{
 		if ( RemoveInternalPoints( res.points, &i->second, i->first ) )
 			RemoveInternalPoints( res.points, &i->second, i->first );
@@ -974,7 +974,7 @@ void CSolidObjectInfoClipper::ClipSolid()
 	res.polys.Clear();
 	for ( int k = 0; k < visibleParts.size(); ++k )
 	{
-		CPieceMap::const_iterator it = faces.find( visibleParts[k] );
+		typename CPieceMap::const_iterator it = faces.find( visibleParts[k] );
 		if ( it != faces.end() )
 			AddFaces( &res, it->second );
 	}

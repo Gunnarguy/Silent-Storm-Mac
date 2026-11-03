@@ -67,7 +67,7 @@ public:
 		{
 			CNodesLayer::STransitionSet &trH = pLayer->transitions[ p ];
 			vector<SPathPlace> links;
-			for ( list<CNodesLayer::SLink>::iterator l = trH.links.begin(); l != trH.links.end(); ++l )
+			for ( typename list<CNodesLayer::SLink>::iterator l = trH.links.begin(); l != trH.links.end(); ++l )
 				links.push_back( l->dst );
 			bool b3 = !trH.links.empty();
 //			ASSERT( b3 );

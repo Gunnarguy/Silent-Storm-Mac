@@ -4,7 +4,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -12,7 +12,7 @@ namespace NUI
 // CLogPanel  (retail model @0x1f2620..@0x1f3170)
 //
 // The scrolling combat/event log. Retail keeps a FIXED ring of 10 STextLine slots (linesSet): slot 0
-// is a permanent sentinel/head (bUsed forced true, never scanned); slots 1..9 hold the visible lines.
+// is a permanent head (bUsed forced true, never scanned); slots 1..9 hold the visible lines.
 // The ring is a circular doubly-linked list threaded by ARRAY INDEX (nPrev toward newest, nNext toward
 // oldest). Lines arrive push-style through a CLogPanelNotify installed on the log stream (SetLogNotify)
 // -- not pulled from consoleLines each frame as the Jan03 design did.
@@ -53,7 +53,7 @@ class CLogPanel: public CWindow
 	OBJECT_BASIC_METHODS(CLogPanel)
 private:
 	ZDATA_(CWindow)
-	vector<STextLine> linesSet;		// fixed 10-slot index-linked ring (slot 0 = sentinel head)
+	vector<STextLine> linesSet;		// fixed 10-slot index-linked ring (slot 0 = permanent head)
 	CObj<CLogPanelNotify> pNotify;	// the stream sink that feeds AddLine
 public:
 	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CWindow*)this); f.Add(6,&linesSet); f.Add(7,&pNotify); return 0; }

@@ -9,7 +9,7 @@
 */
 
 #include "TemplateView.h"
-#include "..\Main\MELayers.h"
+#include "../Main/MELayers.h"
 
 const UINT WM_USER_SELECT    = WM_USER + 1; //!< Сообщение, посылаемое когда пользователь выбирает новый слой. WPARAM - id слоя
 const UINT WM_USER_LAYERUP   = WM_USER + 2; //!< Сообщение, посылаемое когда пользователь пытется переместить слой на уровень вверх. WPARAM - id слоя

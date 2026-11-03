@@ -11,7 +11,7 @@
 #include "aiPMConst.h"
 #include "wInterface.h"
 #include "aiDoorCollider.h"
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 namespace NAI
 {
 
@@ -497,7 +497,7 @@ CPassCalcer::STile &CPassCalcer::GetFlipperTile(
 		pHash = &flipper.locksClosed;
 	else
 		pHash = &flipper.locksOpen;
-	CFHash::iterator it = pHash->find( p );
+	typename CFHash::iterator it = pHash->find( p );
 	if ( it != pHash->end() )
 		return it->second;
 	else
@@ -530,7 +530,7 @@ void CPassCalcer::RecordDoorPose( int x, int y, int nLayer, int nDis,
 //   - the special-point scan start is keyed on bTop (the last/top layer), not the collision state,
 //     and the Jan03 render-interval fLimitZ/"place same" machinery is GONE -- the scan runs to the
 //     flat 25 m cap with a degenerate flat-top fallback (one clear sphere at the cap -> a tile at
-//     25 m with sentinel floor 50, falling through to the pose probes);
+//     25 m with a floor value of 50, falling through to the pose probes);
 //   - the tile is stamped with the surface's native source floor (STile::nFloor).
 int CPassCalcer::CalcPoseInPoint( int x, int y, NAI::CCollider *pCollider, const CArray2D<SPCHeight> &tempH,
 		CArray2D<STile> *pTemp, const CArray2D<char> &flags, int nLayer, int nDis, bool bTop )

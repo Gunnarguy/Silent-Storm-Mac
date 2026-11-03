@@ -78,7 +78,7 @@ int GetPathAP( NWorld::CUnitServer *pUS, CPath *pPath )
 		return 0;
 	IPathNetwork *pNet = pUS->GetWorld()->GetPathNetwork();
 	CPathAPCalcerLocal calc( pUS->GetWorld(), pUS->GetUnitRPG(), GetUnitPos( pPath->points[0], pNet ), false );
-	for ( vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
+	for ( typename vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
 		calc.AddPoint( *i );
 	return calc.GetResult();
 }
@@ -91,7 +91,7 @@ bool IsNullAPPath( NWorld::CUnitServer *pUS, CPath *pPath )
 		return true;
 	IPathNetwork *pNet = pUS->GetWorld()->GetPathNetwork();
 	CPathAPCalcerLocal calc( pUS->GetWorld(), pUS->GetUnitRPG(), GetUnitPos( pPath->points[0], pNet ), false );
-	for ( vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
+	for ( typename vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
 	{
 		calc.AddPoint( *i );
 		if ( calc.GetResult() > 0 )

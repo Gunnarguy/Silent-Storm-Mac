@@ -167,7 +167,7 @@ void CCtrlObjectInspector::OnPaint()
 
 	// Draw elements
 	int nNumber = 1;
-	for( CCOIPaintElemVector::const_iterator it = m_aPaintElems.begin() + m_nFirstElem; it != m_aPaintElems.end() && nNumber <= GetLineCount(); ++it, ++nNumber )
+	for( typename CCOIPaintElemVector::const_iterator it = m_aPaintElems.begin() + m_nFirstElem; it != m_aPaintElems.end() && nNumber <= GetLineCount(); ++it, ++nNumber )
 	{
 		CRect rect = GetPaintLineRect(nNumber);
 		rect.bottom = rect.top + 1;
@@ -288,7 +288,7 @@ void CCtrlObjectInspector::ExpandGroup( bool needInverse, bool isExpand )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CCtrlObjectInspector::CollapseGroup( GroupID idGroup )
 {
-	CCOIGpoupMap::iterator it = m_mapGroups.find( idGroup );
+	typename CCOIGpoupMap::iterator it = m_mapGroups.find( idGroup );
 	if ( m_mapGroups.end() == it )
 		return;
 	it->second.isExpand = false;
@@ -297,7 +297,7 @@ void CCtrlObjectInspector::CollapseGroup( GroupID idGroup )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int CCtrlObjectInspector::GetNumProps( GroupID idGroup ) const
 {
-	CCOIGpoupMap::const_iterator it = m_mapGroups.find( idGroup );
+	typename CCOIGpoupMap::const_iterator it = m_mapGroups.find( idGroup );
 	if ( m_mapGroups.end() == it )
 		return 0;
 	return it->second.aPorops.size();
@@ -895,7 +895,7 @@ bool CCtrlObjectInspector::SetPropertiesValue( PropID idProp, const CVariant &va
 void CCtrlObjectInspector::MakePaintList()
 {
 	m_aPaintElems.clear();
-	for( CCOIGpoupMap::iterator itGr = m_mapGroups.begin(); itGr != m_mapGroups.end(); ++itGr )
+	for( typename CCOIGpoupMap::iterator itGr = m_mapGroups.begin(); itGr != m_mapGroups.end(); ++itGr )
 	{
 		SCOIGroup &curGroup = itGr->second;
 		if ( curGroup.isVisible )
@@ -906,7 +906,7 @@ void CCtrlObjectInspector::MakePaintList()
 				m_aPaintElems.push_back(elem);
 			if ( curGroup.isExpand )
 			{
-				for( CCOIPropPtrs::const_iterator itPr = curGroup.aPorops.begin(); itPr != curGroup.aPorops.end(); ++itPr )
+				for( typename CCOIPropPtrs::const_iterator itPr = curGroup.aPorops.begin(); itPr != curGroup.aPorops.end(); ++itPr )
 				{
 					elem.pProp = *itPr;
 					m_aPaintElems.push_back(elem);
@@ -1005,7 +1005,7 @@ void CCtrlObjectInspector::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrol
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CVariant CCtrlObjectInspector::GetPropertyValue( PropID idProp )
 {
-  CCOIPropMap::const_iterator it = m_mapProps.find(idProp);
+  typename CCOIPropMap::const_iterator it = m_mapProps.find(idProp);
 
   if ( it != m_mapProps.end() )
   {
@@ -1019,7 +1019,7 @@ CVariant CCtrlObjectInspector::GetPropertyValue( PropID idProp )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 string CCtrlObjectInspector::GetPropertyName( PropID idProp )
 {
-  CCOIPropMap::const_iterator it = m_mapProps.find(idProp);
+  typename CCOIPropMap::const_iterator it = m_mapProps.find(idProp);
   
   if ( it != m_mapProps.end() )
   {
@@ -1030,7 +1030,7 @@ string CCtrlObjectInspector::GetPropertyName( PropID idProp )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 PropID CCtrlObjectInspector::GetActiveProp( int nGroupID )
 {
-  CCOIGpoupMap::const_iterator it = m_mapGroups.find( nGroupID );
+  typename CCOIGpoupMap::const_iterator it = m_mapGroups.find( nGroupID );
 
   if ( it == m_mapGroups.end() || !it->second.bRadioGroup )
     return -1;
@@ -1039,7 +1039,7 @@ PropID CCtrlObjectInspector::GetActiveProp( int nGroupID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CCtrlObjectInspector::AddPropertyString( PropID idProp, const string &szStr )
 {
-  CCOIPropMap::iterator it = m_mapProps.find(idProp);
+  typename CCOIPropMap::iterator it = m_mapProps.find(idProp);
   
   if ( it != m_mapProps.end() )
     it->second.szStrs.push_back( szStr );
@@ -1047,11 +1047,11 @@ void CCtrlObjectInspector::AddPropertyString( PropID idProp, const string &szStr
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CCtrlObjectInspector::SetActiveProp( PropID nID )
 {
-	CCOIPropMap::const_iterator it = m_mapProps.find( nID );
+	typename CCOIPropMap::const_iterator it = m_mapProps.find( nID );
 	if ( m_mapProps.end() == it )
 		return;
 	GroupID idGroup = it->second.idGroup;
-	CCOIGpoupMap::iterator itg = m_mapGroups.find( idGroup );
+	typename CCOIGpoupMap::iterator itg = m_mapGroups.find( idGroup );
 	if ( m_mapGroups.end() == itg )
 		return;
 	itg->second.iActiveProp = nID;
@@ -1060,7 +1060,7 @@ void CCtrlObjectInspector::SetActiveProp( PropID nID )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 string CCtrlObjectInspector::GetGroupName( GroupID idGroup ) const
 {
-	CCOIGpoupMap::const_iterator it = m_mapGroups.find( idGroup );
+	typename CCOIGpoupMap::const_iterator it = m_mapGroups.find( idGroup );
 	if ( m_mapGroups.end() == it )
 		return "";
 	else
@@ -1069,7 +1069,7 @@ string CCtrlObjectInspector::GetGroupName( GroupID idGroup ) const
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CCtrlObjectInspector::SetPropertyRelation( PropID idProp, int nRelationID )
 {
-	CCOIPropMap::iterator it = m_mapProps.find( idProp );
+	typename CCOIPropMap::iterator it = m_mapProps.find( idProp );
 	if ( m_mapProps.end() == it )
 		return;
 	it->second.nRelation = nRelationID;
@@ -1097,7 +1097,7 @@ void CCtrlObjectInspector::DrawZeroGroupName( bool bDraw )
 int CCtrlObjectInspector::GetPropertyLine( PropID idProp )
 {
 	int i = 0;
-	for ( CCOIPaintElemVector::const_iterator it = m_aPaintElems.begin(); it != m_aPaintElems.end(); ++it, ++i )
+	for ( typename CCOIPaintElemVector::const_iterator it = m_aPaintElems.begin(); it != m_aPaintElems.end(); ++it, ++i )
 	{
 		const SCOIPaintElem &e = *it;
 		if ( !e.pProp )

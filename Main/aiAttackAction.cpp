@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 //
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataRPG.h"
 #include "aiPosition.h"
 #include "aiUnit.h"
 #include "aiInventory.h"
@@ -203,7 +203,7 @@ static int GetNearestGroup( NWorld::CUnitServer *pUS, const SUnitPosition &pos, 
 static bool IsBadGroupHealth( const SAIUnitGroup &group )
 {
 	const int N_BAD_HEALTH = 15;
-	vector< CPtr<IAIUnit> >::const_iterator i;
+	typename vector< CPtr<IAIUnit> >::const_iterator i;
 	int nHealth = 0;
 	for ( i = group.enemies.begin(); i != group.enemies.end(); ++i )
 		nHealth = Max( nHealth, (*i)->GetAP() );
@@ -370,7 +370,7 @@ bool CAILaunchRocketAction::ComparePlaces( const SPlaceWithAP &p1, const SPlaceW
 bool CAITacticalCommander::CannonCanDamageEnemy( NWorld::CCannon *pCannon )
 {
 	vector< CPtr<IAIUnit> > *vEnemyUnits = pAIState->GetEnemyAIPlayer()->GetUnits();
-	for ( vector< CPtr<IAIUnit> >::iterator i = vEnemyUnits->begin(); i != vEnemyUnits->end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = vEnemyUnits->begin(); i != vEnemyUnits->end(); ++i )
 	{
 		if ( (*i)->GetUnitServer()->CanDo( new NWorld::CCmdCannon( pCannon ) ) == NWorld::UCR_OK )
 			return true;
@@ -383,7 +383,7 @@ NWorld::CCannon *CAITacticalCommander::FindNearestCannon( IAIUnit *pUnit )
 	NWorld::CCannon *pRes = 0;
 	list< CObj<NWorld::IDynamicObject> > *miscObjects = GetWorld()->GetMiscObjects();
 	float fMinDistance = 10; // максимальный радиус поиска пулемета в метрах 
-	for ( list< CObj<NWorld::IDynamicObject> >::iterator i = miscObjects->begin(); i != miscObjects->end(); ++i )
+	for ( typename list< CObj<NWorld::IDynamicObject> >::iterator i = miscObjects->begin(); i != miscObjects->end(); ++i )
 	{
 		if ( CDynamicCast<NWorld::CCannon> pCannon( *i ) )
 		{

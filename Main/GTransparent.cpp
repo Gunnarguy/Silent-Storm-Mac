@@ -359,7 +359,7 @@ class CPreciseTranspRender
 	NGfx::CRenderContext *pRC;
 	const STransparentMaterialInfo *pCurrentEffect;
 
-	// Retail 0x584fa0 / v1.2 0x584f60: the final, sentinel-depth particles
+	// Retail 0x584fa0 / v1.2 0x584f60: the final, end-marker-depth particles
 	// (light glows) overlay geometry without moving their vertices toward the camera.
 	void MarkOverdrawParticles( vector<int> *pSorted )
 	{
@@ -506,7 +506,7 @@ void CTransparentRenderer::RealRender( NGfx::CRenderContext *pRC, NGfx::CTexture
 				if ( nParticles == 0 )
 					continue;
 
-				// Retail's non-streaming path uses the first particle's sentinel.
+				// Retail's non-streaming path uses the first particle's end marker.
 				rc.SetDepth( depths[nStart] == 1e10f ? NGfx::DEPTH_NONE : NGfx::DEPTH_TESTONLY );
 				vector<int> particles( nParticles );
 				for ( int i = 0; i < particles.size(); ++i )

@@ -3,7 +3,7 @@
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-#include "..\Input\Bind.h"
+#include "../Input/Bind.h"
 #include "wInterfaceVisitors.h"
 #include "Transform.h"   // CTransformStack (CMission::sTransform by-value member; included by TUs beyond iMission.cpp now)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,7 +109,7 @@ private:
 	NInput::CBind bindShowVisibility;
 
 	NGlobal::CCmd cmdTypeCamera, cmdSurrender;
-	NGlobal::CCmd cmdSetXPLevel, cmdSummonUnit, cmdUnsummonUnit, cmdGetItem;
+	NGlobal::CCmd cmdSetXPLevel, cmdSummonUnit, cmdUnsummonUnit, cmdGetItem, cmdSquadDump;
 	NGlobal::CVar varCheatGodMode, varCheatSeeAll, varCheatTeleport, varCheatAP;
 
 	ZDATA_(CMissionBase)
@@ -268,11 +268,15 @@ protected:
 	void ErasePartUnderCursor();
 	void ShowVisibleFrom();
 
+	// clears the running-mission pointer when this mission goes (OBJECT_BASIC_METHODS owns the destructor)
+	struct SRunningMark { CMission *pOwner; SRunningMark(): pOwner( 0 ) {} ~SRunningMark(); } runningMark;
 protected:
 	// Retail's virtual GameStep is separate from the common world/camera/UI pump.
 	virtual void GameStep();
 public:
 	CMission();
+	// test hook: writes this world to a zone file and reads it back, as leaving a zone and returning does
+	void TestZoneFile() { decltype( pWorld ) pKeep = pWorld; SaveWorld( "orderstest.sav" ); LoadWorld( "orderstest.sav" ); pWorld = pKeep; }
 	void InitializeComplete();
 
 	// The trivial accessors + player/desktop/light/camera-focus family moved to CMissionBase

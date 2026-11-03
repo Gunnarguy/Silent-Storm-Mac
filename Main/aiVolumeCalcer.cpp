@@ -47,7 +47,7 @@ void CConnectedPoints::DebugOutput( const char *szTitle )
 			PointsCoords[ Points[n] ].x, PointsCoords[ Points[n] ].y, PointsCoords[ Points[n] ].z );
 		OutputDebugString( szStr );
 
-		for ( vector<WORD>::iterator i = Connectivities[ Points[n] ].begin();  i != Connectivities[ Points[n] ].end(); ++i )
+		for ( typename vector<WORD>::iterator i = Connectivities[ Points[n] ].begin();  i != Connectivities[ Points[n] ].end(); ++i )
 		{
 			sprintf( szStr, " <%d> ", *i );
 			OutputDebugString( szStr );
@@ -71,7 +71,7 @@ void CConnectedPoints::AddPoint( WORD n )
 void CConnectedPoints::RemovePoint( WORD n )
 {
 	Points.erase( find( Points.begin(), Points.end(), n ) );
-	for ( vector<WORD>::iterator i = Connectivities[n].begin(); i != Connectivities[n].end(); ++i )
+	for ( typename vector<WORD>::iterator i = Connectivities[n].begin(); i != Connectivities[n].end(); ++i )
 		Connectivities[*i].erase( find( Connectivities[*i].begin(), Connectivities[*i].end(), n ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,7 +98,7 @@ bool CConnectedPoints::IsNeighbourPoints( WORD n1, WORD n2 )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CConnectedPoints::RemoveIncorrectPoints( WORD k )
 {
-	for ( vector<WORD>::iterator i = Points.begin(); i != Points.end(); )
+	for ( typename vector<WORD>::iterator i = Points.begin(); i != Points.end(); )
 	{
 		if ( Connectivities[*i].size() < k )
 		{
@@ -149,7 +149,7 @@ void CTriangulater::CalculateNormal( CVec3 ptTop )
 {
 	vNormal = CVec3( 0, 0, 0 );
 	//
-	for ( vector<WORD>::iterator i = Points.begin(); i != Points.end(); ++i )
+	for ( typename vector<WORD>::iterator i = Points.begin(); i != Points.end(); ++i )
 		vNormal += PointsCoords[ *i ];
 	//
 	vNormal /= Points.size();
@@ -163,7 +163,7 @@ int CTriangulater::GetTriangleSign( WORD _n1, WORD _n2, WORD _n3 )
 	int n[3];
 	int k = 0;
 	n[0] = -1; n[1] = -1; n[2] = -1;
-	for ( vector<WORD>::iterator i = Points.begin(); i != Points.end(); ++i )
+	for ( typename vector<WORD>::iterator i = Points.begin(); i != Points.end(); ++i )
 	{
 		if ( *i == _n1 )
 			n[k] = _n1;
@@ -185,7 +185,7 @@ int CTriangulater::GetTriangleSign( WORD _n1, WORD _n2, WORD _n3 )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int CTriangulater::GetNextPoint( int n )
 {
-	vector<WORD>::iterator i = find( Points.begin(), Points.end(), n );
+	typename vector<WORD>::iterator i = find( Points.begin(), Points.end(), n );
 	++i;
 	if ( i == Points.end() )
 		i = Points.begin();
@@ -196,7 +196,7 @@ void CTriangulater::BifurcatePath( vector<SPolygonPath> *pPaths, int n1, int n2 
 {
 	int k = 0;
 	pPaths->resize( Connectivities[n2].size() - 1 );
-	for ( vector<WORD>::iterator c = Connectivities[n2].begin(); c != Connectivities[n2].end(); ++c )
+	for ( typename vector<WORD>::iterator c = Connectivities[n2].begin(); c != Connectivities[n2].end(); ++c )
 	{
 		if ( *c != n1 )
 		{
@@ -221,13 +221,13 @@ bool CTriangulater::IsEdgeConsistsInOnePolygon( WORD _n1, WORD _n2 )
 	while ( !bEnd )
 	{
 		bEnd = true;
-		for ( vector<SPolygonPath>::iterator i = Paths.begin(); i != Paths.end(); ++i )
+		for ( typename vector<SPolygonPath>::iterator i = Paths.begin(); i != Paths.end(); ++i )
 		{
 			if ( !(*i).Front.empty() )
 			{
-				for ( vector<WORD>::iterator f = (*i).Front.begin(); f != (*i).Front.end(); ++f )
+				for ( typename vector<WORD>::iterator f = (*i).Front.begin(); f != (*i).Front.end(); ++f )
 				{
-					for ( vector<WORD>::iterator c = Connectivities[*f].begin(); c != Connectivities[*f].end(); ++c  )
+					for ( typename vector<WORD>::iterator c = Connectivities[*f].begin(); c != Connectivities[*f].end(); ++c  )
 					{
 						if ( *c == _n1 )
 						{
@@ -247,7 +247,7 @@ bool CTriangulater::IsEdgeConsistsInOnePolygon( WORD _n1, WORD _n2 )
 				}
 				//
 				(*i).Front.clear();
-				for ( vector<WORD>::iterator f = (*i).AddToFront.begin(); f != (*i).AddToFront.end(); ++f )
+				for ( typename vector<WORD>::iterator f = (*i).AddToFront.begin(); f != (*i).AddToFront.end(); ++f )
 					(*i).Front.push_back( *f );
 				(*i).AddToFront.clear();
 			}
@@ -262,15 +262,15 @@ bool CTriangulater::IsEdgeConsistsInOnePolygon( WORD _n1, WORD _n2 )
 void CTriangulater::EraseInnerEdges( CConnectedPoints *pOwner )
 {
 	vector<WORD> ToRemove;
-	for ( vector<WORD>::iterator p = Points.begin(); p != Points.end(); ++p )
+	for ( typename vector<WORD>::iterator p = Points.begin(); p != Points.end(); ++p )
 	{
-		for ( vector<WORD>::iterator c = Connectivities[*p].begin(); c != Connectivities[*p].end(); ++c )
+		for ( typename vector<WORD>::iterator c = Connectivities[*p].begin(); c != Connectivities[*p].end(); ++c )
 		{
 			if ( !IsEdgeConsistsInOnePolygon( *p, *c ) )
 				ToRemove.push_back( *c );
 		}
 		//
-		for ( vector<WORD>::iterator t = ToRemove.begin(); t != ToRemove.end(); ++t )
+		for ( typename vector<WORD>::iterator t = ToRemove.begin(); t != ToRemove.end(); ++t )
 		{
 			RemoveConnectivity( *p, *t );
 			pOwner->RemoveConnectivity( *p, *t );
@@ -278,11 +278,11 @@ void CTriangulater::EraseInnerEdges( CConnectedPoints *pOwner )
 		ToRemove.clear();
 	}
 	//
-	for ( vector<WORD>::iterator p = Points.begin(); p != Points.end(); ++p )
+	for ( typename vector<WORD>::iterator p = Points.begin(); p != Points.end(); ++p )
 		if ( Connectivities[*p].size() < 2 )
 			ToRemove.push_back( *p );
 	//
-	for ( vector<WORD>::iterator t = ToRemove.begin(); t != ToRemove.end(); ++t )
+	for ( typename vector<WORD>::iterator t = ToRemove.begin(); t != ToRemove.end(); ++t )
 		RemovePoint( *t );
 	ToRemove.clear();
 }
@@ -309,7 +309,7 @@ void CTriangulater::SortPoints( CConnectedPoints *pOwner )
 	{
 		// ищем следующую точку
 		int nNext;
-		for ( vector<WORD>::iterator i = Connectivities[nCurrent].begin(); i != Connectivities[nCurrent].end(); ++i )
+		for ( typename vector<WORD>::iterator i = Connectivities[nCurrent].begin(); i != Connectivities[nCurrent].end(); ++i )
 			if ( *i != nPrev )
 			{
 				nNext = *i;
@@ -324,7 +324,7 @@ void CTriangulater::SortPoints( CConnectedPoints *pOwner )
 	}
 	//
 	Points.clear();
-	for ( vector<WORD>::iterator i = TmpPoints.begin(); i != TmpPoints.end(); ++i )
+	for ( typename vector<WORD>::iterator i = TmpPoints.begin(); i != TmpPoints.end(); ++i )
 		Points.push_back( *i );
 	PassedPoints.clear();
 }
@@ -334,8 +334,8 @@ void CTriangulater::GetTriangulation( list<STriangle> *pRes, list<int> *pSign )
 	//DebugOutput("Triangulation");
 	//
 	// ищем все треугольники со специальной точкой 
-	vector<WORD>::iterator i;
-	vector<WORD>::iterator j;
+	typename vector<WORD>::iterator i;
+	typename vector<WORD>::iterator j;
 	for ( i = Connectivities[nSpecialPoint].begin(); i != Connectivities[nSpecialPoint].end(); ++i )
 	{
 		for ( j = Connectivities[*i].begin(); j != Connectivities[*i].end(); ++j )
@@ -419,11 +419,11 @@ float CVolumeCalcer::CalculateVolume()
 		int n = Points.back();
 		CPtr<CTriangulater> pTriangulater = new CTriangulater();
 		//
-		for ( vector<WORD>::const_iterator i = Connectivities[n].begin(); i != Connectivities[n].end(); ++i )
+		for ( typename vector<WORD>::const_iterator i = Connectivities[n].begin(); i != Connectivities[n].end(); ++i )
 		{
 			pTriangulater->AddPoint( *i );
 			pTriangulater->AddPointCoords( *i, PointsCoords[*i] );
-			for ( vector<WORD>::const_iterator j = Connectivities[*i].begin(); j != Connectivities[*i].end(); ++j )
+			for ( typename vector<WORD>::const_iterator j = Connectivities[*i].begin(); j != Connectivities[*i].end(); ++j )
 			{
 				if ( find( Connectivities[n].begin(), Connectivities[n].end(), *j ) != Connectivities[n].end() )
 					pTriangulater->AddConnectivity( *i, *j );
@@ -448,7 +448,7 @@ float CVolumeCalcer::CalculateVolume()
 //		}
 
 		pTriangulater->SetSpecialPoint( k );
-		for ( vector<WORD>::const_iterator j = Connectivities[n].begin(); j != Connectivities[n].end(); ++j )
+		for ( typename vector<WORD>::const_iterator j = Connectivities[n].begin(); j != Connectivities[n].end(); ++j )
 			if ( *j != k )
 				if ( find( Connectivities[n].begin(), Connectivities[n].end(), *j ) != Connectivities[n].end() )
 				{
@@ -458,8 +458,8 @@ float CVolumeCalcer::CalculateVolume()
 		//
 		pTriangulater->GetTriangulation( &Triangles, &Signs );
 		// составляем пирамиды из найденных треугольников
-		list<STriangle>::const_iterator t = Triangles.begin();
-		list<int>::const_iterator s = Signs.begin();
+		typename list<STriangle>::const_iterator t = Triangles.begin();
+		typename list<int>::const_iterator s = Signs.begin();
 		//DEBUG{
 		sprintf( szStr, " Triangles for point <%d> : ", n );
 		OutputDebugString( szStr );
@@ -541,7 +541,7 @@ float CalculateObjectVolume( const vector<CVec3> &points, const CEdgesInfo &edge
 	/*CPtr<CVolumeCalcer> pCalcer = new CVolumeCalcer();
 	//
 	WORD n = 0;
-	for ( vector<CVec3>::const_iterator i = points.begin(); i != points.end(); ++i, ++n )
+	for ( typename vector<CVec3>::const_iterator i = points.begin(); i != points.end(); ++i, ++n )
 		pCalcer->AddPointCoords( n, *i );*/
 	//
 	vector<STriangle> triangles;
@@ -568,7 +568,7 @@ float CalculateObjectVolume( const CGeometryInfo::SPiece &Piece )
 float CalculateObjectVolume( const CGeometryInfo &GeometryInfo )
 {
 	float fRes = 0;
-	unordered_map<int, CGeometryInfo::SPiece>::const_iterator i;
+	typename unordered_map<int, CGeometryInfo::SPiece>::const_iterator i;
 	for ( i = GeometryInfo.pieces.begin(); i != GeometryInfo.pieces.end(); ++i )
 	{
 		float fTmpRes = CalculateObjectVolume( i->second.points, i->second.edges );
@@ -582,7 +582,7 @@ float CalculateObjectVolume( const CGeometryInfo &GeometryInfo )
 float CalculateObjectVolume( const CFileSkinPoints &FileSkinPoints )
 {
 	float fRes = 0;
-	unordered_map<int, CFileSkinPoints::SBodypart>::const_iterator i;
+	typename unordered_map<int, CFileSkinPoints::SBodypart>::const_iterator i;
 	for ( i = FileSkinPoints.parts.begin(); i != FileSkinPoints.parts.end(); ++i )
 		fRes += CalculateObjectVolume( i->second.points, i->second.edges );
 	return fRes;

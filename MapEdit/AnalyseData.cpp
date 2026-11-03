@@ -7,8 +7,8 @@
 #include "dbDefs.h"
 #include "ItemsMgr.h"
 #include "Export.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\Misc\StrProc.h"
+#include "../DBFormat/DataFormat.h"
+#include "../Misc/StrProc.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -81,8 +81,8 @@ void CAnalyseDataDlg::GeometriesAndAIGeometriesTest()
 		const CPropMap *pGProps = pGeoms->GetPropList( pGeoms->GetItemID() );
 		if ( !pGProps )
 			continue;
-		CPropMap::const_iterator isk = pGProps->find( "SkeletonID" );
-		CPropMap::const_iterator iai = pGProps->find( "AIGeometryID" );
+		typename CPropMap::const_iterator isk = pGProps->find( "SkeletonID" );
+		typename CPropMap::const_iterator iai = pGProps->find( "AIGeometryID" );
 		if ( pGProps->end() == isk || pGProps->end() == iai )
 		{
 			m_log += "Cannot find SkeletonID or AIGeometryID in Geometries\nTestFailed\r\n";
@@ -100,7 +100,7 @@ void CAnalyseDataDlg::GeometriesAndAIGeometriesTest()
 			UpdateData( false );
 			continue;
 		}
-		CPropMap::const_iterator iaisk = pAIProps->find( "SkeletonID" );
+		typename CPropMap::const_iterator iaisk = pAIProps->find( "SkeletonID" );
 		if ( pAIProps->end() == iaisk )
 		{
 			m_log += "Cannot find SkeletonID in AIGeometries\nTestFailed\r\n";
@@ -183,7 +183,7 @@ void CAnalyseDataDlg::SrcExistence( string szPrefix, const SResTree *pResTree, i
 		const CPropMap *pProps = pTree->GetPropList( pTree->GetItemID() );
 		if ( !pProps )
 			continue;
-		CPropMap::const_iterator it = pProps->find( "SrcName" );
+		typename CPropMap::const_iterator it = pProps->find( "SrcName" );
 		if ( pProps->end() == it )
 		{
 			m_log += "SrcName not found\r\n";
@@ -257,7 +257,7 @@ static bool CheckTextureType( CItemsMgr *pItems, int nTex, const vector<string> 
 	if ( !props )
 		return false;
 	bool bRet = false;
-	CPropMap::const_iterator it = props->find( "Type" );
+	typename CPropMap::const_iterator it = props->find( "Type" );
 	const string szType = it->second->GetValue();
 	for ( int i = 0; i < vszTypes.size(); ++i )
 		if ( szType == vszTypes[i] )
@@ -296,11 +296,11 @@ void CAnalyseDataDlg::MaterialTexsValidity()
 			const CPropMap *pProps = pM->GetPropList( nID, vars[i] );
 			if ( pProps )
 			{
-				CPropMap::const_iterator iTex = pProps->find( "TextureID" );
-				CPropMap::const_iterator iBump = pProps->find( "BumpID" );
-				CPropMap::const_iterator iGloss = pProps->find( "GlossID" );
-				CPropMap::const_iterator iMirr = pProps->find( "MirrorID" );
-				CPropMap::const_iterator e = pProps->end();
+				typename CPropMap::const_iterator iTex = pProps->find( "TextureID" );
+				typename CPropMap::const_iterator iBump = pProps->find( "BumpID" );
+				typename CPropMap::const_iterator iGloss = pProps->find( "GlossID" );
+				typename CPropMap::const_iterator iMirr = pProps->find( "MirrorID" );
+				typename CPropMap::const_iterator e = pProps->end();
 				if ( iTex != e && iBump != e && iGloss != e && iMirr != e )
 				{
 					vector<string> szTypes;
@@ -345,7 +345,7 @@ void CAnalyseDataDlg::ParticleTexsValidity()
 		{
 			for ( int i = 0; i < NDb::N_PARTICLE_TEXTURES; ++i )
 			{
-				CPropMap::const_iterator iTex = pProps->find( string( "Texture" ) + IToA(i) );
+				typename CPropMap::const_iterator iTex = pProps->find( string( "Texture" ) + IToA(i) );
 				if ( iTex != pProps->end() )
 				{
 					vector<string> szTypes;
@@ -384,11 +384,11 @@ void CAnalyseDataDlg::UITexsTexsValidity()
 		const CPropMap *pProps = pU->GetPropList( nID );
 		if ( pProps )
 		{
-			CPropMap::const_iterator i1 = pProps->find( "R_800x600" );
-			CPropMap::const_iterator i2 = pProps->find( "R_1024x768" );
-			CPropMap::const_iterator i3 = pProps->find( "R_1280x960" );
-			CPropMap::const_iterator i4 = pProps->find( "R_1600x1200" );
-			CPropMap::const_iterator e = pProps->end();
+			typename CPropMap::const_iterator i1 = pProps->find( "R_800x600" );
+			typename CPropMap::const_iterator i2 = pProps->find( "R_1024x768" );
+			typename CPropMap::const_iterator i3 = pProps->find( "R_1280x960" );
+			typename CPropMap::const_iterator i4 = pProps->find( "R_1600x1200" );
+			typename CPropMap::const_iterator e = pProps->end();
 			if ( i1 != e && i2 != e && i3 != e && i4 != e )
 			{
 				vector<string> szTypes;

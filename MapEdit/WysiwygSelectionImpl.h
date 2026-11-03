@@ -6,7 +6,7 @@
 
 #include "WysiwygSelection.h"
 #include "WysiwygClipboard.h"
-#include "..\Misc\HPTimer.h"
+#include "../Misc/HPTimer.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NWorld
 {
@@ -29,7 +29,7 @@ class CSelection: public ISelection
 {
 	OBJECT_NOCOPY_METHODS(CSelection);
 
-	enum EAction
+	enum EAction : int
 	{
 		A_MOVE,
 		A_MOVE_Z,

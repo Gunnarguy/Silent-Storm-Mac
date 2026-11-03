@@ -7,17 +7,17 @@
 #include "wInterface.h"
 #include "wTurnBased.h"
 #include "wDebris.h"
-#include "..\DBFormat\DataSound.h"
+#include "../DBFormat/DataSound.h"
 #include "wMisc.h"
 #include "TerrainInfo.h"
 #include "aiPosition.h"
-#include "..\Misc\EventsBase.h"
+#include "../Misc/EventsBase.h"
 #include "wVision.h"
 #include "eventPlayer.h"
 #include "wUnitCommands.h"   // complete NWorld::SItem for CPlayer::sHandItem (release save-format, by-value)
 #include "wPocket.h"         // NWorld::CPocket complete -- CWorld::pPocket (save tag 42, retail @0x376f60 GetPocket)
 #include "wHeightLayers.h"   // NWorld::IHeightLayers complete -- CWorld::pHeightLayers (save tag 44, @0x376f00)
-#include "..\DBFormat\DataLight.h"   // NDb::CTAmbientLight complete (pDefaultLight's CDBPtr saveload uses typeid;
+#include "../DBFormat/DataLight.h"   // NDb::CTAmbientLight complete (pDefaultLight's CDBPtr saveload uses typeid;
                                      // GetDefaultLight @0x3620a0 resolves the template through CTAmbientLight::GetLight)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 struct SMapUnit;
@@ -47,7 +47,7 @@ namespace NRPG
 	struct SAttackRayInfo;
 	class IUnitMission;
 	class IClipItem;
-	enum EAction;
+	enum EAction : int;
 	class CUnit;
 	class CGlobalDiplomacy;
 }
@@ -64,7 +64,7 @@ namespace NDb
 	class CScript;
 	class CDBCamera;
 	class CRPGArmor;
-	enum EDiplomacyState;
+	enum EDiplomacyState : int;
 }
 namespace NScript
 {
@@ -95,13 +95,13 @@ class CTerrain;
 struct SInterfaceAck;
 class IPassageObject;
 class CCameraTracker;
-enum EInterfaceEvent;
-enum ESkipMode;
+enum EInterfaceEvent : int;
+enum ESkipMode : int;
 class CUnitGroup;
 class IMine;
 class CMineTracker;
 struct SPerkMineModifiers;   // explosive-perk damage modifiers (wExplosionPerks.h); AddGrenadeExplosion takes them by ptr
-enum EInterfaceEventType;
+enum EInterfaceEventType : int;
 //
 //class CEventOnNewPlayerFastTurnOrTime;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,8 +199,8 @@ public:
 	list<SDoorTrap> traps;
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// World time-of-day, carried as a single sentinel value in CWorld::createFlags (or none = ANYTIME).
-// The sentinel values (5/6) are the createFlags codes the map-load / door-sound-variant path uses.
+// World time-of-day, carried as a single marker value in CWorld::createFlags (or none = ANYTIME).
+// The marker values (5/6) are the createFlags codes the map-load / door-sound-variant path uses.
 enum ETimeOfDay : int   // fixed underlying type so wOSBase.h / MapBuild.h can forward-declare it (retail NDb::ETimeOfDay)
 {
 	TOD_ANYTIME = 0,
@@ -606,8 +606,8 @@ public:
 	void ScriptWantTurnBased( bool bWant );   // retail @0x361c00 -- the WantTurnBased("b") script binding
 	void DelayGameStart( int bDelay );        // retail IWorld vtbl+0x1d8 -- script start control (c_StartGameEx(0)/c_DelayGameStartEx(1))
 	void AddNextUIHint( bool bSilent );        // retail @0x368140 IWorld vtbl+0x118 -- advance the sequential-hint cursor (lua AddHints)
-	ETimeOfDay GetTimeOfDay();                // retail @0x361bb0 -- read the TOD sentinel from createFlags
-	void SetTimeOfDay( ETimeOfDay tod );      // retail @0x362b90 -- rewrite the TOD sentinel + re-light every object
+	ETimeOfDay GetTimeOfDay();                // retail @0x361bb0 -- read the TOD marker from createFlags
+	void SetTimeOfDay( ETimeOfDay tod );      // retail @0x362b90 -- rewrite the TOD marker + re-light every object
 	void AddHitLocator( CHitLocator* pLocator );
 	// retail @0x764140 takes BOTH grenade records: an engineer grenade arrives with a null
 	// pRPGGrenade and a live pRPGEngGrenade (contact-fused eng server, thrower's ENG skill).

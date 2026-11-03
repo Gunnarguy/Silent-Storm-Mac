@@ -32,7 +32,7 @@ private:
   // "-1", если ID не найден
   int  GetPlacementIndex( int id ) const 
   {
-    std::map<int, int>::const_iterator it = varID2Ind.find( id );
+    typename std::map<int, int>::const_iterator it = varID2Ind.find( id );
     if ( varID2Ind.end() == it )
       return -1;
     return it->second;

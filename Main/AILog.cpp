@@ -15,8 +15,8 @@
 #include "RPGItem.h"
 #include "RPGItemSet.h"
 
-#include "..\DBFormat\DataConst.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataConst.h"
+#include "../DBFormat/DataRPG.h"
 
 namespace NAI
 {
@@ -266,7 +266,7 @@ void CAILogChangeWeapon::Commit()
 void CAILogChangeWeapon::GetItemPosition( NRPG::IInventoryItem *pItem, CTPoint<int> *Position )
 {
 	const vector<NRPG::SBackPackItem> &Items = pAIUnit->GetUnitServer()->GetUnitRPG()->GetInventory()->GetItems();
-	for ( vector<NRPG::SBackPackItem>::const_iterator i = Items.begin(); i != Items.end(); ++i )	
+	for ( typename vector<NRPG::SBackPackItem>::const_iterator i = Items.begin(); i != Items.end(); ++i )	
 		if ( (*i).pItem == pItem )
 		{
 			*Position = (*i).sPos;

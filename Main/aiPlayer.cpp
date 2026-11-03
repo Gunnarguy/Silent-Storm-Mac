@@ -40,7 +40,7 @@ public:
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAIPlayer::CancelActions()
 {
-	for ( vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )
 		(*i)->GetUnitServer()->Do( new NWorld::CCmdCancel( (*i)->GetUnitServer() ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -53,14 +53,14 @@ void CAIPlayer::AddUnit( IAIUnit *_pAIUnit )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAIPlayer::OnTurnStarted()
 {
-	for ( vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )
 		(*i)->OnTurnStarted();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAIPlayer::DebugOutput()
 {
 	char buf[128];
-	for ( vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )
 	{
 		SPathPlace ptPos = (*i)->GetPosition().p;
 		sprintf( buf, "(x:%d, y:%d)", ptPos.GetX(), ptPos.GetY() );
@@ -73,7 +73,7 @@ IAIUnit *CAIPlayer::GetNearestUnit( IAIUnit *pUnit, float *fDistance )
 {
 	IAIUnit *pRes = 0;
 	float fTmpDistance, fMinDistance = 0xFFFF;
-	for ( vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )
 	{
 		fTmpDistance = fabs2( (*i)->GetPosition().GetCP() - pUnit->GetPosition().GetCP() );
 		if ( fMinDistance > fTmpDistance && ( (*i) != pUnit ) )
@@ -88,7 +88,7 @@ IAIUnit *CAIPlayer::GetNearestUnit( IAIUnit *pUnit, float *fDistance )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CAIPlayer::IsPerformingAction()
 {
-	for ( vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); )
 		if ( (*i)->IsPerformingAction() )
 			return true;
 	return false;
@@ -101,7 +101,7 @@ bool CAIPlayer::IsContain( IAIUnit *pAIUnit )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CAIPlayer::IsContain( NWorld::CUnitServer *pUnit )
 {
-	for ( vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )	
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )	
 		if ( (*i)->GetUnitServer() == pUnit )
 			return true;
 	return false;
@@ -109,7 +109,7 @@ bool CAIPlayer::IsContain( NWorld::CUnitServer *pUnit )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAIPlayer::RemoveUnit( IAIUnit *_pAIUnit )
 {
-	for ( vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); )
 		if ( (*i) == _pAIUnit )
 			i = playerUnits.erase( i );
 		else
@@ -118,7 +118,7 @@ void CAIPlayer::RemoveUnit( IAIUnit *_pAIUnit )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAIPlayer::Synchronize() 
 {
-	for ( vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); )
 		if ( !(*i)->GetUnitServer()->CanFight() )
 			i = playerUnits.erase( i );
 		else
@@ -131,7 +131,7 @@ void CAIPlayer::Synchronize()
 bool CAIPlayer::IsSomebodyKilled()
 {
 	bool bRes = false;
-	for ( vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); )
 		if ( !(*i)->GetUnitServer()->CanFight() )
 		{
 			i = playerUnits.erase( i );
@@ -144,7 +144,7 @@ bool CAIPlayer::IsSomebodyKilled()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CAIPlayer::IsPositionLocked( SPathPlace &ptPos, IAIUnit *pAIUnit )
 {
-	for ( vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )
+	for ( typename vector< CPtr<IAIUnit> >::iterator i = playerUnits.begin(); i != playerUnits.end(); ++i )
 	{
 		if ( (*i) != pAIUnit &&
 				 (*i)->GetPosition().p.GetLayer() == ptPos.GetLayer() &&

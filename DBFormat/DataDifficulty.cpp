@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "..\Misc\StrProc.h"
+#include "../Misc/StrProc.h"
 #include "DataDifficulty.h"
 //
 // Release version: Import() column order/names taken verbatim from Game.exe (CDBDifficulty::Import
@@ -39,24 +39,24 @@ void CDBDifficulty::Import()
 	NDatabase::ImportField( "AIAPCoeff", &fAPCoeff );
 	NDatabase::ImportField( "AIVPCoeff", &fVPCoeff );
 	NDatabase::ImportField( "DeathCoeff", &fDeathCoeff );
-	NDatabase::ImportField( "ClueDeathCoeff", &fClueDeathCoeff );
 	NDatabase::ImportField( "AIUnitsLevel", &nAIUnitsLevel );
 	NDatabase::ImportField( "NeedCarryOutUnconscious", &bNeedCarryOutUnconscious );
 	NDatabase::ImportField( "UserName", &szUserName );
-	NDatabase::ImportField( "HealOnRestCoeff", &fHealOnRestCoeff );
 	NDatabase::ImportField( "HealOnLeaveZone", &bHealOnLeaveZone );
-	NDatabase::ImportField( "HealOnLeaveZoneCoeff", &fHealOnLeaveZoneCoeff );
 	NDatabase::ImportField( "BandageOnLeaveZone", &bBandageOnLeaveZone );
+	NDatabase::ImportField( "HideProbability", &nHideProbability );
+	NDatabase::ImportField( "AssassinProbability", &nAssassinProbability );
+	NDatabase::ImportField( "EnemyDamageMult", &fEnemyDamageMult );
+	NDatabase::ImportField( "OurDamageMult", &fOurDamageMult );
+	NDatabase::ImportField( "ClueDeathCoeff", &fClueDeathCoeff );
+	NDatabase::ImportField( "HealOnRestCoeff", &fHealOnRestCoeff );
+	NDatabase::ImportField( "HealOnLeaveZoneCoeff", &fHealOnLeaveZoneCoeff );
 	NDatabase::ImportField( "BandageOnLeaveZoneCoeff", &fBandageOnLeaveZoneCoeff );
 	NDatabase::ImportField( "REDifficulty", &nREDifficulty );
 	NDatabase::ImportField( "ShowAllClueIcons", &bShowAllClueIcons );
 	NDatabase::ImportField( "ShowAllScenarioGoals", &bShowAllScenarioGoals );
 	NDatabase::ImportField( "UseDefaultStringForUnknownGoals", &bUseDefaultStringForUnknownGoals );
 	NDatabase::ImportField( "GroupMedicalCoeff", &fGroupMedicalCoeff );
-	NDatabase::ImportField( "HideProbability", &nHideProbability );
-	NDatabase::ImportField( "AssassinProbability", &nAssassinProbability );
-	NDatabase::ImportField( "EnemyDamageMult", &fEnemyDamageMult );
-	NDatabase::ImportField( "OurDamageMult", &fOurDamageMult );
 	NDatabase::ImportField( "AlwaysCritical", &bAlwaysCritical );
 	NDatabase::ImportField( "HeadshotShouldKill", &bHeadshotShouldKill );
 	NDatabase::ImportField( "AICheckCorpses", &bAICheckCorpses );

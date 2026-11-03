@@ -22,6 +22,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NAI
 {
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // CAICombatLogic engine
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CAICombatLogic::CAICombatLogic( IAIUnit *pUnit, IAIChoosePlaceJob *_pChoosePlace ):
@@ -84,7 +85,7 @@ void CAICombatLogic::GenerateCommand()
 {
 	list< CPtr<NWorld::CCommand> > cmds;
 	pLog->GetWorldCommands( &cmds );
-	for ( list< CPtr<NWorld::CCommand> >::iterator i = cmds.begin(); i != cmds.end(); ++i )
+	for ( typename list< CPtr<NWorld::CCommand> >::iterator i = cmds.begin(); i != cmds.end(); ++i )
 		DoCommand( *i );   // CAILogic::commands is now list<CPtr<CCommand>> - the log's world commands flow straight through
 	pLog->Clear();
 }

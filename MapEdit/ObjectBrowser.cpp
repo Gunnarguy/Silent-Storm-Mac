@@ -2,7 +2,7 @@
 #include "MapEdit.h"
 #include "ObjectBrowser.h"
 #include "ItemsMgr.h"
-#include "..\Misc\StrProc.h"
+#include "../Misc/StrProc.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 struct SProperty
 {
@@ -39,7 +39,7 @@ void CObjectBrowser::AddProperty( int nColumn, const string &szPropertyPath, IOb
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 static int GetVariant( int nPropID, const unordered_map<int, int> &propVariants )
 {
-	unordered_map<int, int>::const_iterator i = propVariants.find( nPropID );
+	typename unordered_map<int, int>::const_iterator i = propVariants.find( nPropID );
 	if ( i != propVariants.end() )
 		return i->second;
 	return -1;
@@ -56,8 +56,8 @@ void CObjectBrowser::GetProperties( vector<CPropMap> *pProps, int nObjectID, int
 	pProps->clear();
 	//
 	int iColumn = 0;
-	for ( vector<CColumn>::const_iterator ic = columns.begin(); ic != columns.end(); ++iColumn, ++ic )
-		for ( CColumn::const_iterator i = ic->begin(); i != ic->end(); ++i )
+	for ( typename vector<CColumn>::const_iterator ic = columns.begin(); ic != columns.end(); ++iColumn, ++ic )
+		for ( typename CColumn::const_iterator i = ic->begin(); i != ic->end(); ++i )
 		{
 			const SProperty &sp = *i;
 			if ( sp.path.empty() )
@@ -97,12 +97,12 @@ CProp* CObjectBrowser::GetProperty( CItemsMgr *pRoot, int nObject, int nVariant,
 	int nCurVar = nVariant;
 	CItemsMgr *pCurMgr = pRoot;
 
-	for ( vector<string>::const_iterator i = path.begin(); i != path.end(); ++i )
+	for ( typename vector<string>::const_iterator i = path.begin(); i != path.end(); ++i )
 	{
 		const CPropMap *pProps = pCurMgr->GetPropList( nCurObj, nCurVar );
 		if ( !pProps )
 			return 0;
-		CPropMap::const_iterator ip = pProps->find( *i );
+		typename CPropMap::const_iterator ip = pProps->find( *i );
 		if ( ip == pProps->end() )
 		{
 			ASSERT(0);

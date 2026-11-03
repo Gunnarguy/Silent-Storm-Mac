@@ -1,6 +1,6 @@
 #include "StdAfx.h"
-#include "..\Misc\BasicFactory.h"
-#include "..\FileIO\BasicChunk1.h"
+#include "../Misc/BasicFactory.h"
+#include "../FileIO/BasicChunk1.h"
 #include <strstream>
 
 #import "C:\Program Files (x86)\Common Files\System\ado\msado15.dll" no_namespace rename("EOF", "EndOfFile")
@@ -111,7 +111,7 @@ int COLETable::GetFieldIndex( const char *pszField )
 #endif
 		return fieldIndices[nCurrentField++];
 	}
-	vector<string>::iterator r = find( fields.begin(), fields.end(), pszField );
+	typename vector<string>::iterator r = find( fields.begin(), fields.end(), pszField );
 	int nPos = 0;
 	if ( r == fields.end() )
 	{
@@ -319,7 +319,7 @@ void NDatabase::AddTable( int nTableID, const char *pszTableName,
 {
 	CTablesHash &tables = GetTables();
 	list<STableDescr> &tableDescrs = GetTableDescrs();
-	CTablesHash::iterator i = tables.find( nTableID );
+	typename CTablesHash::iterator i = tables.find( nTableID );
 	if ( i != tables.end() )
 	{
 		ASSERT(0); // already registered
@@ -336,7 +336,7 @@ void NDatabase::AddTable( int nTableID, const char *pszTableName,
 CDBTableBase* NDatabase::GetTable( int nTableID )
 {
 	CTablesHash &tables = GetTables();
-	CTablesHash::iterator i = tables.find( nTableID );
+	typename CTablesHash::iterator i = tables.find( nTableID );
 	if ( i != tables.end() )
 		return &i->second;
 	return 0;
@@ -345,7 +345,7 @@ CDBTableBase* NDatabase::GetTable( int nTableID )
 static CDBTableBase* NDatabase::GetTableByName( const char *pszTable )
 {
 	list<STableDescr> &tableDescrs = GetTableDescrs();
-	list< STableDescr >::iterator i;
+	typename list< STableDescr >::iterator i;
 	for ( i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
 	{
 		if ( i->szTable == pszTable )
@@ -373,8 +373,8 @@ void NDatabase::Import()
 	list<STableDescr> &tableDescrs = GetTableDescrs();
 	list< SRelation > &relations = GetRelations();
 	EstablishConnection( szDataSource.c_str() );
-	list<STableDescr>::iterator i;
-	list<SRelation>::iterator k;
+	typename list<STableDescr>::iterator i;
+	typename list<SRelation>::iterator k;
 	//
 	// 1st phase - create all records & load relations
 	for ( i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
@@ -432,7 +432,7 @@ void NDatabase::Refresh( int nTableID )
 	list<STableDescr> &tableDescrs = GetTableDescrs();
 	EstablishConnection( szDataSource.c_str() );
 	// 1st phase - refresh records
-	list<STableDescr>::iterator i;
+	typename list<STableDescr>::iterator i;
 	for ( i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
 		if ( nTableID == i->nTableID )
 			break;
@@ -486,7 +486,7 @@ void NDatabase::ImportRelation( CDBRecord *pSrc, CDBTableBase *pDestTable, std::
 	list< SRelation > &relations = GetRelations();
 	ASSERT( pDestTable );
 	std::vector< CPtr<CDBRecord> > &refs = *pRefs;
-	list<SRelation>::iterator k;
+	typename list<SRelation>::iterator k;
 	CDBTableBase *pLeft = GetTableByRecord( pSrc );
 	CDBTableBase *pRight = pDestTable;
 	refs.clear();
@@ -571,7 +571,7 @@ void CDBTableBase::PreCreate( int nTypeID )
 			break;
 		pRes->nID = table.GetInt( "ID" );
 #ifdef _DEBUG
-		CRecordHash::iterator i = records.find( pRes->nID );
+		typename CRecordHash::iterator i = records.find( pRes->nID );
 		if ( i != records.end() )
 			ASSERT(0);  // record with this ID already created
 #endif
@@ -592,11 +592,11 @@ void CDBTableBase::Refresh( int nTypeID )
 		if ( !IsValid( pRes ) )
 			break;
 		pRes->nID = table.GetInt( "ID" );
-		CRecordHash::const_iterator it = copy.find( pRes->nID );
+		typename CRecordHash::const_iterator it = copy.find( pRes->nID );
 		if ( it != copy.end() && IsValid( it->second ) )
 			pRes = it->second;
 #ifdef _DEBUG
-		CRecordHash::iterator i = records.find( pRes->nID );
+		typename CRecordHash::iterator i = records.find( pRes->nID );
 		if ( i != records.end() )
 			ASSERT(0);  // record with this ID already created
 #endif
@@ -610,7 +610,7 @@ void CDBTableBase::Import()
 	for ( ; !table.IsEof(); table.MoveNext() )
 	{
 		int nID = table.GetInt( "ID" );
-		CRecordHash::iterator i = records.find( nID );
+		typename CRecordHash::iterator i = records.find( nID );
 		if ( i == records.end() ) 
 		{
 			ASSERT(0); // this record should be created on PreCreate stage
@@ -622,18 +622,18 @@ void CDBTableBase::Import()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CDBRecord* CDBTableBase::GetDBRecord( int nID )
 {
-	CRecordHash::iterator i = records.find( nID );
+	typename CRecordHash::iterator i = records.find( nID );
 	if ( i == records.end() ) 
 	{
 #ifdef _MAPEDIT
 		if ( !bIsDatabaseLoading && nID > 0 )
 		{
 			CTablesHash& tables = GetTables();
-			for ( CTablesHash::const_iterator it = tables.begin(); it != tables.end(); ++it )
+			for ( typename CTablesHash::const_iterator it = tables.begin(); it != tables.end(); ++it )
 				if ( &it->second == this )
 				{
 					list<STableDescr> &tableDescrs = GetTableDescrs();
-					for ( list<STableDescr>::iterator i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
+					for ( typename list<STableDescr>::iterator i = tableDescrs.begin(); i != tableDescrs.end(); ++i )
 						if ( it->first == i->nTableID )
 						{
 							COLETable tbl;

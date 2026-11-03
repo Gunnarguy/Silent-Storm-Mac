@@ -1,11 +1,11 @@
 #include "StdAfx.h"
 #include "Camera.h"
-#include "..\Misc\Geom.h"
+#include "../Misc/Geom.h"
 #include "Transform.h"
-#include "..\Input\Bind.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"      // NGlobal::GetVar / RegisterCmd / CValue (BUG 4 camera sensitivity)
-#include "..\FileIO\BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
+#include "../Input/Bind.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"      // NGlobal::GetVar / RegisterCmd / CValue (BUG 4 camera sensitivity)
+#include "../FileIO/BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
 #include "wInterface.h"               // NWorld::IWorld::GetAIMap (the framing raycast world handle)
 #include "wHeightLayers.h"            // NWorld::IHeightLayers / SHLayer (the per-floor height fields the terrain leg samples)
 #include "Interpolate.h"              // GetBilinear<float,TLinearInterpolate> -- the layer sampler (release @0xcfb40)
@@ -14,7 +14,7 @@
 #include "Interface.h"                // NUI::CInterface via the UI umbrella (CFPCamera pUI -- serialized CPtr member)
 #include "aiMap.h"                    // NAI::IAIMap::Trace / CFloorsSet / SInterval (occlusion ray -- CanSeeOneRay)
 #include "wTSFlags.h"                 // NWorld::TS_VISION (the vision trace-set flag)
-#include "..\Misc\RandomGen.h"        // SRand (the framing's rod fan-sweep roll)
+#include "../Misc/RandomGen.h"        // SRand (the framing's rod fan-sweep roll)
 #include "RPGGlobal.h"                // NRPG::CGlobalGame::nSloMoTimes (the slo-mo repeat-offender tax)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // BUG 4 -- camera sensitivity / invert config consumer. Retail UpdateCameraFromConfig @0xcd180 pushes the
@@ -40,6 +40,7 @@ static void UpdateCameraFromConfig()
 	float sScrollX = NGlobal::GetVar( "game_invertscrollx" ).GetFloat() != 0.f ? -1.0f : 1.0f;
 	float sScrollY = NGlobal::GetVar( "game_invertscrolly" ).GetFloat() != 0.f ? -1.0f : 1.0f;
 	NInput::SetCommandCoeff( "camera_zoom",    fCam );
+	NInput::SetCommandCoeff( "camera_zoom_wheel", fCam );
 	NInput::SetCommandCoeff( "camera_pitch",   fCam * sTurnY );
 	NInput::SetCommandCoeff( "camera_rotate",  fCam * sTurnX );
 	NInput::SetCommandCoeff( "camera_strafe",  fScr * sScrollY );   // ORIGINAL BUG @0xcd180: strafe <- invertscrollY
@@ -61,7 +62,7 @@ public:
 	// UpdateEarthQuakes) + peak amplitude.
 	struct SEarthQuake { STime sTime; float fAmplitude; };
 protected:
-	NInput::CBind fwd, strafe, zoom, pitch, rotate;
+	NInput::CBind fwd, strafe, zoom, pitch, rotate, zoomWheel;
 	// retail CBaseCamera serialized state, PDB layout (size 220) -- full save-format parity with
 	// operator& @0xd0100 (tags 2..16). The old "save format frozen" hedge is REVERSED: the widened
 	// 56-byte SCameraLimits (+ the sZoneLimit relocation onto the camera) IS the retail v1.2 format.
@@ -234,7 +235,7 @@ public:
 CBaseCamera::CBaseCamera():
 	sScreenRect( 0, 0, 1, 1 ),
 	sZoneLimit( -1000, -1000, 1000, 1000 ),		// release ctor @0xcd380 (the rect that used to default inside SCameraLimits)
-	fwd( "camera_forward" ), strafe( "camera_strafe" ), zoom( "camera_zoom" ), pitch ( "camera_pitch" ), rotate( "camera_rotate" )
+	fwd( "camera_forward" ), strafe( "camera_strafe" ), zoom( "camera_zoom" ), pitch ( "camera_pitch" ), rotate( "camera_rotate" ), zoomWheel( "camera_zoom_wheel" )
 {
 	sPlacement.ptAnchor = VNULL3;
 	sPlacement.fRod = 30;
@@ -322,6 +323,7 @@ void CBaseCamera::ProcessEvent( const NInput::SEvent &eEvent )
 	bool bFwd = fwd.ProcessEvent( eEvent );
 	bool bStrafe = strafe.ProcessEvent( eEvent );
 	bool bZoom = zoom.ProcessEvent( eEvent );
+	bZoom |= zoomWheel.ProcessEvent( eEvent );
 	bool bPitch = pitch.ProcessEvent( eEvent );
 	bool bRotate = rotate.ProcessEvent( eEvent );
 	if ( ( bRotate || bFwd || bStrafe || bZoom || bPitch ) && !bMustUnlockDueToUserDecision )
@@ -440,7 +442,7 @@ private:
 	CPtr<NWorld::IWorld>     pWorld;					// tag 2, release +0x0F4 (the raycast + terrain world handle)
 	CPtr<NGScene::IGameView> pView;						// tag 3, release +0x0F8 (the view height-grid handle; consumer = the deferred 2nd CorrectPlacement pass)
 	SCameraPos               sDesiredPlacement;			// tag 4, release +0x0FC (all user input drives it; Update eases the live pose toward it)
-	STime                    sLastTime;					// tag 5, release +0x11C (0xffffffff = "no frame yet" sentinel, ctor @0xce8e0)
+	STime                    sLastTime;					// tag 5, release +0x11C (0xffffffff = "no frame yet" marker, ctor @0xce8e0)
 	SCameraLimits            sSoftLimits;				// tag 6, release +0x120 (Get/SetSoftLimits @0xd04a0/@0xd04c0; ApplySoftDelta consumer deferred)
 	float                    fFloorSliderValue;			// tag 7 (the retail floor-slider input accumulator; no dev floor-slider bind -- inert, serialized)
 	float                    fAttenuation;				// tag 8, release +0x15C: the WORKING attenuation -- while script-LOCKED, Update eases with dt * this, ramping toward sLimits.fAttenuation*0.5; reset by the SlowCameraAcceleration settle (@0xd03c0)
@@ -931,7 +933,7 @@ void CBaseCamera::UpdateEarthQuakes( const STime &sTime )
 	if ( earthQuakesList.empty() )
 		return;
 	float fSum = 0;
-	for ( list<SEarthQuake>::iterator it = earthQuakesList.begin(); it != earthQuakesList.end(); )
+	for ( typename list<SEarthQuake>::iterator it = earthQuakesList.begin(); it != earthQuakesList.end(); )
 	{
 		if ( it->sTime == 0 )
 			it->sTime = sTime;
@@ -1063,7 +1065,7 @@ void CCamera::Update( const STime &sTime )
 		fZoom = 0;
 	}
 
-	// release @0xcd930: frame dt clamped to [0,100] ms (0xffffffff sentinel -> first tick applies nothing)
+	// release @0xcd930: frame dt clamped to [0,100] ms (0xffffffff marker -> first tick applies nothing)
 	STime sDelta = 0;
 	if ( sLastTime != 0xFFFFFFFF )
 		sDelta = Min( sTime - sLastTime, (STime)100 );
@@ -1119,6 +1121,15 @@ void CCamera::Update( const STime &sTime )
 		// Read sPlacement.fRod HERE: the terrain fallback below mutates it.
 		fZoom = Max( -5.0f, Min( fZoom, 5.0f ) ) * sLimits.fZoomSpeed
 		      * ( fabs( sPlacement.fRod ) * sLimits.fZoomAcceleration + 1.0f );
+		// macOS port: the original curve multiplied a wheel notch to several times the whole zoom range (measured with the
+		// default camera: one notch 50.1 to 17.9, a tenth of a notch the same), so the wheel only ever reached the two ends.
+		// A notch is 120 units times the 0.16 of input.cfg; here it moves 8% of the soft range, at the default zoom speed.
+		const float fNotches = Max( -1.5f, Min( zoomWheel.GetDelta() / 19.2f, 1.5f ) );
+		if ( fNotches != 0 )
+			fZoom += fNotches * 0.08f * ( sSoftLimits.fMaxRod - sSoftLimits.fMinRod ) * ( sLimits.fZoomSpeed / 0.3f );
+		static const bool bZoomTrace = getenv( "S2_ZOOM_TRACE" ) != 0;
+		if ( bZoomTrace && fZoom != 0 )
+			fprintf( stderr, "[zoom] rod %.2f step %.3f limits %.1f..%.1f speed %.3f accel %.3f\n", sPlacement.fRod, fZoom, sSoftLimits.fMinRod, sSoftLimits.fMaxRod, sLimits.fZoomSpeed, sLimits.fZoomAcceleration );
 
 		// forward: the keyboard pan goes through the ScrollAnchor virtual (@0x4cdc32, cam vtbl+0x54 --
 		// slot-walked), NON-immediate, so it picks up the scroll input scale. Writing ptAnchor direct

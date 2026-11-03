@@ -1,9 +1,10 @@
 #include "StdAfx.h"
+#include <time.h>
 #include "iMain.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\LogStream.h"
-#include "..\MiscDll\Commands.h"
-#include "..\FileIO\Streams.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/LogStream.h"
+#include "../MiscDll/Commands.h"
+#include "../FileIO/Streams.h"
 #include "Interface.h"     // NUI umbrella -- GetDBString (IsValidCustomName's reserved-name lookups)
 #include "iSaveManager.h"
 #include <io.h>
@@ -157,7 +158,15 @@ void CSaveManager::GetSlotTime( const string &szName, wstring *pTime )
 void GetSlotTime( const string &szName, wstring *pTime, int *pDateKey, int *pTimeKey )
 {
 	struct _stat sStat;
+#if defined(__APPLE__)
+	// Save slot paths use Windows separators. POSIX stat otherwise sees both slots as absent,
+	// making quickload select the empty slot instead of the newest save.
+	char path[4096];
+	S2HostPath( GetSaveManager()->GetSlotFilePath( szName, S_SAVE_FILENAME ).c_str(), path, sizeof(path) );
+	int nRet = _stat( path, &sStat );
+#else
 	int nRet = _stat( GetSaveManager()->GetSlotFilePath( szName, S_SAVE_FILENAME ).c_str(), &sStat );
+#endif
 	if ( nRet == -1 )
 		return;
 
@@ -314,7 +323,7 @@ void GetProfilesList( list<string> *pList )
 	GetSaveManager()->GetProfilesList( pList );
 	// CSaveManager::GetProfilesList returns every save\* subdir incl. the "." / ".." dir entries that
 	// _findfirst yields -- drop them so they don't show up as bogus profiles.
-	for ( list<string>::iterator iProfile = pList->begin(); iProfile != pList->end(); )
+	for ( typename list<string>::iterator iProfile = pList->begin(); iProfile != pList->end(); )
 	{
 		if ( *iProfile == "." || *iProfile == ".." )
 			iProfile = pList->erase( iProfile );
@@ -342,7 +351,7 @@ string GetActiveProfile()
 	GetProfilesList( &profilesList );
 
 	bool bFound = false;
-	for ( list<string>::const_iterator iProfile = profilesList.begin(); iProfile != profilesList.end(); iProfile++ )
+	for ( typename list<string>::const_iterator iProfile = profilesList.begin(); iProfile != profilesList.end(); iProfile++ )
 		if ( *iProfile == szActive )
 			bFound = true;
 

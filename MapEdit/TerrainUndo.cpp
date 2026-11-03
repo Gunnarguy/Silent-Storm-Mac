@@ -1,9 +1,9 @@
 #include "StdAfx.h"
 #include "TerrainUndo.h"
-#include "..\Misc\BasicShare.h"
-#include "..\Main\METerrain.h"
+#include "../Misc/BasicShare.h"
+#include "../Main/METerrain.h"
 #include "weInterface.h"
-#include "..\Main\Grid.h"
+#include "../Main/Grid.h"
 #include "MESerialize.h"
 
 externA5 CBasicShare<int, CMETerrainLoader> shareTerrains;
@@ -113,7 +113,7 @@ static bool DeleteBlades( CTRect<float> *pRect, SGrassLayer *pGrass, const vecto
 {
 	bool bRet = false;
 	*pRect = CTRect<float> ( 1e6, 1e6, -1e6, -1e6 );
-	for ( vector<CVec2>::iterator i = pGrass->blades.begin(); i != pGrass->blades.end(); )
+	for ( typename vector<CVec2>::iterator i = pGrass->blades.begin(); i != pGrass->blades.end(); )
 	{
 		const CVec2 &pt = *i;
 		bool b = false;

@@ -28,7 +28,7 @@ inline CEventHandlers &GetEventHandlers()
 void ThrowEventInner( const type_info &eventID, const void *pStuff )
 {
 	CCallInfoHash &handlers = GetEventHandlers()[ &eventID ];
-	for ( CCallInfoHash::iterator i = handlers.begin(); i != handlers.end(); ++i )
+	for ( typename CCallInfoHash::iterator i = handlers.begin(); i != handlers.end(); ++i )
 		(*i)->Call( pStuff );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,7 +41,7 @@ void RegisterEventHandler( IEventRegister *pReg, const type_info &eventID )
 void UnregisterEventHandler( IEventRegister *pReg, const type_info &eventID )
 {
 	vector<IEventRegister*> &handlers = GetEventHandlers()[ &eventID ];
-	vector<IEventRegister*>::iterator i = find( handlers.begin(), handlers.end(), pReg );
+	typename vector<IEventRegister*>::iterator i = find( handlers.begin(), handlers.end(), pReg );
 	if ( i != handlers.end() )
 	{
 		handlers.erase( i );

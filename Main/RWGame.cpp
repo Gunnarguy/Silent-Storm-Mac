@@ -11,17 +11,17 @@
 #include "GAnimFormat.h"
 #include "GAnimation.h"
 #include "GAnimPath.h"
-#include "..\Misc\BasicShare.h"
+#include "../Misc/BasicShare.h"
 #include "TerrainInfo.h"
 #include "GTerrain.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataAnimation.h"
-#include "..\DBFormat\DataLight.h"	// CAmbientLightReal (SyncWeather sun/rain reference lights)
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataAnimation.h"
+#include "../DBFormat/DataLight.h"	// CAmbientLightReal (SyncWeather sun/rain reference lights)
 #include "GMatShare.h"
 #include "InventoryUnit.h"
-#include "..\MiscDll\Commands.h"      // REGISTER_VAR_EX (v1.2 game_selectionmode / game_showweathereffect)
-#include "..\FileIO\BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
+#include "../MiscDll/Commands.h"      // REGISTER_VAR_EX (v1.2 game_selectionmode / game_showweathereffect)
+#include "../FileIO/BasicChunk1.h"    // START_REGISTER / FINISH_REGISTER
 ///
 #include "GPostProcessors.h"
 #include "GGrass.h"
@@ -252,7 +252,7 @@ void CSetRender::RemoveObsoleteFlashes()
 	CDGPtr<CFuncBase<STime> > pTimer( pTime );
 	pTimer.Refresh();
 	STime tNow = pTimer->GetValue();
-	for ( list<SUnitFlash>::iterator i = unitFlashes.begin(); i != unitFlashes.end(); )
+	for ( typename list<SUnitFlash>::iterator i = unitFlashes.begin(); i != unitFlashes.end(); )
 	{
 		if ( i->tEnd < tNow )
 			i = unitFlashes.erase( i );
@@ -312,14 +312,14 @@ void CSetRender::PostVisit( int nID, NWorld::IVisObj *pObject )
 	objects[nID] = pObject;
 	if ( !pObject )
 		return;
-	CSelectionHash::iterator i = selections.find( pObject );
+	typename CSelectionHash::iterator i = selections.find( pObject );
 	if ( i != selections.end() && IsValid( i->second ) )
 		CreateSelection( nID, i->second->selectionInfo, i->second );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CObjectBase* CSetRender::Select( CObjectBase *pSelect, const SSelectionInfo &info )
 {
-	CSelectionHash::iterator iTemp = selections.find( pSelect );
+	typename CSelectionHash::iterator iTemp = selections.find( pSelect );
 	if ( iTemp != selections.end() )
 	{
 		if ( IsValid( iTemp->second ) && iTemp->second->selectionInfo.vColor == info.vColor )
@@ -547,7 +547,7 @@ void CSetRender::AddHead( NDb::CComplexHead *pHead, CFuncBase<SFBTransform> *pPo
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Release-new: a standalone head with a LIVE macro-muscle morph (the advanced FaceGen editor). Same as
 // the 3-arg CComplexHead overload, but hands the CHeadTransformInfo to the head animator so it lays the
-// editor's tension sliders over the idle pose. (Sentinels-LS: the morph rides the proven CHeadAnimator.)
+// editor's tension sliders over the idle pose. (The morph rides the proven CHeadAnimator.)
 void CSetRender::AddHead( NDb::CComplexHead *pHead, CFuncBase<SFBTransform> *pPosition, const NGScene::SRoomInfo &room, NLSHead::CHeadTransformInfo *pTransformInfo, CPtrFuncBase<NGfx::CTexture> *pFaceTexture )
 {
 	if ( !IsValid(pHeadsController) )
@@ -1539,7 +1539,7 @@ void CRenderGame::UpdateVisible( NWorld::IPlayer *pViewFrom, bool bShowUnits )
 		list<CPtr<NWorld::CUnit> > res;
 		pViewFrom->GetVisible( &res );
 		vector<NWorld::IVisObj*> vis;
-		for ( list<CPtr<NWorld::CUnit> >::iterator i = res.begin(); i != res.end(); ++i )
+		for ( typename list<CPtr<NWorld::CUnit> >::iterator i = res.begin(); i != res.end(); ++i )
 		{
 			vis.push_back( CDynamicCast<NWorld::IVisObj>( *i ) );
 			(*i)->AddVisitableChildren( &vis );
@@ -1547,17 +1547,17 @@ void CRenderGame::UpdateVisible( NWorld::IPlayer *pViewFrom, bool bShowUnits )
 		pViewFrom->GetSounds( &vis );
 		list<CPtr<CObjectBase> > resObj;
 		pViewFrom->GetVisibleObjects( &resObj );
-		for ( list<CPtr<CObjectBase> >::iterator i = resObj.begin(); i != resObj.end(); ++i )
+		for ( typename list<CPtr<CObjectBase> >::iterator i = resObj.begin(); i != resObj.end(); ++i )
 			vis.push_back( CDynamicCast<NWorld::IVisObj>( *i ) );
 		pVisible->Set( vis );
 		// show bombs
 		list<CPtr<CObjectBase> > bombs;
 		list<SBombSelection> newBombSelections;
 		pViewFrom->GetTrappedObjectsList( &bombs );
-		for ( list< CPtr<CObjectBase> >::const_iterator i = bombs.begin(); i != bombs.end(); ++i )
+		for ( typename list< CPtr<CObjectBase> >::const_iterator i = bombs.begin(); i != bombs.end(); ++i )
 		{
 			CObjectBase *pBomb = *i;
-			list<SBombSelection>::iterator k;
+			typename list<SBombSelection>::iterator k;
 			for ( k = bombSelections.begin(); k != bombSelections.end(); ++k )
 			{
 				if ( k->pBomb == pBomb )

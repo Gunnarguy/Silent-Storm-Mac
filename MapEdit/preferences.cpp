@@ -5,10 +5,10 @@
 #include "mapedit.h"
 #include "preferences.h"
 #include "Export.h"
-#include "..\FileIO\BasicChunk1.h"
-#include "..\Main\iMain.h"
-#include "..\Main\gResource.h"
-#include "..\Main\iMapEditor.h"
+#include "../FileIO/BasicChunk1.h"
+#include "../Main/iMain.h"
+#include "../Main/gResource.h"
+#include "../Main/iMapEditor.h"
 #include "MEUserSettings.h"
 #include "MEParams.h"
 #include "GameView.h"
@@ -16,7 +16,7 @@
 #include "TreeSelItemdlg.h"
 #include "ItemsMgr.h"
 #include "UserSettingsSetup.h"
-#include "..\Input\Bind.h"
+#include "../Input/Bind.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -440,25 +440,25 @@ void CLightPrefsDlg::OnLightLoadpreset()
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nItemID );
 	if ( !pProps )
 		return;
-	CPropMap::const_iterator il =pProps->find( "LightColor" );
-	CPropMap::const_iterator ia =pProps->find( "AmbientColor" );
-	CPropMap::const_iterator ifog =pProps->find( "FogColor" );
-	CPropMap::const_iterator igloss =pProps->find( "GlossColor" );
-	CPropMap::const_iterator ivcr =pProps->find( "VapourColor" );
-	CPropMap::const_iterator ip =pProps->find( "Pitch" );
-	CPropMap::const_iterator iy =pProps->find( "Yaw" );
-	CPropMap::const_iterator ifstart =pProps->find( "FogStartDistance" );
-	CPropMap::const_iterator ifdist =pProps->find( "FogDistance" );
-	CPropMap::const_iterator ivheight =pProps->find( "VapourHeight" );
-	CPropMap::const_iterator ivdensity =pProps->find( "VapourDensity" );
-	CPropMap::const_iterator isky =pProps->find( "SkyID" );
-	CPropMap::const_iterator ishcr =pProps->find( "ShadowColor" );
-	CPropMap::const_iterator ivnp = pProps->find( "VapourNoiseParam" );
-	CPropMap::const_iterator ivs = pProps->find( "VapourSpeed" );
-	CPropMap::const_iterator ivst = pProps->find( "VapourSwitchTime" );
-	CPropMap::const_iterator ibkcr =pProps->find( "BackLightColor" );
-	CPropMap::const_iterator igrcr =pProps->find( "GroundAmbientColor" );
-	CPropMap::const_iterator e =pProps->end();
+	typename CPropMap::const_iterator il =pProps->find( "LightColor" );
+	typename CPropMap::const_iterator ia =pProps->find( "AmbientColor" );
+	typename CPropMap::const_iterator ifog =pProps->find( "FogColor" );
+	typename CPropMap::const_iterator igloss =pProps->find( "GlossColor" );
+	typename CPropMap::const_iterator ivcr =pProps->find( "VapourColor" );
+	typename CPropMap::const_iterator ip =pProps->find( "Pitch" );
+	typename CPropMap::const_iterator iy =pProps->find( "Yaw" );
+	typename CPropMap::const_iterator ifstart =pProps->find( "FogStartDistance" );
+	typename CPropMap::const_iterator ifdist =pProps->find( "FogDistance" );
+	typename CPropMap::const_iterator ivheight =pProps->find( "VapourHeight" );
+	typename CPropMap::const_iterator ivdensity =pProps->find( "VapourDensity" );
+	typename CPropMap::const_iterator isky =pProps->find( "SkyID" );
+	typename CPropMap::const_iterator ishcr =pProps->find( "ShadowColor" );
+	typename CPropMap::const_iterator ivnp = pProps->find( "VapourNoiseParam" );
+	typename CPropMap::const_iterator ivs = pProps->find( "VapourSpeed" );
+	typename CPropMap::const_iterator ivst = pProps->find( "VapourSwitchTime" );
+	typename CPropMap::const_iterator ibkcr =pProps->find( "BackLightColor" );
+	typename CPropMap::const_iterator igrcr =pProps->find( "GroundAmbientColor" );
+	typename CPropMap::const_iterator e =pProps->end();
 	if ( e == il || ia == e || ip == e || iy == e || ifog == e || igloss == e 
 			|| ivcr == e || ifdist == e || ivheight == e || ivdensity == e || ishcr == e 
 			|| ivnp == e || ivs == e || ivst == e || ibkcr == e || igrcr == e )
@@ -517,22 +517,22 @@ void CLightPrefsDlg::OnLightSave()
 	if ( !pProps )
 		return;
 	UpdateData();
-	CPropMap::const_iterator il =pProps->find( "LightColor" );
-	CPropMap::const_iterator ia =pProps->find( "AmbientColor" );
-	CPropMap::const_iterator ip =pProps->find( "Pitch" );
-	CPropMap::const_iterator iy =pProps->find( "Yaw" );
-	CPropMap::const_iterator e =pProps->end();
+	typename CPropMap::const_iterator il =pProps->find( "LightColor" );
+	typename CPropMap::const_iterator ia =pProps->find( "AmbientColor" );
+	typename CPropMap::const_iterator ip =pProps->find( "Pitch" );
+	typename CPropMap::const_iterator iy =pProps->find( "Yaw" );
+	typename CPropMap::const_iterator e =pProps->end();
 
-	CPropMap::const_iterator ifog =pProps->find( "FogColor" );
-	CPropMap::const_iterator igloss =pProps->find( "GlossColor" );
-	CPropMap::const_iterator ivcr =pProps->find( "VapourColor" );
-	CPropMap::const_iterator ifstart =pProps->find( "FogStartDistance" );
-	CPropMap::const_iterator ifdist =pProps->find( "FogDistance" );
-	CPropMap::const_iterator ivheight =pProps->find( "VapourHeight" );
-	CPropMap::const_iterator ivdensity =pProps->find( "VapourDensity" );
-	CPropMap::const_iterator isky =pProps->find( "SkyID" );
-	CPropMap::const_iterator ishcr =pProps->find( "ShadowColor" );
-	CPropMap::const_iterator ibkcr =pProps->find( "BackLightColor" );
+	typename CPropMap::const_iterator ifog =pProps->find( "FogColor" );
+	typename CPropMap::const_iterator igloss =pProps->find( "GlossColor" );
+	typename CPropMap::const_iterator ivcr =pProps->find( "VapourColor" );
+	typename CPropMap::const_iterator ifstart =pProps->find( "FogStartDistance" );
+	typename CPropMap::const_iterator ifdist =pProps->find( "FogDistance" );
+	typename CPropMap::const_iterator ivheight =pProps->find( "VapourHeight" );
+	typename CPropMap::const_iterator ivdensity =pProps->find( "VapourDensity" );
+	typename CPropMap::const_iterator isky =pProps->find( "SkyID" );
+	typename CPropMap::const_iterator ishcr =pProps->find( "ShadowColor" );
+	typename CPropMap::const_iterator ibkcr =pProps->find( "BackLightColor" );
 	if ( e == il || ia == e || ip == e || iy == e || ifog == e || igloss == e 
 			|| ivcr == e || ifdist == e || ivheight == e || ivdensity == e 
 			|| ifstart == e || ishcr == e || ibkcr == e )

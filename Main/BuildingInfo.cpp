@@ -1,9 +1,9 @@
 #include "StdAfx.h"
 #include "BuildingInfo.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataMap.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataMap.h"
 #include "Grid.h"
-#include "..\Misc\2Darray.h"
+#include "../Misc/2Darray.h"
 
 namespace NBuilding
 {
@@ -35,9 +35,16 @@ void CBuildInfoLoader::Recalc()
 			pValue->roomMap.resize( pValue->nMaxFloor - pValue->nMinFloor + 1, array );
 		}
 	}
+	catch( SFileIOError &e )
+	{
+		OutputDebugString( "Exception: CBuildInfoLoader::Recalc()\n" );
+		fprintf( stderr, "[building-fail] %d: %s\n", GetKey(), e.szError.c_str() );
+		return;
+	}
 	catch(...)
 	{
 		OutputDebugString( "Exception: CBuildInfoLoader::Recalc()\n" );
+		fprintf( stderr, "[building-fail] %d: unknown exception\n", GetKey() );
 		return;
 	}
 }

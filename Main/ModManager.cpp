@@ -2,7 +2,7 @@
 #include "ModManager.h"
 #include "DG.h"						// ClearHoldQueue
 #include "GResource.h"				// NGScene::{CloseAllResources,ClearResourceDirs,AddResourceDir}
-#include "..\ADOImport\BasicDB.h"	// NDatabase::{ClearDatabaseTables,Serialize} + CFileStream (via BasicChunk1.h)
+#include "../ADOImport/BasicDB.h"	// NDatabase::{ClearDatabaseTables,Serialize} + CFileStream (via BasicChunk1.h)
 namespace NDb { void BuildMapLinks( bool bTranslate ); }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CModManager -- mod enumeration / activation. Reconstructed from
@@ -126,6 +126,11 @@ bool CModManager::Activate( const vector<SModInfo> &mods )
 		return false;
 	}
 	NGScene::AddResourceDir( ".\\res" );		// release @0x685fb1: literal ".\res"
+#if defined(__APPLE__)
+	if ( S2HDTexturePackAvailable() )
+		NGScene::AddResourceDir( ".\\hd" );		// macOS port: HD texture pack, below the mods
+	NGScene::SetHDTextureSources(S2HDTexturesEnabled());
+#endif
 	// per-mod overlay (release @0x685fbb-0x6860a3): layer "<dir>\game.db" over the database, then
 	// register <dir> as a resource dir. A throwing load is swallowed (release funclet @0x686083)
 	// and the loop continues -- the failed mod's dir is STILL added, exactly like the release.

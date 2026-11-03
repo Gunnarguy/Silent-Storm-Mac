@@ -35,7 +35,7 @@ public:
 	// retrieve character description
   const STFCharacter& GetChar( const WORD c ) const
 	{
-		CCharacterMap::const_iterator pos = chars.find( c );
+		typename CCharacterMap::const_iterator pos = chars.find( c );
 		if ( pos == chars.end() )
 		{
 			pos = chars.find( wDefaultChar );
@@ -50,7 +50,7 @@ public:
 	// retrieve kerning pair width
 	int GetKern( WORD wChar, WORD wLastChar ) const
 	{
-    CKernMap::const_iterator pos = kerns.find( (DWORD(wLastChar) << 16) | DWORD(wChar) );
+    typename CKernMap::const_iterator pos = kerns.find( (DWORD(wLastChar) << 16) | DWORD(wChar) );
 		return pos != kerns.end() ? pos->second : 0;
 	}
 	//

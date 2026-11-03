@@ -13,13 +13,13 @@ namespace NRPG
 //
 namespace NDb
 {
-	enum EShootMode;
+	enum EShootMode : int;
 }
 //
 namespace NAI
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-enum EPose;
+enum EPose : int;
 class IAIUnit;
 class CAILogRecord;
 struct SUnitPosition;
@@ -228,7 +228,6 @@ public:
 	NRPG::CFirstAidItem* GetItem() const { return pItem; }
 	virtual NRPG::IInventoryItem* GetInventoryItem() const;
 };
-////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CAIFireArmsWeaponClip* CreateAIFireArmsWeaponClip( NRPG::CClipItem *pItem );
 CAIFireArmsWeapon* CreateAIFireArmsWeapon( IAIUnit *pOwner, NRPG::CWeaponItem *pItem );

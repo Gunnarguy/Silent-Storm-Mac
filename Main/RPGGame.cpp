@@ -4,15 +4,15 @@
 #include "RPGCover.h"
 #include "aiMap.h"
 #include "aiRender.h"
-#include "..\Misc\RandomGen.h"
+#include "../Misc/RandomGen.h"
 #include "wTSFlags.h"
 #include "wInterface.h"
 #include "RPGUnitMission.h"
 #include "RPGItemInfo.h"
 #include "RPGToHit.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataMap.h"   // NDb::EDiplomacyState / DS_ALLY -- friendly-fire ally check in cover penetration
-#include "..\MiscDll\LogStream.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataMap.h"   // NDb::EDiplomacyState / DS_ALLY -- friendly-fire ally check in cover penetration
+#include "../MiscDll/LogStream.h"
 #include "aiGrid.h"
 #include "RPGVision.h"
 #include "rpgCheatConstants.h"
@@ -85,7 +85,7 @@ void GetObjectsThatMayBeDamaged( CCoverInfo *pCover,
 	pRes->clear();
 	vector<CCoverInfo::SRay> rays( pCover->hitRays );
 	rays.insert( rays.end(), pCover->looseRays.begin(), pCover->looseRays.end() );
-	for ( vector<CCoverInfo::SRay>::const_iterator i = rays.begin(); i != rays.end(); ++i )
+	for ( typename vector<CCoverInfo::SRay>::const_iterator i = rays.begin(); i != rays.end(); ++i )
 		for ( NAI::CFastRenderer::SResult *p = pCover->grids[i->nGrid].resGrid[i->nY][i->nX]; p; p = p->pNext )
 			(*pRes)[ p->GetInfo().pUserData ] = 1;
 }
@@ -349,7 +349,7 @@ float CGame::GetCoverForAIUnit( CVec3 ptFrom, NWorld::CUnit *pIgnore,
 		AttackPortion, pIgnore, pTarget, HitLocation, 1.f, true, 0.f );
 	//
 	int nPenetrateCount = 0;
-	for ( vector<NRPG::CCoverInfo::SRay>::const_iterator i = pCover->hitRays.begin(); i != pCover->hitRays.end(); ++i )
+	for ( typename vector<NRPG::CCoverInfo::SRay>::const_iterator i = pCover->hitRays.begin(); i != pCover->hitRays.end(); ++i )
 		if ( i->isPenetrate )
 			++nPenetrateCount;
 	float fAverageAPA = ( pCover->fSummAPA / float(nPenetrateCount) ) / AttackPortion.nK;
@@ -451,13 +451,13 @@ void CGame::ProcessMeleeAttackPortion( const CAttackPortion &a, const CRay &ray,
 	// every unit/object on path receives damage
 	vector<NAI::SInterval> intersect;
 	vector<IAttackable*> ignore;
-	for ( vector<IAttackable*>::const_iterator it = _ignore.begin(); it != _ignore.end(); ++it )
+	for ( typename vector<IAttackable*>::const_iterator it = _ignore.begin(); it != _ignore.end(); ++it )
 		ignore.push_back( *it );
 	CAttackPortion tmpAttackPortion( a );
 	tmpAttackPortion.rTtrajectory = ray;   // Jan03 write the combat code reads (see ProcessRangedAttackPortion note)
 	pAIMap->Trace( ray, &intersect, NWorld::TS_FRAGMENTED );
 
-	for ( vector<NAI::SInterval>::iterator i = intersect.begin(); i != intersect.end(); ++i )
+	for ( typename vector<NAI::SInterval>::iterator i = intersect.begin(); i != intersect.end(); ++i )
 	{
 		if ( i->enter.fT > 0 )	// because this is actually not a ray but a straight line
 		{
@@ -498,7 +498,7 @@ void CGame::ProcessRangedAttackPortion( const CAttackPortion &a, const CRay &ray
 	// every unit/object on path receives damage
 	vector<NAI::SInterval> intersect;
 	vector<IAttackable*> ignore;
-	for ( vector<IAttackable*>::const_iterator it = ignores.begin(); it != ignores.end(); ++it )
+	for ( typename vector<IAttackable*>::const_iterator it = ignores.begin(); it != ignores.end(); ++it )
 		ignore.push_back( *it );
 	CAttackPortion tmpAttackPortion( a );
 	// Jan03 wrote the fired ray into the attack portion here; the combat code (ProcessAttack corpse-push,
@@ -513,7 +513,7 @@ void CGame::ProcessRangedAttackPortion( const CAttackPortion &a, const CRay &ray
 	pTrails->clear();
 	pTrails->push_back( STrailPoint( 0, ray.ptDir, ray.ptOrigin, tmpAttackPortion, 0, 0, 0, CVec3(0,0,1), 100 ) );
 
-	for ( vector<NAI::SInterval>::iterator i = intersect.begin(); i != intersect.end(); ++i )
+	for ( typename vector<NAI::SInterval>::iterator i = intersect.begin(); i != intersect.end(); ++i )
 	{
 		if ( i->enter.fT > 0 && i->enter.fT < fMaxRange )	// because this is actually not a ray but a straight line
 		{
@@ -603,7 +603,7 @@ static bool RealPeekRay( CCoverInfo *pCover, CRay *pRes, float fHit, bool *bIsMi
 		}
 
 		CRoulette roulette;
-		for ( vector<CCoverInfo::SRay>::const_iterator i = pCover->hitRays.begin(); i != pCover->hitRays.end(); ++i )
+		for ( typename vector<CCoverInfo::SRay>::const_iterator i = pCover->hitRays.begin(); i != pCover->hitRays.end(); ++i )
 		{
 			float fK = i->fDeviation;
 			if ( bStickTo_pRes )
@@ -639,7 +639,7 @@ static bool RealPeekRay( CCoverInfo *pCover, CRay *pRes, float fHit, bool *bIsMi
 		sort( pCover->looseRays.begin(), pCover->looseRays.end() ); // sort from worst to best
 		float fStep = 1.f / float( pCover->looseRays.size() );
 		int n = 0;
-		for ( vector<CCoverInfo::SRay>::const_iterator i = pCover->looseRays.begin(); i != pCover->looseRays.end(); ++i, ++n )
+		for ( typename vector<CCoverInfo::SRay>::const_iterator i = pCover->looseRays.begin(); i != pCover->looseRays.end(); ++i, ++n )
 		{
 			float fK = sqr( fHit - fabs( float(n) * fStep - fHit ) * i->fDeviation );
 			if ( bStickTo_pRes )
@@ -689,7 +689,7 @@ int GetHitCover( const NWorld::CUnit *pAttacker, CCoverInfo *pCover )
 	ASSERT(pCover);
 	//
 	int nPenetrateCount = 0;
-	for ( vector<CCoverInfo::SRay>::const_iterator i = pCover->hitRays.begin(); i != pCover->hitRays.end(); ++i )
+	for ( typename vector<CCoverInfo::SRay>::const_iterator i = pCover->hitRays.begin(); i != pCover->hitRays.end(); ++i )
 		if ( i->isPenetrate )
 			++nPenetrateCount;
 	//
@@ -699,11 +699,11 @@ int GetHitCover( const NWorld::CUnit *pAttacker, CCoverInfo *pCover )
 	if ( attack.empty() )
 		return 0;
 	// Rays were cast but NONE penetrate: the target/tile is fully walled off. Report the BLOCKED
-	// sentinel. NOTE (2026-07-05): the retail calcer gate @0x2b85e0/0x2b86c0/0x2b8a50 is
+	// marker. NOTE (2026-07-05): the retail calcer gate @0x2b85e0/0x2b86c0/0x2b8a50 is
 	// `fHitCover <= 0 -> 0%` (fcomp vs the 0.0f global @0x8d54dc, disasm-verified), so retail's
 	// plain 0.0 return covers this case AND the empty-hitRays case (all rays muzzle-obstructed --
 	// the RealPeekRay @0x2b3f00 "Kick the programmers" scenario, where we fall through below and
-	// return 0). The -1 sentinel is kept as a stronger-typed BLOCKED marker; both -1 and 0 now
+	// return 0). The -1 value is kept as a stronger-typed BLOCKED marker; both -1 and 0 now
 	// zero the displayed chance, matching retail. The old unguarded 0/0-NaN ->
 	// int(0*NaN)=INT_MIN accidentally produced this for blocked tiles while ALSO poisoning open
 	// ground; the plain 0.0f guard alone lost the blocked case (good % through two walls).
@@ -889,7 +889,7 @@ int CGame::GetTileCompositeToHit(  NWorld::CUnit *pAttacker, CVec3 ptTilePos,
 		return 0;
 	}
 	// 0x6b56e3..0x6b5766: preview the pose facing the commanded point, as
-	// execution will, and keep the impossible-direction sentinel out of the UI.
+	// execution will, and keep the impossible-direction marker out of the UI.
 	NAI::SUnitPosition pos = pAttacker->GetPosition();
 	pos.pos.p.SetDirection( GetShootDirection( pos.pos.pNet, pos.pos.p, ptTilePos ) );
 	const NAI::EPassable pass = pos.pos.pNet->GetPassability( pos.pos.p );

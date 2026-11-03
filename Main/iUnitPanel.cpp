@@ -8,12 +8,12 @@
 #include "RPGItemInfo.h"
 #include "RPGUnitInfo.h"
 #include "RWGame.h"
-#include "..\Misc\StrProc.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataSound.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
-#include "..\DBFormat\DataCamera.h"    // NDb::GetDBCamera -- the HUD face camera (release @0x254cc0: record 0x13a1)
+#include "../Misc/StrProc.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataSound.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
+#include "../DBFormat/DataCamera.h"    // NDb::GetDBCamera -- the HUD face camera (release @0x254cc0: record 0x13a1)
 #include "Sound.h"
 #include "iMission.h"
 #include "Interface.h"
@@ -903,7 +903,20 @@ bool CInfoPanelSlot::ProcessMessage( const SEvent &sEvent )
 				CDynamicCast<NRPG::IClipItem> pClip( sInfo.pItem );
 				CDynamicCast<NRPG::IWeaponItemInfo> pWeapon( pUnit->GetRPG()->GetInventoryInfo()->Get( eType ) );
 				if ( IsValid( pClip ) && IsValid( pWeapon ) )
-					pMission->Command( pUnit, new NWorld::CCmdLoadWeapon( pWeapon, sSource ) );
+				{
+					// retail CInfoPanelSlot::ProcessMessage @0x6586e2..0x65877f: the drop is probed first
+					// (mission vtbl+0xac); a refused load plays the IMPOSSIBLE_TO_PERFORM voice on the
+					// mission events channel instead of issuing an order the unit cannot carry out.
+					if ( pMission->CanDoCommand( new NWorld::CCmdLoadWeapon( pWeapon, sSource ), false, 0, 0, 0 ) == NWorld::UCR_OK )
+						pMission->Command( pUnit, new NWorld::CCmdLoadWeapon( pWeapon, sSource ) );
+					else
+					{
+						static const bool bTrace = getenv( "S2_STATS_TRACE" ) != 0;
+						if ( bTrace )
+							csSystem << "[ack-trace] slot load refused: IA_IMPOSSIBLE_TO_PERFORM" << endl;
+						pMission->DoEvent( new NWorld::CCmdPlayAck( pUnit, NWorld::IA_IMPOSSIBLE_TO_PERFORM ) );
+					}
+				}
 				else
 				{
 					if ( CanPlace( sEvent.nX, sEvent.nY, sSource ) )

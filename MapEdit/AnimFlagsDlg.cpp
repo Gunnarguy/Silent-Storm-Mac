@@ -88,7 +88,7 @@ void CAnimFlagsDlg::DoDataExchange(CDataExchange* pDX)
 
 inline bool GetFlag( const CPropMap *pProps, const string &szFlag )
 {
-	CPropMap::const_iterator i = pProps->find( szFlag );
+	typename CPropMap::const_iterator i = pProps->find( szFlag );
 	if ( i != pProps->end() )
 		return i->second->GetValue();
 	return false;
@@ -160,7 +160,7 @@ void CAnimFlagsDlg::UpdateItem( int nID )
 	int nCheck = pB->GetCheck();
 	CString szText;
 	pB->GetWindowText( szText );
-	CPropMap::const_iterator i = pProps->find( (LPCSTR)szText );
+	typename CPropMap::const_iterator i = pProps->find( (LPCSTR)szText );
 	if ( i != pProps->end() )
 	{
 		i->second->SetValue( nCheck > 0 );

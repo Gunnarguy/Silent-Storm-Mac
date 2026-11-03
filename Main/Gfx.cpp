@@ -1,10 +1,12 @@
 #include "StdAfx.h"
 #include <D3D9.h>
+#if defined(_WIN32)
 #include <dxgi.h>
+#endif
 #include "GfxRender.h"
-#include "..\Misc\HPTimer.h"
-#include "..\Misc\2DArray.h"
-#include "..\MiscDll\Commands.h"
+#include "../Misc/HPTimer.h"
+#include "../Misc/2DArray.h"
+#include "../MiscDll/Commands.h"
 #include "Gfx.h"
 #include "GfxInternal.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,6 +85,7 @@ SVideoConfigInfo GetVideoConfigInfo()
 	// Query the same adapter without allocating GPU memory; retain D3D9 fallback on older Windows.
 	if ( pDevice )
 		info.fVideoMemoryMB = pDevice->GetAvailableTextureMem() / 1048576.0f;
+#if defined(_WIN32)
 	HMODULE hDXGI = LoadLibraryW( L"dxgi.dll" );
 	if ( hDXGI )
 	{
@@ -110,6 +113,7 @@ SVideoConfigInfo GetVideoConfigInfo()
 		}
 		FreeLibrary( hDXGI );
 	}
+#endif
 	return info;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -604,7 +608,10 @@ void MakeScreenShot( CArray2D<SPixel8888> *pRes, bool bCorrectGamma )
 	D3DDISPLAYMODE desktop;
   hr = pD3D->GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &desktop );
 	ASSERT( D3D_OK == hr );
-	hr = pDevice->CreateOffscreenPlainSurface( desktop.Width, desktop.Height, D3DFMT_A8R8G8B8, D3DPOOL_SCRATCH, pSurface.GetAddr(), 0 );
+	// macOS port: the back buffer can be larger than the desktop mode (a 3600x2338 setting on a 2560x1440 main display), and
+	// the copy below takes the back buffer's size, so a desktop-sized surface was read past its end: a crash on any hint,
+	// clue or save screenshot once the read crossed into an unmapped page.
+	hr = pDevice->CreateOffscreenPlainSurface( Max( (UINT)desktop.Width, (UINT)pp.BackBufferWidth ), Max( (UINT)desktop.Height, (UINT)pp.BackBufferHeight ), D3DFMT_A8R8G8B8, D3DPOOL_SCRATCH, pSurface.GetAddr(), 0 );
 	ASSERT( D3D_OK == hr );
 	hr = pDevice->GetFrontBufferData( 0, pSurface );
 	ASSERT( D3D_OK == hr );

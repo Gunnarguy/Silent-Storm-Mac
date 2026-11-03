@@ -169,7 +169,7 @@ void SetupObjects()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CObjectMgr* GetObjectMgr( EBrushType type )
 {
-	CObjectMgrMap::iterator i = objectMgrMap.find( type );
+	typename CObjectMgrMap::iterator i = objectMgrMap.find( type );
 	if ( i == objectMgrMap.end() )
 		return 0;
 	return i->second;

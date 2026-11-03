@@ -3,8 +3,8 @@
 #include "RPGStore.h"
 #include "RPGItem.h"
 #include "RPGUnit.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataRPG.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataRPG.h"
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CStore - release vendor stock model bodies. Reconstructed from the v1.1 raw disassembly.
@@ -168,9 +168,9 @@ void CStore::Take( IInventoryItem *item )
 {
 	itemsMapsSet[ eFilter ]->Take( item );
 
-	for ( vector<SStoreItem>::iterator row = itemsSet.begin(); row != itemsSet.end(); ++row )
+	for ( typename vector<SStoreItem>::iterator row = itemsSet.begin(); row != itemsSet.end(); ++row )
 	{
-		for ( list<CObj<IInventoryItem> >::iterator it = row->itemsList.begin(); it != row->itemsList.end(); ++it )
+		for ( typename list<CObj<IInventoryItem> >::iterator it = row->itemsList.begin(); it != row->itemsList.end(); ++it )
 		{
 			if ( it->GetPtr() == item )
 			{
@@ -202,7 +202,7 @@ void CStore::PlaceItem( SStoreItem *pRow, bool bWeapon, bool bForce, const CTPoi
 
 	NDb::CRPGWeapon *pWeapon = IsValid( pRow->pRPGItem->pSuccessor )
 		? dynamic_cast<NDb::CRPGWeapon*>( pRow->pRPGItem->pSuccessor.GetPtr() ) : 0;
-	for ( list<CObj<IInventoryItem> >::iterator it = pRow->itemsList.begin(); it != pRow->itemsList.end(); ++it )
+	for ( typename list<CObj<IInventoryItem> >::iterator it = pRow->itemsList.begin(); it != pRow->itemsList.end(); ++it )
 	{
 		IInventoryItem *pItem = it->GetPtr();
 		if ( !IsValid( pItem ) )

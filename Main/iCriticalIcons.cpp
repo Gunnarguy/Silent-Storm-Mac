@@ -1,9 +1,9 @@
 #include "StdAfx.h"
 #include "wInterface.h"
 #include "RPGUnitInfo.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "iMission.h"
 #include "Interface.h"
 #include "UIInterface.h"
@@ -114,7 +114,7 @@ void UpdateCriticalIcons( NGame::IUnitTracker *pUnit, const vector<CObj<CInfoPan
 		criticalsList.push_back( new CMissionCriticalBleedingFake( nBleeding ) );
 
 	int nCount = 0;
-	for ( list<CPtr<NRPG::ICriticalInfo> >::const_iterator iTemp = criticalsList.begin(); iTemp != criticalsList.end(); ++iTemp )
+	for ( typename list<CPtr<NRPG::ICriticalInfo> >::const_iterator iTemp = criticalsList.begin(); iTemp != criticalsList.end(); ++iTemp )
 	{
 		// PK statuses (everything past the plain-wound block) get no icon slot (release: type < 0x10)
 		if ( (*iTemp)->GetCriticalType() >= NDb::C_PANZERKLEIN_AXIS )

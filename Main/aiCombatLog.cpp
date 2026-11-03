@@ -25,7 +25,7 @@ void CAILog::operator<<( IAILogRecord *pRecord )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAILog::GetWorldCommands( list< CPtr<NWorld::CCommand> > *pOut )
 {
-	for ( list< CObj<IAILogRecord> >::iterator i = records.begin(); i != records.end(); ++i )
+	for ( typename list< CObj<IAILogRecord> >::iterator i = records.begin(); i != records.end(); ++i )
 	{
 		IAILogRecord *pRec = *i;
 		if ( IsValid( pRec ) )

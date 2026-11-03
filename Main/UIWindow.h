@@ -12,7 +12,7 @@ namespace NScript
 {
 	class CScript;		// retail CWindow window-scripting members (eventsMap/pScript, op& tags 16/17)
 }
-#include "..\MiscDll\LogStream.h"
+#include "../MiscDll/LogStream.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -73,8 +73,8 @@ protected:
 	CPtr<CInterface> pInterface;
 	// retail listChildren is nstl::vector<CMObj<CWindow>> (AddChild/RemoveChild/~CWindow/Update all use
 	// _M_start/_M_finish; s2_uiwindow.h:25). It was a std::list here: std::list::erase(end()) frees the list
-	// SENTINEL node, so RemoveChild on a save-load-inconsistent parent freed a LIVE window's sentinel ->
-	// teardown heap-use-after-free (ASan 2026-07-14). A vector has no sentinel -> that failure mode is gone.
+	// END node, so RemoveChild on a save-load-inconsistent parent freed a LIVE window's end node ->
+	// teardown heap-use-after-free (ASan 2026-07-14). A vector has no end node -> that failure mode is gone.
 	vector<CMObj<CWindow> > listChildren;
 	// retail window-scripting/tooltip tail (@0xd4220 tags 14-17). sToolTipAnchor/eToolTipAnchorType are
 	// copied from the originating NDb::CUIControl on EVENT_TEMPLATECREATE; eventsMap/pScript belong to

@@ -40,7 +40,8 @@ void GetIDList( vector<string> *pList );
 ////
 const CValue& GetVar( const string &szID, const CValue &sDefault = CValue() );
 void SetVar( const string &szVar, const CValue &sValue );
-void ResetVar( const string &szVar );    // @0x3d4c80 -- restore the var's registered default value
+void ResetVar( const string &szVar );
+bool IsRegistered( const string &szID );   // macOS port: a live command or variable has a handler now (mission-scoped cheats)    // @0x3d4c80 -- restore the var's registered default value
 ////
 void ProcessCommand( const wstring &szCmd );
 void LoadConfig( const string &szFileName );

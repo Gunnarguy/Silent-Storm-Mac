@@ -24,9 +24,9 @@
 #include "RPGUnit.h"
 #include "rpgCheatConstants.h"
 
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataDifficulty.h"   // NDb::CDBDifficulty::nHideProbability (ctor hide-prob seed)
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataDifficulty.h"   // NDb::CDBDifficulty::nHideProbability (ctor hide-prob seed)
 
 #include "RPGGlobal.h"                     // NRPG::CGlobalGame::pDifficulty (ctor hide-prob seed)
 #include "wMain.h"
@@ -436,7 +436,7 @@ void CAIUnit::GetUnitSkillValues()
 void CAIUnit::DebugOutput()
 {
 	OutputDebugString( "[AI UNIT] [\n" );
-	for ( vector< CObj<IAIControl> >::reverse_iterator i = controls.rbegin(); i != controls.rend(); ++i )
+	for ( typename vector< CObj<IAIControl> >::reverse_iterator i = controls.rbegin(); i != controls.rend(); ++i )
 		(*i)->DebugOutput();
 	OutputDebugString( "[AI UNIT] ]\n" );
 }
@@ -444,7 +444,7 @@ void CAIUnit::DebugOutput()
 bool CAIUnit::HasVisibleEnemies()
 {
 	const list< CPtr<NWorld::CUnitServer> > &units = GetUnitServer()->GetTBSVisible();
-	for ( list< CPtr<NWorld::CUnitServer> >::const_iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename list< CPtr<NWorld::CUnitServer> >::const_iterator i = units.begin(); i != units.end(); ++i )
 	{
 		bool bDiplomacyEnemy = pUnitServer->GetWorld()->GetDiplomacyState( pUnitServer, (*i)->GetPlayer() ) == NDb::DS_ENEMY;
 		if ( bDiplomacyEnemy && (*i)->CanFight() && (*i)->GetPlayer() != GetUnitServer()->GetPlayer() )
@@ -563,7 +563,7 @@ void CAIUnit::DeactivateCurrentControl()
 static bool EraseScriptControls( vector< CObj<IAIControl> > *pControls )
 {
 	bool bEndedActive = false;
-	for ( vector< CObj<IAIControl> >::iterator i = pControls->begin(); i != pControls->end(); )
+	for ( typename vector< CObj<IAIControl> >::iterator i = pControls->begin(); i != pControls->end(); )
 	{
 		IAIControl *pControl = *i;
 		if ( IsValid( pControl ) && pControl->GetManager() == AIM_SCRIPT )
@@ -795,7 +795,7 @@ void CAIUnit::SetPose( int pose )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAIUnit::OnDied()
 {
-	for ( vector< CObj<IAIControl> >::iterator i = controls.begin(); i != controls.end(); ++i )
+	for ( typename vector< CObj<IAIControl> >::iterator i = controls.begin(); i != controls.end(); ++i )
 		(*i)->OnPerformerDied();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////

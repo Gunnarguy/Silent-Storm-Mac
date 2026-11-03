@@ -220,7 +220,7 @@ void CEdgesInfo::GenerateEdgeList( const vector<STriangle> &tris, const vector<C
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CGeometryInfo::SPiece* CGeometryInfo::GetPiece( int nPieceID ) 
 { 
-	CPieceMap::iterator i = pieces.find( nPieceID );
+	typename CPieceMap::iterator i = pieces.find( nPieceID );
 	if ( i == pieces.end() )
 		return 0;
 	return &i->second;
@@ -248,7 +248,7 @@ void CGeometryInfo::AddPiece( int nPieceID, const vector<CVec3> &_points,
 void CGeometryInfo::CalcBound()
 {
 	SBoundCalcer b;
-	for ( CPieceMap::const_iterator i = pieces.begin(); i != pieces.end(); ++i )
+	for ( typename CPieceMap::const_iterator i = pieces.begin(); i != pieces.end(); ++i )
 		b.LookSet( i->second.points, SGetSelf<CVec3>() );
 	
 	b.Make( &bound );
@@ -260,7 +260,7 @@ void CGeometryInfo::PrecalcCollideInfo( bool bTerrain )
 	// terrain collision goes through the triangle (CUserCollider) path, not precalc.
 	if ( bTerrain )
 		return;
-	CPieceMap::iterator i;
+	typename CPieceMap::iterator i;
 	for ( i = pieces.begin(); i != pieces.end(); ++i )
 	{
 		CGeometryInfo::SPiece &p = i->second;
@@ -272,10 +272,10 @@ void CGeometryInfo::PrecalcCollideInfo( bool bTerrain )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGeometryInfo::SetCollideInfo( const CPrecalcPieces &precalc )
 {
-	CPrecalcPieces::const_iterator it;
+	typename CPrecalcPieces::const_iterator it;
 	for ( it = precalc.begin(); it != precalc.end(); ++it )
 	{
-		CPieceMap::iterator iPiece = pieces.find( it->first );
+		typename CPieceMap::iterator iPiece = pieces.find( it->first );
 		if ( iPiece == pieces.end() )
 			continue;
 		CGeometryInfo::SPiece &p = iPiece->second;

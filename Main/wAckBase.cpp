@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "wAckBase.h"
-#include "..\Misc\RandomGen.h"
-#include "..\DBFormat\DataAck.h"
-#include "..\DBFormat\DataMap.h"	// NDb::EDiplomacyState / DS_ENEMY (CAckBase::IsEnemy gate)
+#include "../Misc/RandomGen.h"
+#include "../DBFormat/DataAck.h"
+#include "../DBFormat/DataMap.h"	// NDb::EDiplomacyState / DS_ENEMY (CAckBase::IsEnemy gate)
 #include "wInterface.h"
 #include "wUnitServer.h"
 #include "wAck.h"
@@ -19,14 +19,14 @@ namespace NWorld
 #define DEFINE_UNITSERVER_EVENT_HANDLER( HandlerName )                               \
 void CGlobalAck::HandlerName( CUnitServer *pUnit )                                   \
 {                                                                                    \
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )      \
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )      \
 		(*i)->HandlerName( pUnit );                                                      \
 }                                                                                    \
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define DEFINE_EVENT_HANDLER( HandlerName )                                          \
 void CGlobalAck::HandlerName()                                                       \
 {                                                                                    \
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )      \
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )      \
 		(*i)->HandlerName();                                                             \
 }                                                                                    \
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,69 +48,69 @@ DEFINE_UNITSERVER_EVENT_HANDLER( OnSkillIncreased );
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalAck::OnNewTurnStarted( IPlayer *pPlayer )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
 		(*i)->OnNewTurnStarted( pPlayer );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalAck::OnCannotFinishHeal( CUnitServer *pHealer, CUnitServer *pTarget )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
 		(*i)->OnCannotFinishHeal( pHealer, pTarget );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalAck::OnHealFinished( CUnitServer *pHealer, CUnitServer *pTarget )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
 		(*i)->OnHealFinished( pHealer, pTarget );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalAck::OnDoCriticalDamage( CUnitServer *pAttacker, CUnitServer *pTarget )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
 		(*i)->OnDoCriticalDamage( pAttacker, pTarget );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalAck::OnUnitWasKilled( CUnitServer *pAttacker, CUnitServer *pTarget )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
 		(*i)->OnUnitWasKilled( pAttacker, pTarget );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalAck::OnDoDamage( CUnitServer *pAttacker, CUnitServer *pTarget )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
 		(*i)->OnDoDamage( pAttacker, pTarget );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalAck::OnDoAccidentalDamage( CUnitServer *pAttacker, CUnitServer *pTarget )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
 		(*i)->OnDoAccidentalDamage( pAttacker, pTarget );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalAck::OnEnemyBecomesVisible( CUnitServer *pWatcher, 
 	CUnitServer *pTarget, bool bRealTime )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
 		(*i)->OnEnemyBecomesVisible( pWatcher, pTarget, bRealTime );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalAck::OnGrenadeExplosion( CUnitServer *pUnit,
 																		int nUnitsDestroyed, int nObjectsDestroyed )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
 		(*i)->OnGrenadeExplosion( pUnit, nUnitsDestroyed, nObjectsDestroyed );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalAck::OnUnitDied( CUnitServer *pUnit )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
 		(*i)->OnUnitDied( pUnit );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CGlobalAck::HasAcksFor( CUnitServer *pUnit )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); ++i )
 	{
 		CDynamicCast<CAckBase> pAckBase( *i );
 		if ( pAckBase && pAckBase->GetUnit() == pUnit )
@@ -121,7 +121,7 @@ bool CGlobalAck::HasAcksFor( CUnitServer *pUnit )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CGlobalAck::RemoveUnitAcks( CUnitServer *pUnit )
 {
-	for ( vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); )
+	for ( typename vector< CObj<IAck> >::iterator i = vAck.begin(); i != vAck.end(); )
 	{
 		CDynamicCast<CAckBase> pAckBase( *i );
 		CUnitServer *xpUnit = pAckBase->GetUnit();
@@ -169,7 +169,7 @@ bool CGlobalAck::IsContainUnit( const list< CPtr<CUnit> > &visibleUnits, int nRP
 {
 	if ( !visibleUnits.empty() )
 	{
-		for ( list< CPtr<CUnit> >::const_iterator i = visibleUnits.begin(); i != visibleUnits.end(); ++i)
+		for ( typename list< CPtr<CUnit> >::const_iterator i = visibleUnits.begin(); i != visibleUnits.end(); ++i)
 		{
 			CDynamicCast<CUnitServer> pUnit(*i);
 			if ( pUnit && pUnit->GetUnitRPG()->GetRPGPersID() == nRPGPersID )
@@ -199,7 +199,7 @@ void CGlobalAck::RemoveInvisibleSequences( IPlayer *pPlayer )
 		list< CPtr<CUnit> > visible;
 		pPlayer->GetVisible( &visible );
 	
-		for ( list< SAck >::iterator i = sequences.begin(); i != sequences.end(); )	
+		for ( typename list< SAck >::iterator i = sequences.begin(); i != sequences.end(); )	
 		{
 			if ( !IsSequenceVisible( visible, i->pAck->pAckSequence ) )
 				i = sequences.erase( i );
@@ -247,7 +247,7 @@ int CGlobalAck::FetchHighestAcks()
 	// find the maximum priority -- retail @0x339150: the per-entry value is GetAckPriority
 	// (sequence priority with the CONDITION fallback), not the bare sequence field.
 	int nMaxPriority = 0;
-	list< SAck >::iterator i;
+	typename list< SAck >::iterator i;
 	for ( i = sequences.begin(); i != sequences.end(); ++i )
 		if ( GetAckPriority( i->pAck ) > nMaxPriority )
 			nMaxPriority = GetAckPriority( i->pAck );
@@ -274,7 +274,7 @@ NDb::CDBAckSequence *CGlobalAck::GetSequence( IPlayer *pPlayer, CUnitServer **pp
 		// Select one of the Acks -- retail weight: ack probability x condition factor
 		float fProb = 0;
 		CRoulette roulette;
-		for ( list< SAck >::iterator i = sequences.begin(); i != sequences.end(); ++i )
+		for ( typename list< SAck >::iterator i = sequences.begin(); i != sequences.end(); ++i )
 		{
 			const float fWeight = GetAckWeight( i->pAck );
 			fProb += fWeight;
@@ -288,7 +288,7 @@ NDb::CDBAckSequence *CGlobalAck::GetSequence( IPlayer *pPlayer, CUnitServer **pp
 		int nSector = roulette.GetRandomSector( &SRand() );
 		if ( nSector < sequences.size() )
 		{
-			list< SAck >::iterator i = sequences.begin();
+			typename list< SAck >::iterator i = sequences.begin();
 			for ( int k = 0; i != sequences.end() && k < nSector; ++i, ++k );
 			pRes = i->pAck->pAckSequence;
 			// retail @0x339230: the winning ack's queued SPEAKER rides along with the sequence

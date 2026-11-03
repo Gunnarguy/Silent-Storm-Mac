@@ -2,12 +2,12 @@
 #include "Sound.h"
 #include "SoundFormat.h"
 #include "Transform.h"
-#include "..\DBFormat\DataSound.h"
-#include "..\FModSound\FMSound.h"
-#include "..\Misc\BasicShare.h"
-#include "..\Misc\RandomGen.h"
-#include "..\MiscDll\Commands.h"
-#include "..\MiscDll\LogStream.h"
+#include "../DBFormat/DataSound.h"
+#include "../FModSound/FMSound.h"
+#include "../Misc/BasicShare.h"
+#include "../Misc/RandomGen.h"
+#include "../MiscDll/Commands.h"
+#include "../MiscDll/LogStream.h"
 #include "SoundEffect.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NSound
@@ -141,6 +141,7 @@ public:
 		eNextMusicType(NDb::MT_AMBIENT), tStartMusic(0), tStopMusic(0) {}
 	CSoundScene( NDb::CTMusic *_pAmbient, NDb::CTMusic *_pCombat, CFuncBase<STime> *_pTime );
 	friend ISoundScene* CreateSoundScene( ISoundScene *pSource, CFuncBase<STime> *pTime );
+	friend ISoundScene* CreateSoundScene( NDb::CTMusic *pAmbient, NDb::CTMusic *pCombat, CFuncBase<STime> *pTime );
 
 	virtual CSound* Add3DSound( NDb::CSound *pSample, CFuncBase<CVec3> *pPos, STime tStart );
 	virtual CSound2D* Add2DSound( NDb::CSound *pSample, STime tStart = 0 );
@@ -154,13 +155,13 @@ public:
 	// sounds, 2D sounds, in that order. The music stream is NOT touched (retail menus keep music).
 	virtual void Pause( bool bPause )
 	{
-		for ( list< CPtr<CSoundEffect> >::iterator i = effects.begin(); i != effects.end(); ++i )
+		for ( typename list< CPtr<CSoundEffect> >::iterator i = effects.begin(); i != effects.end(); ++i )
 			if ( IsValid( *i ) )
 				(*i)->Pause( bPause );
-		for ( list< CPtr<CSound> >::iterator i = sounds.begin(); i != sounds.end(); ++i )
+		for ( typename list< CPtr<CSound> >::iterator i = sounds.begin(); i != sounds.end(); ++i )
 			if ( IsValid( *i ) )
 				NFMSound::Pause( (*i)->pSound, bPause );
-		for ( list< CPtr<CSound2D> >::iterator i = sounds2D.begin(); i != sounds2D.end(); ++i )
+		for ( typename list< CPtr<CSound2D> >::iterator i = sounds2D.begin(); i != sounds2D.end(); ++i )
 			if ( IsValid( *i ) )
 				NFMSound::Pause( (*i)->pSound, bPause );
 	}
@@ -355,7 +356,7 @@ void CSoundScene::FadeOutMusic()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CSoundScene::Draw( CTransformStack *pTS )
 {
-	for ( list< CPtr<CSound> >::iterator it = sounds.begin(); it != sounds.end(); )
+	for ( typename list< CPtr<CSound> >::iterator it = sounds.begin(); it != sounds.end(); )
 	{
 		CSound *pSound = *it;
 		if ( !IsValid( pSound ) || ( !IsValid( pSound->pSound ) && !pSound->pSample ) )
@@ -391,7 +392,7 @@ void CSoundScene::Draw( CTransformStack *pTS )
 		//
 		++it;
 	}
-	for ( list< CPtr<CSound2D> >::iterator it = sounds2D.begin(); it != sounds2D.end(); )
+	for ( typename list< CPtr<CSound2D> >::iterator it = sounds2D.begin(); it != sounds2D.end(); )
 	{
 		CSound2D *pSound = *it;
 		if ( !pSound || ( !IsValid( pSound->pSound ) && !pSound->pSample ) )
@@ -419,7 +420,7 @@ void CSoundScene::Draw( CTransformStack *pTS )
 		++it;
 	}
 	//
-	for ( list< CPtr<CSoundEffect> >::iterator i = effects.begin(); i != effects.end(); )
+	for ( typename list< CPtr<CSoundEffect> >::iterator i = effects.begin(); i != effects.end(); )
 		if ( !IsValid( *i ) || (*i)->Update() )
 			i = effects.erase( i );
 		else
@@ -545,7 +546,8 @@ bool SetModeFromConfig()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ISoundScene* CreateSoundScene( NDb::CTMusic *pAmbient, NDb::CTMusic *pCombat, CFuncBase<STime> *pTime )
 {
-	return new CSoundScene( pAmbient, pCombat, pTime ); // v1.2 @0x705f40
+	CSoundScene *pScene = new CSoundScene( pAmbient, pCombat, pTime ); // v1.2 @0x705f40
+	return pScene;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ISoundScene* CreateSoundScene( ISoundScene *pSource, CFuncBase<STime> *pTime )
@@ -553,7 +555,7 @@ ISoundScene* CreateSoundScene( ISoundScene *pSource, CFuncBase<STime> *pTime )
 	// Retail v1.2 0x705fb0: inherit pools, not live channels or playback state.
 	CDynamicCast<CSoundScene> pOriginal( pSource );
 	if ( pOriginal )
-		return new CSoundScene( pOriginal->pAmbient, pOriginal->pCombat, pTime );
+		return CreateSoundScene( pOriginal->pAmbient, pOriginal->pCombat, pTime );
 	return new CSoundScene( 0, 0, pTime );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -3,15 +3,15 @@
 #include "G2DView.h"
 #include "RectLayout.h"
 #include "G2DView.h"
-#include "..\Misc\StrProc.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataInterface.h"
+#include "../Misc/StrProc.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataInterface.h"
 #include "Interface.h"
 #include "UIWindow.h"
 #include "UICommCtrls.h"	// CToolTip -- CWindow::pToolTip is the typed retail CObj<CToolTip>
 #include "A5Script.h"		// NScript::CScript -- retail CWindow window-scripting members (eventsMap/pScript)
 #include "scriptCallLUA.h"
-#include "..\DBFormat\DataScript.h"
+#include "../DBFormat/DataScript.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -106,9 +106,9 @@ void CWindow::RemoveChild( CWindow *pWindow )
 	// pWindow->pParent (releasing its ref). The find==end() guard is defensive: on a save whose deserialize
 	// left a child's pParent pointing at a window that does not actually list it, retail's raw vector erase
 	// would pop an unrelated last element; skipping keeps a live parent's container intact. (The former
-	// std::list here made the not-found erase(end()) free the list sentinel -> teardown heap-use-after-free;
+	// std::list here made the not-found erase(end()) free the list's end node -> teardown heap-use-after-free;
 	// ASan 2026-07-14. Matching retail's vector removes that failure mode.)
-	vector< CMObj<CWindow> >::iterator iTemp = find( listChildren.begin(), listChildren.end(), pWindow );
+	typename vector< CMObj<CWindow> >::iterator iTemp = find( listChildren.begin(), listChildren.end(), pWindow );
 	ASSERT( iTemp != listChildren.end() );
 	if ( iTemp != listChildren.end() )
 		listChildren.erase( iTemp );
@@ -118,7 +118,7 @@ void CWindow::RemoveChild( CWindow *pWindow )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CWindow* CWindow::GetChildByID( const string &szID )
 {
-	for( vector< CMObj<CWindow> >::iterator iTemp = listChildren.begin(); iTemp != listChildren.end(); iTemp++ )
+	for( typename vector< CMObj<CWindow> >::iterator iTemp = listChildren.begin(); iTemp != listChildren.end(); iTemp++ )
 	{
 		if ( (*iTemp)->GetWindowID() == szID )
 			return (*iTemp);
@@ -390,7 +390,7 @@ bool CWindow::ProcessMessage( const SEvent &sEvent )
 	case EVENT_MOUSEMOVE:
 		{
 			CPtr<CWindow> pHitWnd;
-			for ( vector<CMObj<CWindow> >::iterator iTemp = listChildren.begin(); iTemp != listChildren.end(); iTemp++ )
+			for ( typename vector<CMObj<CWindow> >::iterator iTemp = listChildren.begin(); iTemp != listChildren.end(); iTemp++ )
 			{
 				if ( !(*iTemp)->HitTest( sEvent.nX, sEvent.nY ) )
 					continue;
@@ -464,7 +464,7 @@ bool CWindow::ProcessMessage( const SEvent &sEvent )
 
 	list< CPtr<CWindow> > windowsList;
 	FormChildrenList( &windowsList );
-	for( list< CPtr<CWindow> >::iterator iTemp = windowsList.begin(); iTemp != windowsList.end(); iTemp++ )
+	for( typename list< CPtr<CWindow> >::iterator iTemp = windowsList.begin(); iTemp != windowsList.end(); iTemp++ )
 	{
 		if ( (*iTemp) == 0 )
 		{
@@ -519,8 +519,9 @@ bool CWindow::Update( const STime &sTime, NGScene::I2DGameView *pView )
 	for ( int i = 0; i < (int)listChildren.size(); i++ )
 	{
 		CWindow *pChild = listChildren[i].GetPtr();
-		unsigned u = (unsigned)pChild;
-		if ( pChild == 0 || u < 0x00010000 || u >= 0x7f000000 || ( u & 3 ) )
+		uintptr_t u = (uintptr_t)pChild;
+		// the 0x7f000000 ceiling is the 32-bit user address space; on 64-bit every heap pointer is above it
+		if ( pChild == 0 || u < 0x00010000 || ( sizeof( void* ) == 4 && u >= 0x7f000000 ) || ( u & 3 ) )
 			continue;
 		if ( IsBadReadPtr( pChild, 4 ) || IsBadReadPtr( *(void**)pChild, 4 ) || !IsValid( listChildren[i] ) )
 			continue;
@@ -531,7 +532,7 @@ bool CWindow::Update( const STime &sTime, NGScene::I2DGameView *pView )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int CWindow::GetEventHandler( NScript::CScript *pHandlerScript ) const
 {
-	unordered_map<CPtr<NScript::CScript>,int,SPtrHash>::const_iterator i = eventsMap.find( pHandlerScript );
+	typename unordered_map<CPtr<NScript::CScript>,int,SPtrHash>::const_iterator i = eventsMap.find( pHandlerScript );
 	return i != eventsMap.end() ? i->second : 0;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -558,7 +559,7 @@ void CWindow::DispatchScriptEvent( const SEvent &sEvent )
 	}
 	// A callback can register another script: pin the dispatch list across rehash.
 	vector< pair<CPtr<NScript::CScript>, int> > handlers;
-	for ( unordered_map<CPtr<NScript::CScript>,int,SPtrHash>::const_iterator i = eventsMap.begin(); i != eventsMap.end(); ++i )
+	for ( typename unordered_map<CPtr<NScript::CScript>,int,SPtrHash>::const_iterator i = eventsMap.begin(); i != eventsMap.end(); ++i )
 		handlers.push_back( make_pair( i->first, i->second ) );
 	for ( int i = 0; i < handlers.size(); ++i )
 	{
@@ -579,7 +580,7 @@ void CWindow::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 {
 	list< CPtr<CWindow> > windowsList;
 	FormChildrenList( &windowsList );
-	for ( list< CPtr<CWindow> >::reverse_iterator iTemp = windowsList.rbegin(); iTemp != windowsList.rend(); iTemp++ )
+	for ( typename list< CPtr<CWindow> >::reverse_iterator iTemp = windowsList.rbegin(); iTemp != windowsList.rend(); iTemp++ )
 	{
 		if ( !(*iTemp)->GetStyle( STYLE_VISIBLE ) )
 			continue;
@@ -599,7 +600,7 @@ void CWindow::ActivateTest( int nX, int nY )
 
 	list< CPtr<CWindow> > windowsList;
 	FormChildrenList( &windowsList );
-	for ( list< CPtr<CWindow> >::iterator iTemp = windowsList.begin(); iTemp != windowsList.end(); iTemp++ )
+	for ( typename list< CPtr<CWindow> >::iterator iTemp = windowsList.begin(); iTemp != windowsList.end(); iTemp++ )
 	{
 		if ( (*iTemp)->GetStyle( STYLE_NOACTIVATE ) )
 			continue;
@@ -626,7 +627,7 @@ void CWindow::BringWindowToTop( CWindow *pWindow )
 	// retail @0x327c20: hold a temp M-ref on pWindow, erase it from the (vector) listChildren, reinsert at
 	// front. Vector form of the former list remove()/push_front().
 	CMObj<CWindow> pKeepPointer( pWindow );
-	vector< CMObj<CWindow> >::iterator iTemp = find( listChildren.begin(), listChildren.end(), pWindow );
+	typename vector< CMObj<CWindow> >::iterator iTemp = find( listChildren.begin(), listChildren.end(), pWindow );
 	if ( iTemp != listChildren.end() )
 		listChildren.erase( iTemp );
 	listChildren.insert( listChildren.begin(), pWindow );
@@ -635,19 +636,19 @@ void CWindow::BringWindowToTop( CWindow *pWindow )
 void CWindow::FormChildrenList( list< CPtr<CWindow> > *pList )
 {
 	pList->clear();
-	for ( vector< CMObj<CWindow> >::iterator iTemp = listChildren.begin(); iTemp != listChildren.end(); iTemp++ )
+	for ( typename vector< CMObj<CWindow> >::iterator iTemp = listChildren.begin(); iTemp != listChildren.end(); iTemp++ )
 	{
 		if ( !(*iTemp)->GetStyle( STYLE_TOPMOST ) )
 			continue;
 		pList->push_back( (*iTemp).GetPtr() );
 	}
-	for ( vector< CMObj<CWindow> >::iterator iTemp = listChildren.begin(); iTemp != listChildren.end(); iTemp++ )
+	for ( typename vector< CMObj<CWindow> >::iterator iTemp = listChildren.begin(); iTemp != listChildren.end(); iTemp++ )
 	{
 		if ( (*iTemp)->GetStyle( STYLE_TOPMOST ) || (*iTemp)->GetStyle( STYLE_BOTTOMMOST ) )
 			continue;
 		pList->push_back( (*iTemp).GetPtr() );
 	}
-	for ( vector< CMObj<CWindow> >::iterator iTemp = listChildren.begin(); iTemp != listChildren.end(); iTemp++ )
+	for ( typename vector< CMObj<CWindow> >::iterator iTemp = listChildren.begin(); iTemp != listChildren.end(); iTemp++ )
 	{
 		if ( !(*iTemp)->GetStyle( STYLE_BOTTOMMOST ) || (*iTemp)->GetStyle( STYLE_TOPMOST ) )
 			continue;

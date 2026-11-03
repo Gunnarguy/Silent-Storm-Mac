@@ -10,9 +10,9 @@
 #include "RPGUnitMission.h"
 #include "aiVoxelRender.h"
 #include "wTSFlags.h"
-#include "..\Misc\HPTimer.h"
+#include "../Misc/HPTimer.h"
 #include "wDecal.h"
-#include "..\Misc\EventsBase.h"   // NGlobal::ThrowEvent
+#include "../Misc/EventsBase.h"   // NGlobal::ThrowEvent
 #include "eventUnit.h"            // NWorld::CEventOnGrenadeExplosion (AI grenade-perception event)
 #include "wTerrain.h"             // CTerrain::DrawExplosion (blast grass scorch)
 #include "wMisc.h"                // CreateDGrassEvent
@@ -244,7 +244,7 @@ void CVoxelExpl::StartWave( CObjectBase *pIgnitionObject )
 		pLookup->GetObject( nCX, nCY, nCZ, &nObj, &pCell );
 		// the ignition object's blast-object id (retail keeps the LAST matching hash entry)
 		unsigned short nIgnition = 0;
-		for ( NAI::CExplVoxelRenderer::CObjectsHash::const_iterator i = pSpace->objects.begin(); i != pSpace->objects.end(); ++i )
+		for ( typename NAI::CExplVoxelRenderer::CObjectsHash::const_iterator i = pSpace->objects.begin(); i != pSpace->objects.end(); ++i )
 			if ( i->first.pUser.GetPtr() == pIgnitionObject )
 				nIgnition = (unsigned short)i->second.nObjectID;
 		if ( nIgnition != 0 )
@@ -335,10 +335,10 @@ void CVoxelExpl::ApplyWaveDamage()
 	}
 	// retail: iterate the SPACE's blast-object registry; only objects the wave actually touched have a
 	// damageInfo entry (retail's inlined bucket-walk find -- no entry, no processing).
-	for ( NAI::CExplVoxelRenderer::CObjectsHash::const_iterator i = pSpace->objects.begin(); i != pSpace->objects.end(); ++i )
+	for ( typename NAI::CExplVoxelRenderer::CObjectsHash::const_iterator i = pSpace->objects.begin(); i != pSpace->objects.end(); ++i )
 	{
 		const NAI::CExplVoxelRenderer::SExplObject &o = i->second;
-		CDamageInfoHash::iterator itDi = damageInfo.find( o.nObjectID );
+		typename CDamageInfoHash::iterator itDi = damageInfo.find( o.nObjectID );
 		if ( itDi == damageInfo.end() )
 			continue;
 		SObjectDamageInfo &di = itDi->second;
@@ -440,7 +440,7 @@ void CVoxelExpl::ApplyWaveDamage()
 // (a missed object INSERTS a default zero entry) -- kept 1:1.
 void CVoxelExpl::CheckWaveResults()
 {
-	for ( NAI::CExplVoxelRenderer::CObjectsHash::const_iterator i = pSpace->objects.begin(); i != pSpace->objects.end(); ++i )
+	for ( typename NAI::CExplVoxelRenderer::CObjectsHash::const_iterator i = pSpace->objects.begin(); i != pSpace->objects.end(); ++i )
 	{
 		const NAI::CExplVoxelRenderer::SExplObject &o = i->second;
 		const SObjectDamageInfo &di = damageInfo[ o.nObjectID ];
@@ -467,7 +467,7 @@ void CVoxelExpl::GetFront( vector<CVec3> *pRes )
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // retail CVoxelExpl::GetTouchedObjects @0x354f10: append the world-space centre of every voxel the
-// blast touched (the 0xFFFF index-cell sentinel) across all occupied cubes of the lookup grid.
+// blast touched (the 0xFFFF index-cell marker) across all occupied cubes of the lookup grid.
 void CVoxelExpl::GetTouchedObjects( vector<CVec3> *pRes )
 {
 	vector<C3DLookupTable::SIndexCubeInfo> cubes;
@@ -553,7 +553,7 @@ void CVoxelExplTracker::MakeDamage()
 		if ( bIsFinished )
 		{
 			vector<CObjectBase*> targets;
-			for ( CDecalsHash::iterator i = drawDecals.begin(); i != drawDecals.end(); ++i )
+			for ( typename CDecalsHash::iterator i = drawDecals.begin(); i != drawDecals.end(); ++i )
 				targets.push_back( i->first );
 			// retail @0x3566d0: the scorch-decal base radius comes off whichever record is live
 			// (regular fDecalRadius @+0x70, engineer fDecalRadius @+0x74); neither record -> radius 0.
@@ -655,7 +655,7 @@ void CVoxelExplTracker::ExplodeFragments()
 	for ( int i = 0; i < nTargeted; ++i )
 	{
 		int nIdx = units.empty() ? 0 : (int)random.Get( (unsigned int)units.size() );   // retail: raw isaac % size
-		list< CPtr<CUnitServer> >::iterator it = units.begin();
+		typename list< CPtr<CUnitServer> >::iterator it = units.begin();
 		for ( int k = 0; k < nIdx; ++k )
 			++it;
 		if ( IsValid( *it ) )
@@ -706,7 +706,7 @@ void SFlushCacheList::RegisterCache( IFlushCache *pCache )
 // like retail captures node->next, so a re-entrant DoFlush cannot derail the walk.
 void SFlushCacheList::Flush()
 {
-	for ( list< CPtr<IFlushCache> >::iterator it = caches.begin(); it != caches.end(); )
+	for ( typename list< CPtr<IFlushCache> >::iterator it = caches.begin(); it != caches.end(); )
 	{
 		if ( !IsValid( *it ) )
 			it = caches.erase( it );
@@ -754,7 +754,7 @@ void C3DLookupTable::GetAllCubes( vector<SIndexCubeInfo> *pRes )
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // retail C3DLookupTable::FlushCache @0x3587b0 (the IFlushCache::DoFlush override): invalidate the
-// one-cube resolve cache -- re-arm the nGCx sentinel and release both cached cubes. The grid itself
+// one-cube resolve cache -- re-arm the nGCx marker and release both cached cubes. The grid itself
 // stays intact; only the cache drops.
 void C3DLookupTable::DoFlush()
 {
@@ -1024,7 +1024,7 @@ void CExplosionMaster::Segment()
 	// ---- (4) drain the start queue: retail spawns CVoxelExplTracker(pSpace, vCenter,
 	// pIgnitionObject, pGrenade, pThrower, modifiers, pWorld, pEngGrenade, nEngSkill) ----
 	CDynamicCast<CWorld> pW( pWorld.GetPtr() );
-	for ( list<SStartInfo>::iterator i = toBeStarted.begin(); i != toBeStarted.end(); ++i )
+	for ( typename list<SStartInfo>::iterator i = toBeStarted.begin(); i != toBeStarted.end(); ++i )
 	{
 		if ( pW )
 			explosions.push_back( CObj<CVoxelExplTracker>( new CVoxelExplTracker( pSpace, i->vCenter,

@@ -19,15 +19,15 @@
 #include "iCommonUI.h"
 #include "iDesktopWindow.h"
 #include "iGlobalMap.h"
-#include "..\Misc\StrProc.h"
-#include "..\MiscDll\Commands.h"
-#include "..\Input\Bind.h"
-#include "..\DBFormat\DataMap.h"
-#include "..\DBFormat\DataRPG.h"
-#include "..\DBFormat\DataDifficulty.h"
-#include "..\DBFormat\DataSound.h"
-#include "..\DBFormat\DataFormat.h"
-#include "..\DBFormat\DataCamera.h"
+#include "../Misc/StrProc.h"
+#include "../MiscDll/Commands.h"
+#include "../Input/Bind.h"
+#include "../DBFormat/DataMap.h"
+#include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataDifficulty.h"
+#include "../DBFormat/DataSound.h"
+#include "../DBFormat/DataFormat.h"
+#include "../DBFormat/DataCamera.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 const int
 	N_HEROMENU_CAMERA = 44;
@@ -134,6 +134,7 @@ public:
 
 	NDb::CRPGPers* GetPers() const;
 	NDb::CNationality* GetNationality() const;   // @0x1e6f00: feeds the downstream char/face-gen
+	void SelectPreset( int i );                  // macOS port test hook: pick portrait i without a pointer
 
 	bool ProcessMessage( const SEvent &sEvent );
 	void Draw( const STime &sTime, NGScene::I2DGameView *pView );
@@ -152,6 +153,15 @@ NDb::CRPGPers* CHeroMenuUI::GetPers() const
 NDb::CNationality* CHeroMenuUI::GetNationality() const
 {
 	return pNationality;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void CHeroMenuUI::SelectPreset( int i )
+{
+	if ( i >= 0 && i < (int)pSide->defaultPersesSet.size() )
+	{
+		pSelectedPers = pSide->defaultPersesSet[i];
+		pNationality = i < 2 ? pSide->pNationality1 : i < 4 ? pSide->pNationality2 : pSide->pNationality3;
+	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CHeroMenuUI::ProcessMessage( const SEvent &sEvent )
@@ -275,6 +285,10 @@ public:
 	CHeroMenuInterface();
 
 	void Initialize( NDb::CSide *pSide, NDb::CDBDifficulty *pDifficulty );
+	// macOS port test hooks (console "heromenu_pick n" / "heromenu_play")
+	void TestPick( int i ) { if ( IsValid( pHeroMenuUI ) ) pHeroMenuUI->SelectPreset( i ); }
+	void TestPlay();
+	void TestCustomMerc();   // console "heromenu_merc": what the custom character screen hands on, without that screen
 
 	void Step();
 	bool ProcessEvent( const NInput::SEvent &sEvent );
@@ -282,15 +296,39 @@ public:
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CHeroMenuInterface
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+static CPtr<CHeroMenuInterface> s_pActiveHeroMenu;   // macOS port test hook target (weak: clears when the interface dies)
 CHeroMenuInterface::CHeroMenuInterface():
 	bindClose( "cancel" ), bindPlay( "play" ), bindCustomChar( "customchar" )
 {
+}
+void CHeroMenuInterface::TestPlay()
+{
+	if ( !IsValid( pHeroMenuUI ) )
+		return;
+	if ( !IsValid( pHeroMenuUI->GetPers() ) )
+		pHeroMenuUI->SelectPreset( 0 );   // the pick command was lost (seen once in a hidden run): default to the first portrait
+	if ( !IsValid( pHeroMenuUI->GetPers() ) )
+	{
+		csSystem << "heromenu_play: no hero selected" << endl;
+		return;
+	}
+	csSystem << "heromenu_play: starting FaceGen" << endl;
+	NMainLoop::Command( new NGame::CICFaceGen( pSide, pHeroMenuUI->GetNationality(), pDifficulty,
+		NRPG::CreateMerc( pHeroMenuUI->GetPers(), 0, true ) ) );
+}
+void CHeroMenuInterface::TestCustomMerc()
+{
+	NDb::CNationality *pNationality = pSide->pNationality1;
+	NMainLoop::Command( new NGame::CICFaceGen( pSide, pNationality, pDifficulty,
+		NRPG::CreateMerc( pSide->malePersesSet[0], 0, pNationality->pMaleHead, true ) ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CHeroMenuInterface::Initialize( NDb::CSide *_pSide, NDb::CDBDifficulty *_pDifficulty )
 {
 	pSide = _pSide;
 	pDifficulty = _pDifficulty;   // release @0x1e73d0: stored before CRenderBaseInterface::Initialize
+	s_pActiveHeroMenu = this;
+	fprintf( stderr, "[test-hook] heromenu ready\n" );   // marker for drive.py waits
 
 	CRenderBaseInterface::Initialize( pSide->nHeroSelectTemplate );
 
@@ -355,6 +393,25 @@ void CHeroMenuInterface::Step()
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CICMainMenu
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// macOS port test hooks: pick a portrait and press Play from the console / _s2cmd.txt
+static void HeroMenuPickCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	if ( IsValid( s_pActiveHeroMenu ) && !szParams.empty() ) s_pActiveHeroMenu->TestPick( (int)wcstol( szParams[0].c_str(), 0, 10 ) );
+}
+static void HeroMenuPlayCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	if ( IsValid( s_pActiveHeroMenu ) ) s_pActiveHeroMenu->TestPlay();
+}
+static void HeroMenuMercCmd( const string &szID, const vector<wstring> &szParams, void *pContext )
+{
+	if ( getenv( "S2_HEADLESS" ) && IsValid( s_pActiveHeroMenu ) ) s_pActiveHeroMenu->TestCustomMerc();
+}
+START_REGISTER(iHeroMenuTest)
+	REGISTER_CMD( "heromenu_merc", HeroMenuMercCmd )
+	REGISTER_CMD( "heromenu_pick", HeroMenuPickCmd )
+	REGISTER_CMD( "heromenu_play", HeroMenuPlayCmd )
+FINISH_REGISTER
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CICHeroMenu::CICHeroMenu( NDb::CSide *_pSide, NDb::CDBDifficulty *_pDifficulty ):
 	pSide( _pSide ), pDifficulty( _pDifficulty )

@@ -18,7 +18,7 @@ namespace NWorld
 class CWorld;
 class CMineTracker;
 class CUnitServer;
-// retail CMine ctor angle sentinel @0x37ead0 (-0x1b207): random facing instead of a map-set angle
+// retail CMine ctor angle marker @0x37ead0 (-0x1b207): random facing instead of a map-set angle
 const int MINE_ANGLE_RANDOM = -111111;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class CMine : public IMine, public IVisObj, public NRPG::IAttackable

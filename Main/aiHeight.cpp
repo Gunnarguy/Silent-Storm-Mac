@@ -204,7 +204,7 @@ void CalcHeightMap( NAI::IAIMap *pMap, CHeightMapBlockInfo *pRes, const CTRect<i
 			pRes->height[ Wrap( y, nYSize ) ][ Wrap( x, nXSize ) ] = fRes;
 		}
 	}
-	for ( list<CVec3>::const_iterator i = hInfo.points.begin(); i != hInfo.points.end(); ++i )
+	for ( typename list<CVec3>::const_iterator i = hInfo.points.begin(); i != hInfo.points.end(); ++i )
 	{
 		const CVec3 &p = *i;
 		int nX = Float2Int( p.x / HEIGHT_MAP_SAMPLE_SIZE );
@@ -257,7 +257,7 @@ void CalcHeightMap( NAI::IAIMap *pMap, CHeightMapBlockInfo *pRes, const CVec3 &c
 
 	// Get info about source for every special point
 	unordered_map<CObjectBase *, bool> hSources;
-	for ( list<CVec3>::const_iterator i = specialPoints.begin(); i != specialPoints.end(); ++i )
+	for ( typename list<CVec3>::const_iterator i = specialPoints.begin(); i != specialPoints.end(); ++i )
 	{
 		int nX = Float2Int( i->x / HEIGHT_MAP_SAMPLE_SIZE );
 		int nY = Float2Int( i->y / HEIGHT_MAP_SAMPLE_SIZE );
@@ -301,7 +301,7 @@ void CalcHeightMap( NAI::IAIMap *pMap, CHeightMapBlockInfo *pRes, const CVec3 &c
 				pRes->height[ Wrap( y, nYSize ) ][ Wrap( x, nXSize ) ] = fH;
 		}
 	}
-	for ( list<CVec3>::const_iterator i = specialPoints.begin(); i != specialPoints.end(); ++i )
+	for ( typename list<CVec3>::const_iterator i = specialPoints.begin(); i != specialPoints.end(); ++i )
 	{
 		const CVec3 &p = *i;
 		int nX = Float2Int( p.x / HEIGHT_MAP_SAMPLE_SIZE );

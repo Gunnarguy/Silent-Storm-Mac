@@ -1,9 +1,9 @@
 #include "StdAfx.h"
 #include "mapedit.h"
 #include "ScenarioView.h"
-#include "..\Main\scFlowChart.h"
-#include "..\DBFormat\DataScenario.h"
-#include <foundation\image\mfc\secjpeg.h>
+#include "../Main/scFlowChart.h"
+#include "../DBFormat/DataScenario.h"
+#include <foundation/image/mfc/secjpeg.h>
 #include "dbDefs.h"
 #include "ItemsMgr.h"
 
@@ -69,7 +69,7 @@ void CScenarioView::SetScenario( int nID )
 	const CPropMap *pProps = pTree->pItemsTree->GetPropList( nID );
 	if ( !pProps )
 		return;
-	CPropMap::const_iterator it = pProps->find( "FullGraph" );
+	typename CPropMap::const_iterator it = pProps->find( "FullGraph" );
 	bool bFull = it != pProps->end() ? it->second->GetValue() : true;
 	CObj<NScenario::CScenarioFlowChart> pS = NScenario::CreateScenarioFlowChart( nID, bFull );
 

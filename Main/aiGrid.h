@@ -265,9 +265,9 @@ public:
 		list<SLink> links;
 		ZEND int operator&( CStructureSaver &f ) { f.Add(2,&links); return 0; }
 
-		list<SLink>::iterator GetLink( const SPathPlace &p )
+		typename list<SLink>::iterator GetLink( const SPathPlace &p )
 		{
-			list<SLink>::iterator i;
+			typename list<SLink>::iterator i;
 			for ( i = links.begin(); i != links.end(); ++i ) if ( i->dst == p ) return i;
 			return i;
 		}

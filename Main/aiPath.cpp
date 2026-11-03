@@ -17,8 +17,8 @@ void CPath::DebugOutput()
 {
 	char buf[128];
 	Zero( buf );
-	vector<SPathAction>::iterator it = actions.begin();
-	for ( vector<SPathPlace>::iterator i = points.begin(); i != points.end(); ++i )
+	typename vector<SPathAction>::iterator it = actions.begin();
+	for ( typename vector<SPathPlace>::iterator i = points.begin(); i != points.end(); ++i )
 	{
 		if ( i->IsIntegral() )
 		{
@@ -412,7 +412,7 @@ typedef list<CObjectBase*> CUnitsContainer;
 void Assign( CPointsContainer *pRes, const CUnitsContainer &units, bool bThisIsBig, CPathNetwork *pNet )
 {
 	pRes->clear();
-	for ( CUnitsContainer::const_iterator i = units.begin(); i != units.end(); ++i )
+	for ( typename CUnitsContainer::const_iterator i = units.begin(); i != units.end(); ++i )
 	{
 		NWorld::CUnit *pUnit = dynamic_cast<NWorld::CUnit*>( *i );
 		if ( !pUnit ) 
@@ -427,7 +427,7 @@ void Assign( CPointsContainer *pRes, const CUnitsContainer &units, bool bThisIsB
 					pHash = &pFlipper->locksOpen;
 				else
 					pHash = &pFlipper->locksClosed;
-				unordered_map<SPathPlace, CNodesLayer::STile, SPathPlaceHash>::const_iterator it;
+				typename unordered_map<SPathPlace, CNodesLayer::STile, SPathPlaceHash>::const_iterator it;
 				for ( it = pHash->begin(); it != pHash->end(); ++it )
 					pRes->push_back( it->first );
 			}
@@ -686,7 +686,7 @@ CPath* SPathFinder2::FindPath( CPathNetwork *pNet, const SPathPlace &src, const 
 		unordered_map<SZone, bool, SZoneHash> checkedZones;
 		vector<SZone> zonesDst;
 		vector<CVec3> dstCP;
-		for ( vector<SPathPlace>::const_iterator i = dst.begin(); i != dst.end(); ++i )
+		for ( typename vector<SPathPlace>::const_iterator i = dst.begin(); i != dst.end(); ++i )
 		{
 			SZone	dstZone( pNet, *i );
 	    if ( checkedZones.find( dstZone ) != checkedZones.end() )
@@ -714,7 +714,7 @@ CPath* SPathFinder2::FindPath( CPathNetwork *pNet, const SPathPlace &src, const 
 		counter( &table, &constraints, &enumerator, src );
 	counter.SetMap( &enumerator );
 	counter.SetPosition( src );
-	for ( vector<SPathPlace>::const_iterator i = dst.begin(); i != dst.end() ; ++i )
+	for ( typename vector<SPathPlace>::const_iterator i = dst.begin(); i != dst.end() ; ++i )
 	{
 		SPathPlace cur( *i );
 		if ( eParams & PF_USE_DIR )
@@ -761,7 +761,7 @@ CPath* SPathFinder2::FindPath( CPathNetwork *pNet, const SPathPlace &src, const 
 		// a click on a floor the wave never reached (e.g. a -1 basement with a broken descent)
 		// silently produced a long path to the nearest current-floor cell instead of retail's
 		// UCR_PATH_NOT_FOUND -- masking the unreachability instead of reporting it.
-		CPathPlaceTable::CMovesHash::iterator thi;
+		typename CPathPlaceTable::CMovesHash::iterator thi;
 		vector<CVec3> dstCP;
 		for ( int i = 0; i < dst.size(); ++i )
 			dstCP.push_back( pNet->GetCP( dst[i] ) );
@@ -800,7 +800,7 @@ CPath* SPathFinder2::FindPath( CPathNetwork *pNet, const SPathPlace &src, const 
 		SPathPlace _cur( cur );
 //		if ( _cur.GetPose() == CM_STAND )
 //			_cur.SetDirection( 0 );
-		CPathPlaceTable::CMovesHash::iterator k = table.data.find( _cur );
+		typename CPathPlaceTable::CMovesHash::iterator k = table.data.find( _cur );
 		if ( k == table.data.end() )
 		{
 			ASSERT( 0 ); // it's an error - counter returned "path found", but no path itself
@@ -814,7 +814,7 @@ CPath* SPathFinder2::FindPath( CPathNetwork *pNet, const SPathPlace &src, const 
 	CPath *pRes = new CPath;
 	pRes->pNet = pNet;
 	//OutputDebugString("Adding Points to way\n");
-	for ( list<SPathPlace>::iterator i = points.begin(); i != points.end(); ++i )
+	for ( typename list<SPathPlace>::iterator i = points.begin(); i != points.end(); ++i )
 	{
 		if ( !pRes->AddNewPoint( *i ) )
 			return pRes;
@@ -866,7 +866,7 @@ CPath* FindSimplePath( const SPathPlace &ptSrc, const vector<SPathPlace> &ptDst,
 {
 	// when src and dst points are in one move, do not construct big data structures etc.
 	// just return the way
-	// Retail v1.2 0x48a8b0 ranks direct transitions below the sentinel 16.
+	// Retail v1.2 0x48a8b0 ranks direct transitions below the end value 16.
 	const int nSimplePathLimit = 16;
 	int nBestCost = nSimplePathLimit, nCurCost;
 	SPathPlace a( ptSrc );
@@ -879,7 +879,7 @@ CPath* FindSimplePath( const SPathPlace &ptSrc, const vector<SPathPlace> &ptDst,
 	if ( ptDst.empty() || ptSrc.GetPose() == CM_INACTIVE ||
 		( ptSrc.GetPose() == CM_LAY && ptDst.front().GetPose() == CM_LAY ) )
 		return 0;
-	for ( vector<SPathPlace>::const_iterator i = ptDst.begin(); i != ptDst.end(); ++i )
+	for ( typename vector<SPathPlace>::const_iterator i = ptDst.begin(); i != ptDst.end(); ++i )
 	{
 		int nDir1 = 0, nDir2 = 7;
 		int nPose1 = CM_LAY, nPose2 = CM_INACTIVE;

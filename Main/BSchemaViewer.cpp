@@ -11,7 +11,7 @@
 #include "MemObject.h"
 #include "Transform.h"
 #include "Grid.h"
-#include "..\Misc\BasicShare.h"
+#include "../Misc/BasicShare.h"
 #include "BuildingInfo.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGScene
@@ -77,7 +77,7 @@ CObjectBase* ViewBuildingSchema( NGScene::IGameView *pScene, NBuilding::CSolidAn
 	float fAlpha = 1;
 	float fMaxPressure = 0;
 	float fWeight = 0;
-	for ( vector<NBuilding::CJunction>::const_iterator pJ = juncs.begin(); pJ != juncs.end(); ++pJ )
+	for ( typename vector<NBuilding::CJunction>::const_iterator pJ = juncs.begin(); pJ != juncs.end(); ++pJ )
 	{
 		const CVec3 ptPos( pJ->ptJ.x * FP_GRID_STEP, pJ->ptJ.y * FP_GRID_STEP, pJ->ptJ.z * 0.625f );
 		NBuilding::CJunction::EStability st = pJ->GetStability();
@@ -122,7 +122,7 @@ CObjectBase* ViewBuildingSchema( NGScene::IGameView *pScene, NBuilding::CSolidAn
 	//
 	float fMax = -1;
 	float fMin = 0;
-	for ( vector<NBuilding::CRod>::const_iterator pR = rods.begin(); pR != rods.end(); ++pR )
+	for ( typename vector<NBuilding::CRod>::const_iterator pR = rods.begin(); pR != rods.end(); ++pR )
 	{
 		const NBuilding::CRod &rod = *pR;
 		float ml = pSchema->GetJunction( pR->GetJunction( NBuilding::RS_LEFT ) )->GetMoment( &rod );
@@ -142,7 +142,7 @@ CObjectBase* ViewBuildingSchema( NGScene::IGameView *pScene, NBuilding::CSolidAn
 	float fScale = fDenom > FP_EPSILON ? 5.0f / (fMax - fMin) : 1;
 	//
 	CVec4 lcr( 0.05f, 0.25f, 0.3f, fAlpha );
-	for ( vector<NBuilding::CRod>::const_iterator pR = rods.begin(); pR != rods.end(); ++pR )
+	for ( typename vector<NBuilding::CRod>::const_iterator pR = rods.begin(); pR != rods.end(); ++pR )
 	{
 		const NBuilding::CRod &rod = *pR;
 		const NBuilding::CIVec3 ptL = pR->GetLeftPt();

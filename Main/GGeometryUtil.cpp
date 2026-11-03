@@ -2,7 +2,7 @@
 #include "GGeometryUtil.h"
 
 /*#include <d3dx8.h>
-#include "..\Misc\Win32Helper.h"
+#include "../Misc/Win32Helper.h"
 namespace NGfx
 {
 	externA5 NWin32Helper::com_ptr<IDirect3DDevice8> pDevice;
@@ -438,7 +438,7 @@ void CSquarePacker::PushTriangle( int n1, int n2, int n3, char nFirst )
 	edge.nV = n3;
 	edge.nXSize = nXSize;
 	edge.nYSize = nYSize;
-	CEdgesHash::iterator i = edgesInfo.find( edge );
+	typename CEdgesHash::iterator i = edgesInfo.find( edge );
 	if ( i != edgesInfo.end() )
 	{
 		STriInfo &tri = squares[i->second];

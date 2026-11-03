@@ -31,7 +31,7 @@ void GetUnitServersAtRange( CUnitServer *pUS, const CVec3 &center, float fRadius
 		return;
 	list< CPtr<CUnitServer> > tmp;
 	pUS->GetWorld()->GetUnitsNear( center, &tmp, fRadius );
-	for ( list< CPtr<CUnitServer> >::iterator i = tmp.begin(); i != tmp.end(); ++i )
+	for ( typename list< CPtr<CUnitServer> >::iterator i = tmp.begin(); i != tmp.end(); ++i )
 		pRes->push_back( *i );
 }
 // Release corpse-scan radius, decoded @0xab7a0: pWorld->GetGame() (world vtbl+0x1c @0x376e90) ->
