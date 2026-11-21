@@ -460,9 +460,10 @@ static void MakeBuilding( SBuildingInfo *pInfo, const CBuildingGrid &grid, CBuil
 
   // Solid objects
 	const unordered_map<int, CNodeMap<SSolidElement> > &solids = swMap.GetSolidMap();
-	for (typename unordered_map<int, CNodeMap<SSolidElement> >::const_iterator it = solids.begin(); it != solids.end(); ++it )
+	const vector<int> &solidOrder = swMap.GetSolidOrder();
+	for ( size_t group = 0; group < solidOrder.size(); ++group )
 	{
-		const vector<SSolidElement> &frags = it->second.GetValues();
+		const vector<SSolidElement> &frags = solids.find( solidOrder[group] )->second.GetValues();
 		for ( int i = 0; i < frags.size(); ++i )
 		{
 			const SSolidElement &e = frags[i];
@@ -578,10 +579,13 @@ inline bool IsGround( const CVec3 &pt )
 	return pt.z <= 0;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-inline void JuncsMoveRotate( const SDiscretePos &dpos, vector<SJunction> *pJuncs )
+inline void JuncsMoveRotate( const SDiscretePos &dpos, vector<SJunction> *pJuncs, const CArray2D<bool> &cellarWalls )
 {
 	for ( int i = 0; i < pJuncs->size(); ++i )
+	{
 		dpos.MoveAndRotate( &(*pJuncs)[i].pt );
+		(*pJuncs)[i].bCellar = IsCellarWall( (*pJuncs)[i].pt, cellarWalls );
+	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void AddPieces( CBuildingSchema *pSchema, const vector<int> &parts, const vector<int> &additionparts, NDb::CRPGArmor *pAr, int nAIGeomID, 
@@ -623,7 +627,7 @@ void AddPieces( CBuildingSchema *pSchema, const vector<int> &parts, const vector
 			for ( int i = 0; i < piece.juncs.size(); ++i )
 				juncs.push_back( SJunction( piece.juncs[i].pt, bGround && piece.juncs[i].bGround ) );
 		}
-		JuncsMoveRotate( dpos, &juncs );
+		JuncsMoveRotate( dpos, &juncs, cellarWalls );
 		dpos.MoveAndRotate( &pt );
 		bool bCellarWall = IsCellarWall( pt, cellarWalls );
 		pSchema->AddNode( pAr, pt, bCellarWall, fWeight, juncs );
@@ -652,7 +656,7 @@ void AddPieces( CBuildingSchema *pSchema, const vector<int> &parts, const vector
 			const CVec3 ptJ = pt + links[j];
 			juncs.push_back( SJunction( ptJ, bGround && fabs( ptJ.z ) < FP_EPSILON ) );
 		}
-		JuncsMoveRotate( dpos, &juncs );
+		JuncsMoveRotate( dpos, &juncs, cellarWalls );
 		dpos.MoveAndRotate( &pt );
 		bool bCellarWall = IsCellarWall( pt, cellarWalls );
 		pSchema->AddNode( pAr, pt, bCellarWall, 0.1f * pAr->pMaterial->fWeight, juncs ); // CRAP - volume for virtual part
@@ -761,9 +765,10 @@ void MakeBuildingSchema( CBuildingSchema *pSchema, CBuildingGrid *pGrid, CBuildI
 	CArray2D<bool> cellarWalls;
 	MarkCellarWalls( &cellarWalls, pBuildInfo->cellar, swMap.GetBottom() );
 
-	for (typename unordered_map<int, CNodeMap<SSolidElement> >::const_iterator it = solidMap.begin(); it != solidMap.end(); ++it )
+	const vector<int> &solidOrder = swMap.GetSolidOrder();
+	for ( size_t group = 0; group < solidOrder.size(); ++group )
 	{
-		const vector<SSolidElement> &frags = it->second.GetValues();
+		const vector<SSolidElement> &frags = solidMap.find( solidOrder[group] )->second.GetValues();
 		for ( int i = 0; i < frags.size(); ++i )
 		{
 			const SSolidElement &e = frags[i];
@@ -944,9 +949,10 @@ void BuildingHP( CBuildInfo *pBuildInfo, CBuildingGrid *pGrid, CSolidAndWallMap 
 	nTotalNodes = 0;
   // Сплошные объекты
 	const unordered_map<int, CNodeMap<SSolidElement> > &solidMap = swMap.GetSolidMap();
-	for (typename unordered_map<int, CNodeMap<SSolidElement> >::const_iterator it = solidMap.begin(); it != solidMap.end(); ++it )
+	const vector<int> &solidOrder = swMap.GetSolidOrder();
+	for ( size_t group = 0; group < solidOrder.size(); ++group )
 	{
-		const vector<SSolidElement> &frags = it->second.GetValues();
+		const vector<SSolidElement> &frags = solidMap.find( solidOrder[group] )->second.GetValues();
 		for ( int i = 0; i < frags.size(); ++i )
 		{
 			const SSolidElement &e = frags[i];

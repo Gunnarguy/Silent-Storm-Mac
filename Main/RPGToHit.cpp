@@ -375,7 +375,9 @@ float CToHitCalcer::GetFRMult()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 float CToHitCalcer::GetAllMult()
 {
-	return Max( 0.f, GetAllAdd() * GetLight() * GetFRMult() );
+	float fRes = GetAllAdd();
+	fRes *= GetFRMult();
+	return Max( 0.f, fRes * GetLight() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 float CToHitCalcer::GetSnipeAdd()
@@ -394,22 +396,22 @@ float CToHitCalcer::GetTArea()
 float CToHitCalcer::GetCA()
 {
 	float fTArea = GetTArea();
-	float fTCover = fHitCover / 100.f;
+	float fTCover = fHitCover * 0.01f;
 	// Retail v1.2 0x6b7053..0x6b707e: perk 72 scales cover, preserving area.
 	float fCoverMultiplier;
 	if ( pUnitMission->HasPerk( 0x48, &fCoverMultiplier ) )
 		fTCover *= fCoverMultiplier;
 	float fScopeFactor = sWeaponInfo.fScopeFactor; // 20 - normal weapon // 100 - sniper rifle
 	float fDistCoeff = DistanceFunc( nDistance, fScopeFactor );
-	return ( (100-fDistCoeff)*(fTCover*fTArea)+fDistCoeff ) / 100.0f;
+	return ( (100-fDistCoeff)*(fTCover*fTArea)+fDistCoeff ) * 0.01f;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 float CToHitCalcer::GetAllAdd()
 {
 	// Retail 0x6b8410: keep the stored-float sums and the familiarity/quality tail in order.
 	float fRes = GetSMove() + GetRS();
-	fRes += GetStance();
 	fRes += GetD2();
+	fRes += GetStance();
 	fRes = double( fRes ) + pUnitMission->GetWeaponAdaptation() + sWeaponInfo.nQuality;
 	//
 	if ( IsValid( pWeaponItem ) )
@@ -507,7 +509,8 @@ int CToHitCalcer::GetToHit()
 		return 0;
 	fToHit = GetAllMult() + ( GetAuraToHitAdd() + GetCarefulShootPerk() ) - GetWeatherPenalty();
 	fToHit = Clamp( fToHit, 2.0f, 100.0f );
-	return int( fToHit + 0.5f );  // release rounds the result (fistp), unlike the dev's truncation
+	// v1.2 0x6b864f..0x6b8667: fnstcw / or ah,0x0c / fldcw / fistp -- RC=11 is TRUNCATE, not round.
+	return int( fToHit );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CToHitCalcer::Log()
@@ -560,9 +563,13 @@ int CUnitToHitCalcer::GetToHit()
 	float fDef = 0;
 	if ( !bBackStab )
 		fDef = GetTAuraEvasionAdd() + pTarget->GetUnitRPG()->GetIC() / pUnitMission->GetToHitConstants()->fICModifier;
-	fToHit = GetAllMult() * GetCA() + GetCarefulShootPerk() + GetAuraToHitAdd() - fDef - GetWeatherPenalty();
+	float fAttack = GetCA();
+	fAttack *= GetAllMult();
+	fAttack += GetCarefulShootPerk();
+	fToHit = double( fAttack ) + GetAuraToHitAdd() - GetWeatherPenalty() - fDef;
 	fToHit = Clamp( fToHit, 2.0f, 100.0f );
-	return int( fToHit + 0.5f );  // release rounds the result (fistp), unlike the dev's truncation
+	// v1.2 0x6b8796..0x6b87ae: the same RC=11 (truncate) fistp as CToHitCalcer::GetToHit.
+	return int( fToHit );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // NRPG::GetTAreaReal  @0x2b8800 (RVA) -- release-new free helper extracted as the single source of truth
@@ -790,8 +797,8 @@ CAIUnitToHitCalcer::CAIUnitToHitCalcer(	NAI::IAIUnit *pShooter, const NAI::SUnit
 	NAI::IAIUnit *pTarget, float fHitCover, NAI::EHitLocation _eHitLocation, int _nBullet, IInventoryItem *_pWeapon, int _nExtraAP ):
 		CUnitToHitCalcer( pShooter->GetUnitServer(),
 		shooterPos.GetPose(),
-		fabs( shooterPos.GetCP() - pTarget->GetPosition().GetCP() ) / FP_GRID_STEP,
-		shooterPos.GetEyePosition(),
+		fabs( shooterPos.GetCP() - pTarget->GetPosition().GetCP() ) * 1.6f,
+		pShooter->GetUnitServer()->GetAttackOrigin( shooterPos, false ),
 		pTarget->GetPosition(),
 		_nExtraAP, 0, fHitCover, false, pShooter->GetUnitServer()->GetWorld()->GetGame()->IsNight(), CVec3( 1, 1, 1 ),
 		_eHitLocation,

@@ -11,6 +11,7 @@
 #include "wDebris.h"        // NWorld::CDFrozenItem (CAILogPickUpItem's retail item ref)
 
 #include "RPGUnitMission.h"
+#include "RPGUnit.h"
 #include "RPGItemInfo.h"
 #include "RPGItem.h"
 #include "RPGItemSet.h"
@@ -23,27 +24,33 @@ namespace NAI
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CAILogPosition
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-CAILogPosition::CAILogPosition( IAIUnit *_pAIUnit, SPosition _pSourcePosition, SPosition _pTargetPosition, NAI::EPose _pose ):
-	CAILogRecord(_pAIUnit), pSourcePosition(_pSourcePosition), pTargetPosition(_pTargetPosition), pose( _pose )
+CAILogPosition::CAILogPosition( IAIUnit *_pAIUnit, const SUnitPosition &_pos, NAI::EPose _pose ):
+	CAILogRecord( _pAIUnit ), pos( _pos ), pose( _pose )
 {
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////
-void CAILogPosition::RollBack() 
-{ 
-	pAIUnit->SetPosition( pSourcePosition ); 
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAILogPosition::Commit()
 {
-	pAIUnit->SetPosition( pTargetPosition ); 
+	pAIUnit->SetPosition( pos );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAILogPosition::GetCommands( list< CPtr<NWorld::CCommand> > *Commands )
-{ 
-	NWorld::CCmd *pCmd = new NWorld::CCmdWishPose( pose );
-	Commands->push_back( new NWorld::CCmdSetCommand( pAIUnit->GetUnitServer(), pCmd ) );
-	pCmd = new NWorld::CCmdPath( pTargetPosition, NAI::PF_USE_POSE );
-	Commands->push_back( new NWorld::CCmdSetCommand( pAIUnit->GetUnitServer(), pCmd ) );
+{
+	NWorld::CUnitServer *pUS = pAIUnit->GetUnitServer();
+	const bool bPK = pUS->IsWearingPK();
+	NWorld::CCmd *pCmd = new NWorld::CCmdWishPose( bPK && pose >= NAI::WALK ? NAI::WALK : pose );
+	Commands->push_back( new NWorld::CCmdSetCommand( pUS, pCmd ) );
+	if ( bPK )
+	{
+		// Retail 0x45ea80 aligns the suit at its live position before moving.
+		SUnitPosition current = pUS->GetPosition();
+		current.SetPose( pose );
+		Commands->push_back( new NWorld::CCmdSetCommand( pUS,
+			new NWorld::CCmdPath( current.pos, NAI::PF_USE_POSEDIR ) ) );
+	}
+	NWorld::CCmdPath *pPath = new NWorld::CCmdPath( pos.pos, NAI::PF_USE_POSEDIR );
+	pPath->bCanFindNotExact = true;
+	Commands->push_back( new NWorld::CCmdSetCommand( pUS, pPath ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CAILogShot
@@ -188,13 +195,8 @@ void CAILogReloadWeapon::GetCommands( list< CPtr<NWorld::CCommand> > *Commands )
 CAILogSpendAmmo::CAILogSpendAmmo(	CAIFireArmsWeaponClip *_pClip, int nSpendAmmo ):
 	CAILogRecord( 0 ), pClip( _pClip )
 {
-	nOldAmmo = pClip->GetAmmoCount();
+	const int nOldAmmo = pClip->GetAmmoCount();
 	nNewAmmo = max( 0, nOldAmmo - nSpendAmmo );
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////
-void CAILogSpendAmmo::RollBack()
-{
-	pClip->SetAmmoCount( nOldAmmo );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAILogSpendAmmo::Commit()
@@ -208,13 +210,9 @@ void CAILogSpendAmmo::GetCommands( list< CPtr<NWorld::CCommand> > *Commands ) {}
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CAILogSpendAP::CAILogSpendAP(	IAIUnit *_pAIUnit, int nSpendAP ): CAILogRecord(_pAIUnit)
 {
+	int nOldAP;
 	pAIUnit->GetAP( &nOldAP, &nMaxAP );
 	nNewAP = max( 0, nOldAP - nSpendAP );
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////
-void CAILogSpendAP::RollBack()
-{
-	pAIUnit->SetAP( nOldAP, nMaxAP );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAILogSpendAP::Commit()
@@ -228,13 +226,9 @@ void CAILogSpendAP::GetCommands( list< CPtr<NWorld::CCommand> > *Commands ) {}
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CAILogSpendHP::CAILogSpendHP(	IAIUnit *_pAIUnit, int nSpendHP ): CAILogRecord(_pAIUnit)
 {
+	int nOldHP;
 	pAIUnit->GetHP( &nOldHP, &nMaxHP );
 	nNewHP = nOldHP - nSpendHP;
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////
-void CAILogSpendHP::RollBack()
-{
-	pAIUnit->SetHP( nOldHP, nMaxHP );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAILogSpendHP::Commit()
@@ -279,45 +273,46 @@ void CAILogChangeWeapon::GetItemPosition( NRPG::IInventoryItem *pItem, CTPoint<i
 void CAILogChangeWeapon::GetCommands( list< CPtr<NWorld::CCommand> > *Commands )
 {
 	NWorld::CUnitServer *pUnitServer = pAIUnit->GetUnitServer();
-	NRPG::IInventory *pInventory = pUnitServer->GetUnitRPG()->GetInventory();
-	// put the weapon away into the BackPack
+	CPtr<NRPG::IInventoryItem> pDefault = pUnitServer->GetUnitRPG()->GetRPGUnit()->pDefaultWeapon;
+	CPtr<NRPG::IInventoryItem> pOldItem, pNewItem;
 	if ( IsValid( pOldWeapon ) )
-	{
-		CPtr<NRPG::IInventoryItem> pOldItem = pOldWeapon->GetInventoryItem();
-		ASSERT( IsValid( pOldItem ) );
-		if ( IsValid( pOldItem ) )
-		{
-			NWorld::SItem From( pUnitServer, NWorld::SItem::SLOT, NDb::SLOT_1, pOldItem );
-			NWorld::SItem To( pUnitServer, NWorld::SItem::BACKPACK, CTPoint<int>( -1, -1 ), pOldItem );
-			Commands->push_back( new NWorld::CCmdSetCommand( pUnitServer,
-				new NWorld::CCmdMoveInventoryItem( From, To ) ) );
-		}
-	}
-	// move the new weapon into the Slot
+		pOldItem = pOldWeapon->GetInventoryItem();
 	if ( IsValid( pNewWeapon ) )
+		pNewItem = pNewWeapon->GetInventoryItem();
+	// Retail v1.1 0x45f010: the innate bare-hands weapon is not an inventory transfer.
+	if ( pOldItem == pDefault )
+		pOldItem = 0;
+	if ( pNewItem == pDefault )
+		pNewItem = 0;
+
+	// Equip first: this frees the new weapon's backpack space and puts the displaced
+	// slot item in HAND. Stowing first can fail in a full backpack.
+	// Keep the consumed-grenade guard: its AI wrapper can outlive its cleared DB link.
+	const bool bEquipNewItem = IsValid( pNewItem ) && IsValid( pNewItem->GetDBItem() );
+	if ( bEquipNewItem )
 	{
-		CPtr<NRPG::IInventoryItem> pNewItem = pNewWeapon->GetInventoryItem();
-		// retail CAILogChangeWeapon::GetWorldCommands @0x5f010 gates on alive(newItem) -- the UNDERLYING NWorld item,
-		// NOT the AI weapon wrapper. The wrapper (pNewWeapon) can stay valid while its item is stale/freed (e.g. a
-		// just-thrown grenade the wrapper still references after TearOffItem). The prior IsValid(pNewWeapon) here was a
-		// copy/paste from the old-weapon block above (which correctly checks pOldItem); it equipped that DB-less item
-		// into SLOT_1, crashing CExecMoveInventoryItem::AnimationFinished (wUnitAttackExec.cpp:2688) on its null
-		// GetDBItem()->subType. Guard the ITEM -> skip the draw when it isn't alive, exactly as retail does.
-		// In this reconstruction a consumed item's wrapper can outlive the DB link cleared by
-		// DestroyContents, whereas retail's liveness probe rejects that same state. Do not enqueue
-		// the draw unless both halves of the inventory-item invariant are intact.
-		if ( IsValid( pNewItem ) && IsValid( pNewItem->GetDBItem() ) )
-		{
-			Commands->push_back( new NWorld::CCmdSetCommand( pUnitServer,
-				new NWorld::CCmdArrangeInventory() ) );
-			NWorld::SItem From( pUnitServer, NWorld::SItem::BACKPACK, CTPoint<int>( -1, -1 ), pNewItem );
-			NWorld::SItem To( pUnitServer, NWorld::SItem::SLOT, NDb::SLOT_1, pNewItem );
-			Commands->push_back( new NWorld::CCmdSetCommand( pUnitServer,
-				new NWorld::CCmdMoveInventoryItem( From, To ) ) );
-			Commands->push_back( new NWorld::CCmdSetCommand( pUnitServer,
-				new NWorld::CCmdSetActiveItem( NDb::SLOT_1 ) ) );
-		}
+		NWorld::SItem From( pUnitServer, NWorld::SItem::BACKPACK, CTPoint<int>( -1, -1 ), pNewItem );
+		NWorld::SItem To( pUnitServer, NWorld::SItem::SLOT, NDb::SLOT_1, pNewItem );
+		Commands->push_back( new NWorld::CCmdSetCommand( pUnitServer,
+			new NWorld::CCmdMoveInventoryItem( From, To ) ) );
 	}
+	if ( IsValid( pOldItem ) )
+	{
+		// ORIGINAL RETAIL BUG: bare hands do not displace the equipped weapon
+		// into HAND. Remove it from the equipment slot when no replacement is drawn.
+		NWorld::SItem From = bEquipNewItem
+			? NWorld::SItem( pUnitServer, NWorld::SItem::HAND )
+			: NWorld::SItem( pUnitServer, NWorld::SItem::SLOT, NDb::SLOT_1, pOldItem );
+		NWorld::SItem To( pUnitServer, NWorld::SItem::BACKPACK, CTPoint<int>( -1, -1 ), pOldItem );
+		Commands->push_back( new NWorld::CCmdSetCommand( pUnitServer,
+			new NWorld::CCmdMoveInventoryItem( From, To ) ) );
+		Commands->push_back( new NWorld::CCmdSetCommand( pUnitServer,
+			new NWorld::CCmdDropItemFromHand() ) );
+	}
+	Commands->push_back( new NWorld::CCmdSetCommand( pUnitServer,
+		new NWorld::CCmdSetActiveItem( NDb::SLOT_1 ) ) );
+	Commands->push_back( new NWorld::CCmdSetCommand( pUnitServer,
+		new NWorld::CCmdArrangeInventory() ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CAILogPickUpItem
@@ -488,13 +483,7 @@ CAILogChangeShootMode::CAILogChangeShootMode( IAIUnit *_pAIUnit, CAIFireArmsWeap
 	if ( IsValid( pWeaponItem ) )
 	{
 		eNewShootMode = _eShootMode;
-		eOldShootMode = pWeaponItem->GetShootMode();
 	}
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////
-void CAILogChangeShootMode::RollBack()
-{
-	pWeaponItem->SetShootMode( eOldShootMode );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAILogChangeShootMode::Commit()
@@ -504,6 +493,8 @@ void CAILogChangeShootMode::Commit()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAILogChangeShootMode::GetCommands( list< CPtr<NWorld::CCommand> > *Commands )
 {
+	if ( !IsValid( pWeaponItem ) || !pWeaponItem->IsShootModeSupported( eNewShootMode ) )
+		return;
 	Commands->push_back( new NWorld::CCmdSetCommand( pAIUnit->GetUnitServer(),
 		new NWorld::CCmdShootMode( eNewShootMode ) ) );
 }
@@ -590,11 +581,7 @@ void CAILogCollectSnipeAP::GetCommands( list< CPtr<NWorld::CCommand> > *Commands
 	NWorld::CUnitServer *pUS = pAIUnit->GetUnitServer();
 	if ( !IsValid( pUS ) )
 		return;
-	// Release emits CCmdCollectSnipeAP{ CSAP_PRECISE, nAP } (an exact AP amount); the dev command carries only
-	// the ECollectSnipeAP mode (no nAP / no CSAP_PRECISE), so the closest faithful mode is CSAP_ALL (collect all
-	// currently available AP). The exact-nAP refinement is a documented release divergence; the computed nAP is
-	// still carried on this record for save/load fidelity.
-	NWorld::CCmd *pCmd = new NWorld::CCmdCollectSnipeAP( NWorld::CSAP_ALL );
+	NWorld::CCmd *pCmd = new NWorld::CCmdCollectSnipeAP( NWorld::CSAP_PRECISE, nAP );
 	Commands->push_back( new NWorld::CCmdSetCommand( pUS, pCmd ) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////

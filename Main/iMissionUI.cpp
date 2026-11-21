@@ -151,6 +151,8 @@ void CAckIcon::Set( CAckEvent *_pEvent )
 // content in the retail game.db.)
 void CAckIcon::PlayAck()
 {
+	if ( NGlobal::GetVar( "ui_charresponses" ).GetFloat() == 0 )
+		return;
 	NWorld::CAckEvent *pAckEvent = pEvent->GetAckEvent();
 	if ( !IsValid( pAckEvent->pAckInfo ) || !IsValid( pAckEvent->pUnit ) )
 		return;
@@ -969,7 +971,8 @@ void CHitTracker::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 
 	CVec2 vScreenPoint;
 	CVec2 vScreenRect = pMission->GetScene()->GetScreenRect();
-	CTransformStack sTS = pMission->GetCameraTransform();
+	CTransformStack sTS;
+	pMission->GetCamera()->GetTransform( &sTS, vScreenRect );
 	if ( !TestRayInFrustrum( vBegPoint, &sTS, vScreenRect, &vScreenPoint ) )
 		return;
 
@@ -1444,7 +1447,8 @@ void CMissionUI::UpdateItems( NGScene::I2DGameView *pView )
 	// icon projection setup -- mirrors UpdateEnemies/UpdateClues (the zero-width client rect
 	// early-out is the same dev projection guard those passes use)
 	CVec2 vIconScreenRect = pMission->GetScene()->GetScreenRect();
-	CTransformStack sIconTS = pMission->GetCameraTransform();
+	CTransformStack sIconTS;
+	pMission->GetCamera()->GetTransform( &sIconTS, vIconScreenRect );
 	SRect sIconViewRect;
 	SPoint sIconViewPosition;
 	GetClientWindow()->ClientToScreen( &sIconViewPosition, &sIconViewRect );
@@ -1550,8 +1554,9 @@ void CMissionUI::UpdateItems( NGScene::I2DGameView *pView )
 		sMap.FillEvery( false );
 
 		CVec2 vScreenRect = pView->GetViewportSize();
-		CTransformStack sTS = pMission->GetCameraTransform();
-		for ( typename list<CObj<CItemText> >::const_iterator iTemp = itemTextsList.begin(); iTemp != itemTextsList.end(); iTemp++ )
+		CTransformStack sTS;
+		pMission->GetCamera()->GetTransform( &sTS, vScreenRect );
+		for ( list<CObj<CItemText> >::const_iterator iTemp = itemTextsList.begin(); iTemp != itemTextsList.end(); iTemp++ )
 		{
 			CItemText *pItemText = *iTemp;
 
@@ -1665,8 +1670,11 @@ void CMissionUI::UpdateEnemies()
 	vector<CPtr<NGame::IUnitTracker> > unitsSet;
 	pMission->GetSelectedUnits( &unitsSet );
 
+	// Retail CProjectedIcon::GetPositionInfo (v1.1 0x60f610) uses the live camera.
+	// The mission cache predates this frame's final viewport/camera changes.
 	CVec2 vScreenRect = pMission->GetScene()->GetScreenRect();
-	CTransformStack sTS = pMission->GetCameraTransform();
+	CTransformStack sTS;
+	pMission->GetCamera()->GetTransform( &sTS, vScreenRect );
 
 	SRect sViewRect;
 	SPoint sViewPosition;
@@ -1788,7 +1796,8 @@ void CMissionUI::UpdateClues()
 	// the cursor can highlight/attack. Retail anchors the ear at marker position + 1.6,
 	// inside the silhouette's head, without the visible-enemy icon's extra clearance.
 	CVec2 vScreenRect = pMission->GetScene()->GetScreenRect();
-	CTransformStack sTS = pMission->GetCameraTransform();
+	CTransformStack sTS;
+	pMission->GetCamera()->GetTransform( &sTS, vScreenRect );
 
 	SRect sViewRect;
 	SPoint sViewPosition;
@@ -1887,7 +1896,8 @@ void CMissionUI::UpdateTraps()
 	// UpdateHash<CObjectBase,CTrapIcon> @0x2173b0), anchored at the trap position z+0.6
 	// (CTrapIcon::Draw @0x210790), drawn only while on-screen.
 	CVec2 vScreenRect = pMission->GetScene()->GetScreenRect();
-	CTransformStack sTS = pMission->GetCameraTransform();
+	CTransformStack sTS;
+	pMission->GetCamera()->GetTransform( &sTS, vScreenRect );
 
 	SRect sViewRect;
 	SPoint sViewPosition;
@@ -2019,7 +2029,7 @@ CAckEvent* CMissionUI::PlayAckEvent( const STime &sTime, NWorld::CAckEvent *pEve
 	// 3D portrait turns to the camera to deliver the line, temporarily swapping in a non-selected (or
 	// enemy) speaker's head. Retail gates this on bShowAcks ("ui_charresponses", default on); with the
 	// face path off there is no ACK_WAIT handshake, so retail arms the event DIRECTLY here
-	// (CAckEvent::Set @0x1d0cf0: bReady=true, TTL = now + 3000ms) -- the voice/subtitle still play.
+	// (CAckEvent::Set @0x1d0cf0: bReady=true, TTL = now + 3000ms) -- subtitles retain their TTL even with voice and portrait responses disabled.
 	if ( NGlobal::GetVar( "ui_charresponses" ).GetFloat() != 0 )
 		pUnitPanel->PlayAckEvent( sTime, pAckEvent );
 	else

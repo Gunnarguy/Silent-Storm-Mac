@@ -31,6 +31,7 @@
 #include "aiActionPlaceSource.h"
 #include "aiChoosePlace.h"
 #include "../Misc/EventsBase.h"   // NGlobal::CEventRegister (CAIAfterCombatLogic::regOnNewTurn)
+#include "eventUnit.h"          // NWorld::CEventOnPassControl
 namespace NWorld { class CEventOnNewPlayerTurn; }
 namespace NAI
 {
@@ -59,12 +60,9 @@ class CAICombatLogic: public CAILogic, public CAIJob
 	EPrepareState                         prepareState;  // pipeline state
 	int                                   nPSToPrepare = 0; // release tag 8: place-source index pending prepare (save-format)
 	int                                   nUnitLastAP;   // anti-cycling: AP at last decision (release tag 9)
-	// regOnNewTurn: fires CAICombatLogic::OnNewTurn on each new player turn. The a5dll's CEventOnNewPlayerTurn
-	// is the live stand-in for retail's CEventOnPassControl (both fire at StartPlayerTurn; the a5dll never
-	// throws CEventOnPassControl). NOT serialized (a runtime subscription re-established by the ctor -> excluded
-	// from operator&, exactly like CAIAfterCombatLogic's own regOnNewTurn). Fires ALONGSIDE AfterCombat's on the
-	// one event; they touch disjoint state (base: prepareState/nUnitLastAP; derived: bAPUpdated).
-	NGlobal::CEventRegister< CAICombatLogic, NWorld::CEventOnNewPlayerTurn > regOnNewTurn;
+	// Retail 0x4331b0: invalidate planning on every control handover,
+	// including interrupts. After-combat AP refresh still uses full turns.
+	NGlobal::CEventRegister< CAICombatLogic, NWorld::CEventOnPassControl > regOnPassControl;
 	ZEND
 public:
 	int operator&( CStructureSaver &f );   // public: the concrete logics serialize (CAICombatLogic*)this
@@ -76,10 +74,7 @@ protected:
 			pChoosePlace->AddAction( pAction, pSrc );
 		return pAction;
 	}
-	// Fetch the action's info at the place the chooser picked for it. @0x004166d0 (release uses the
-	// SActionInfo memo cache; here we compute via GetInfoInner at the chosen place).
-	// The SActionInfo cache memoizes exactly this GetInfoInner result, so the direct call is shape-faithful
-	// (release routes through SActionInfo<TAction>::GetInfo, whose `info` member is private to the action).
+	// Reuse the chooser's cached evaluation until the next planning reset.
 	// aiAttackLogic CAICombatLogic::GetInfo<TAction> instantiations (VA = RVA + 0x400000):
 	//   @0x004260c0 <CAIShootAction>       @0x004261a0 <CAIThrowGrenadeAction>  @0x00426280 <CAILaunchRocketAction>
 	//   @0x00426360 <CAIThrowKnifeAction>  @0x00426440 <CAIMeleeAction>         @0x00423e20 <CAICollectSnipeAPAction>
@@ -88,10 +83,13 @@ protected:
 	//   @0x00426520 <CAIBeginSnipeAction>  @0x004266a0 <CAITerrorPKAction>      @0x00426760 <CAIWearPKAction>
 	template<class TAction> void GetInfo( TAction *pAction, typename TAction::SInfo *pInfo )
 	{
+		if ( pInfo == 0 )
+			return;
+		*pInfo = typename TAction::SInfo();
 		SPlaceWithAP place;
 		if ( IsValid( pChoosePlace ) && IsValid( pAction ) &&
 			 pChoosePlace->GetPlaceForAction( pAction, &place ) )
-			pAction->GetInfoInner( place, pInfo );
+			pAction->GetInfo( place, pInfo );
 	}
 	//
 	void DoAction( CAIAction *pAction );        // log move-to-place (pos+AP) then pAction->Do(pLog)
@@ -108,7 +106,7 @@ protected:
 public:
 	// both ctors MUST init regOnNewTurn (CEventRegister has no default ctor -- it ASSERTs), exactly like
 	// CAIAfterCombatLogic; the default ctor is the save/load registry create path.
-	CAICombatLogic(): regOnNewTurn( this, &CAICombatLogic::OnNewTurn ) {}
+	CAICombatLogic(): regOnPassControl( this, &CAICombatLogic::OnPassControl ) {}
 	CAICombatLogic( IAIUnit *pUnit, IAIChoosePlaceJob *pChoosePlace );
 	//
 	IAIActionPlaceSource* AddPlaceSource( IAIActionPlaceSource *pSrc );  // dedup-append
@@ -123,9 +121,9 @@ public:
 	virtual void StopThinking();
 	virtual bool IsFinished();
 	virtual bool IsEndOfTurn();
-	// CAICombatLogic does NOT override the no-arg virtual slot-12 OnNewTurn() (retail's slot-12 is empty) -- it
-	// inherits CAILogic::OnNewTurn(){}. The per-turn reset is the EVENT handler below, fired via regOnNewTurn.
-	void OnNewTurn( const NWorld::CEventOnNewPlayerTurn &event );   // @0x00432820 (retail CEventOnPassControl handler)
+	// CAICombatLogic does NOT override the no-arg virtual slot-12 PauseInner() (retail's slot-12 is empty) -- it
+	// inherits CAILogic::PauseInner(){}. The per-turn reset is the EVENT handler below, fired via regOnNewTurn.
+	void OnPassControl( const NWorld::CEventOnPassControl &event );
 	//
 	virtual void MakeDecision() = 0;            // per-logic action/rule set
 	virtual bool CanSkip() const = 0;
@@ -278,9 +276,9 @@ public:
 	// ctor is the save/load registry's create path (ConstructAfterCombatLogic @0x14050 also registers).
 	CAIAfterCombatLogic(): regOnNewTurn( this, &CAIAfterCombatLogic::OnNewTurn ), bAPUpdated( false ), bLoot( false ) {}
 	CAIAfterCombatLogic( IAIUnit *pUnit, bool bLoot );
-	// the event handler @0x14000 (NOT the base virtual OnNewTurn() -- the release does not override that one;
+	// the event handler @0x14000 (NOT the base virtual PauseInner() -- the release does not override that one;
 	// declaring only this overload hides the inherited no-arg name so &CAIAfterCombatLogic::OnNewTurn is
-	// unambiguous, while the inherited CAICombatLogic::OnNewTurn() still fills vtable slot 12).
+	// unambiguous, while the inherited CAICombatLogic::PauseInner() still fills vtable slot 12).
 	void OnNewTurn( const NWorld::CEventOnNewPlayerTurn &event );
 	virtual void MakeDecision();                // @0x00414440
 	virtual bool CanSkip() const;

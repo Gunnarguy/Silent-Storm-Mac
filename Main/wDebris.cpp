@@ -62,7 +62,7 @@ void CDFrozenItem::GetVisiblePos( vector<CVec3> *pRes ) const
 int CDFrozenItem::ProcessAttack( NWorld::IWorld *pWorld, int nUserID, NRPG::CAttackPortion *pAttack,
 	const CVec3 &vDir, NDb::CRPGArmor *pArmor )
 {
-	if ( IsValid( pArmor ) && nVP > 0 )
+	if ( IsValid( pArmor ) && pArmor->pMaterial->nDR > 0 && nVP > 0 )
 	{
 		int nDmg = pAttack->CalcStructDmg( pWorld, pArmor, 0 );
 		nVP = Max( 0, nVP - nDmg );
@@ -332,14 +332,12 @@ CDFrozenItem* CDebrisController::AddFrozenItem( NAI::IAIMap *pMap, const SHMatri
 		bIsVisibleItem ? GetVisibleShowList() : GetShowList(),
 		_model, m, nFloor, pInvItem, pTrash, bTemporaryVisible );
 	if ( bIsVisibleItem )
-	{
 		visibleItems.push_back( pWorldItem );
-		// retail @0x34b100 tail (same branch): register the settled item with the wreckage
-		// stability grid so collapsing support re-drops it (IStabilityTrackers::AddDebris @0xa6770)
-		if ( pMap )
-			pMap->GetStabilityTrackers()->AddDebris( pWorldItem );
-	}
 	showFrozenItems.push_back( pWorldItem );
+	// Retail 0x74ba3a: every settled item must react to collapsing support,
+	// including cosmetic items that do not need visibility discovery.
+	if ( pMap )
+		pMap->GetStabilityTrackers()->AddDebris( pWorldItem );
 	// retail @0x34b100 tail: a CLUE item's frozen form is additionally tracked on clueItems
 	// (save tag 8) -- gated by the RTDynamicCast<NRPG::IClueItem> on the inventory item.
 	if ( CDynamicCast<NRPG::IClueItem>( pInvItem ) )

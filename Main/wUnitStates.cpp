@@ -34,6 +34,26 @@ static CCriticalsBan &GetCriticalsBan() { static CCriticalsBan criticalsBan; ret
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUnitState
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Retail Steam 0x7c8b30: finish placing a cursor item before issuing unrelated orders.
+CCommandExecute* CUnitState::CreateExecutor( CCmd *pCmd, EUnitCommandResult *pResult )
+{
+	if ( IsCriticalsFailCommand( pCmd, pResult ) )
+		return 0;
+	SItem item;
+	if ( pUS->GetTBSPlayer()->GetInHandItem( &item ) )
+	{
+		CDynamicCast<CCmdMoveInventoryItem> pMoveItem( pCmd );
+		CDynamicCast<CCmdLoadWeapon> pLoadWeapon( pCmd );
+		CDynamicCast<CCmdReload> pReload( pCmd );
+		if ( !pMoveItem && !pLoadWeapon && !pReload )
+		{
+			*pResult = UCR_UNAVAILABLE;
+			return 0;
+		}
+	}
+	return NWorld::CreateExecutor( pUS, pCmd, pResult );
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUnitState::FilterCriticals()
 {
 	ASSERT( pUS );
@@ -126,6 +146,8 @@ const NDb::CPanzerklein *CUnitStateNormal::GetPK() const // returns 0 if no PK p
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CCommandExecute* CUnitStateNormal::CreateExecutor( CCmd *pCmd, EUnitCommandResult *pResult )
 {
+	// Retail v1.1 0x7c82e7 / v1.2 0x7c8c87: retain ownership before critical checks.
+	CObj<CCmd> pHold = pCmd;
 	*pResult = UCR_UNAVAILABLE;
 
 	if ( IsCriticalsFailCommand( pCmd, pResult ) )
@@ -140,7 +162,7 @@ CCommandExecute* CUnitStateNormal::CreateExecutor( CCmd *pCmd, EUnitCommandResul
 		if (pSAI)
 			return 0;
 		CDynamicCast<CCmdMoveInventoryItem> pMII(pCmd);
-		if (pMII)
+		if ( pMII && pMII->GetSource().pUnit == pMII->GetTarget().pUnit )
 			return 0;
 	}
 	else
@@ -157,7 +179,7 @@ CCommandExecute* CUnitStateNormal::CreateExecutor( CCmd *pCmd, EUnitCommandResul
 	if (pSnipe)
 		return 0;
 
-	return NWorld::CreateExecutor( pUS, pCmd, pResult );
+	return CUnitState::CreateExecutor( pCmd, pResult );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUnitStateNormal::ProcessCritical( NDb::ECritical eCA )
@@ -269,11 +291,17 @@ CCommandExecute* CUnitStateSniping::CreateExecutor( CCmd *pCmd, EUnitCommandResu
 	*pResult = UCR_OK;
 	CDynamicCast<CCmdCollectSnipeAP> pCollect(pCmd);
 	if (pCollect)
-		return NWorld::CreateExecutor( pUS, pCmd, pResult );
+		return CUnitState::CreateExecutor( pCmd, pResult );
 	else {
 		CDynamicCast<CCmdSnipeAttack> pSnipeAttack(pCmd);
 		if (pSnipeAttack)
-			return NWorld::CreateExecutor(pUS, new CCmdShootObject(pTarget, 0, hitLocation), pResult);
+		{
+			// The base dispatcher checks critical bans before the executor factory
+			// retains the command. Keep this translated shot alive across that
+			// check: GetObjectID takes and releases a temporary reference.
+			CPtr<CCmdShootObject> pShoot = new CCmdShootObject( pTarget, 0, hitLocation );
+			return CUnitState::CreateExecutor( pShoot, pResult );
+		}
 		else {
 			CDynamicCast<CCmdShootObject> pShootObject(pCmd);
 			if (pShootObject)
@@ -286,7 +314,7 @@ CCommandExecute* CUnitStateSniping::CreateExecutor( CCmd *pCmd, EUnitCommandResu
 					NAI::EHitLocation eHL = pShootObject->eHL == NAI::HL_ANY ? hitLocation : pShootObject->eHL;
 					CPtr<CCmdShootObject> pShoot = new CCmdShootObject( pTarget, pShootObject->nExtraAttackAP, eHL );
 					pShoot->bOnlyPrepareToShoot = pShootObject->bOnlyPrepareToShoot;
-					return NWorld::CreateExecutor( pUS, pShoot, pResult );
+					return CUnitState::CreateExecutor( pShoot, pResult );
 				}
 			}
 		}
@@ -319,29 +347,29 @@ CCommandExecute* CUnitStateUsingCannon::CreateExecutor( CCmd *pCmd, EUnitCommand
 	*pResult = UCR_OK;
 	CDynamicCast<CCmdShootTile> pShootTile(pCmd);
 	if (pShootTile)
-		return NWorld::CreateExecutor( pUS, pCmd, pResult );
+		return CUnitState::CreateExecutor( pCmd, pResult );
 	CDynamicCast<CCmdShootObject> pShootObject(pCmd);
 	if (pShootObject)
-		return NWorld::CreateExecutor( pUS, pCmd, pResult );
+		return CUnitState::CreateExecutor( pCmd, pResult );
 	CDynamicCast<CCmdReload> pReload(pCmd);
 	if (pReload)
-		return NWorld::CreateExecutor( pUS, pCmd, pResult );
+		return CUnitState::CreateExecutor( pCmd, pResult );
 	// Retail v1.2 0x7c8e67: mounted units may change the cannon's fire mode.
 	CDynamicCast<CCmdShootMode> pShootMode(pCmd);
 	if (pShootMode)
-		return NWorld::CreateExecutor( pUS, pCmd, pResult );
+		return CUnitState::CreateExecutor( pCmd, pResult );
 	// Spending a level-up point changes the RPG sheet, not the mounted gun.
 	// The manual save "stational weapons" has an available point while the
 	// selected unit is mounted; rejecting this command makes its perk buttons
 	// appear clickable but leaves the point unchanged.
 	CDynamicCast<CCmdTakePerk> pTakePerk(pCmd);
 	if (pTakePerk)
-		return NWorld::CreateExecutor( pUS, pCmd, pResult );
+		return CUnitState::CreateExecutor( pCmd, pResult );
 	CDynamicCast<CCmdExitCannon> pExitCannon(pCmd);
 	if (pExitCannon)
 	{
 		pExitCannon->pCannon = pCannon;
-		return NWorld::CreateExecutor( pUS, pExitCannon, pResult );
+		return CUnitState::CreateExecutor( pExitCannon, pResult );
 	}
 
 	*pResult = UCR_UNAVAILABLE;
@@ -409,12 +437,12 @@ CCommandExecute* CUnitStateCorpseCarrier::CreateExecutor( CCmd *pCmd, EUnitComma
 	CDynamicCast<CCmdNotHeroWantsToTalk> pNotHeroTalk(pCmd);
 	// Retail v1.2 0x7c90a8..0x7c9192 forwards all eight admitted commands.
 	if (pPath || pPassage || pLook || pTeleport || pAnimation || pTakePerk || pTalk || pNotHeroTalk)
-		return NWorld::CreateExecutor( pUS, pCmd, pResult );
+		return CUnitState::CreateExecutor( pCmd, pResult );
 	CDynamicCast<CCmdWishPose> pWishPose(pCmd);
 	if (pWishPose)
 	{
 		if (pWishPose->pose == NAI::WALK)
-			return NWorld::CreateExecutor( pUS, pCmd, pResult );
+			return CUnitState::CreateExecutor( pCmd, pResult );
 		else
 			return 0;
 	}
@@ -432,7 +460,7 @@ CCommandExecute* CUnitStateCorpseCarrier::CreateExecutor( CCmd *pCmd, EUnitComma
 		}
 
 		pDropCorpse->pCorpse = pDeadUnit;
-		return NWorld::CreateExecutor( pUS, pDropCorpse, pResult );
+		return CUnitState::CreateExecutor( pDropCorpse, pResult );
 	}
 	*pResult = UCR_UNAVAILABLE;
 	return 0;
@@ -756,8 +784,10 @@ CCommandExecute* CUnitStateHealer::CreateExecutor( CCmd *pCmd, EUnitCommandResul
 	if ( !IsCriticalsFailCommand( pCmd, pResult ) )
 	{
 		CDynamicCast<CCmdCancel> pCancel(pCmd);
-		if (pCancel)
-			return NWorld::CreateExecutor( pUS, pCmd, pResult );
+		// Retail Steam 0x7ca58e..0x7ca5ab permits spending a perk point during treatment.
+		CDynamicCast<CCmdTakePerk> pTakePerk(pCmd);
+		if (pCancel || pTakePerk)
+			return CUnitState::CreateExecutor( pCmd, pResult );
 	}
 	//
 	*pResult = UCR_UNAVAILABLE;

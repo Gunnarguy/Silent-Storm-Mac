@@ -351,7 +351,9 @@ void CAICommander::GenerateCommand()
 					CDynamicCast<NWorld::CCmdSetCommand> pSet( pCmdUnit.GetPtr() );
 					bool bKeepalive = pSet &&
 						CDynamicCast<NWorld::CCmdContinue>( pSet->GetCmd() ).GetPtr() != 0;
-					if ( !bKeepalive )
+					// Cancellation is a complete top-level operation, with no follow-up resume.
+					bool bCancel = CDynamicCast<NWorld::CCmdCancel>( pCmdUnit.GetPtr() ).GetPtr() != 0;
+					if ( !bKeepalive && !bCancel )
 						commandTracker.DoCommand( new NWorld::CCmdSetCommand( pCmdUnit->pUnit, new NWorld::CCmdContinue() ) );
 				}
 			}
@@ -390,7 +392,14 @@ void CAICommander::CheckForUpdates()
 		if ( IsValid( pReaction ) )
 		{
 			commandTracker.Clear( (*i)->GetUnitServer() );
-			(*i)->CancelCommand();
+			// A threat refresh can retain the current combat logic and target. Do
+			// not discard idle sniping (including AP banked last turn) before that
+			// decision. Replacing the logic still cancels through SetLogic; retained
+			// combat logic validates its target through CAICancelSnipeAction.
+			NWorld::CUnitServer *pUS = (*i)->GetUnitServer();
+			if ( !IsValid( pUS ) || !pUS->IsSniping() ||
+				pUS->HasCommand() || pUS->IsPerformingAction() )
+				(*i)->CancelCommand();
 			updateTracker.Add( pReaction );
 		}
 	}
@@ -479,7 +488,7 @@ void CAICommander::ClearNonFreezeCounters()
 			(*i)->ClearNonFreezeCounter();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// @0x33ad0: the tally alone trips the 5000 cap, else each unit's own counter (weighted x200) plus the
+// @0x33ad0: the tally alone trips the 5000 cap, else each unit's own saved counter plus the
 // tally is tested -- a single churning unit trips the freeze guard well before the aggregate does.
 bool CAICommander::IsPossibleFreeze()
 {
@@ -489,7 +498,7 @@ bool CAICommander::IsPossibleFreeze()
 	{
 		if ( !IsValid( *i ) || !IsOwnUnit( *i ) )
 			continue;
-		if ( commandTracker.nNonFreezeCounter + (*i)->GetNonFreezeCounter() * 200 > 5000 )
+		if ( commandTracker.nNonFreezeCounter + (*i)->GetNonFreezeCounter() > 5000 )
 			return true;
 	}
 	return false;

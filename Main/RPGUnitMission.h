@@ -165,6 +165,7 @@ public:
 	virtual float HealCritical( const SHealCriticalInfo &info ) = 0;
 	virtual void AddBleedingStopper( int nAmount ) = 0;
 	virtual void AddPostponedModifier( CDynamicSkill *pSkill, const SSkillModifyInfo &info, int nTurns ) = 0;
+	virtual void TakePerk( int nPerkID ) = 0;
 	virtual bool HasPerk( int nPerkID, 
 		float *pParam1 = 0, float *pParam2 = 0, float *pParam3 = 0 ) const = 0;
 	virtual int GetGrenadeTrapDC( NDb::CRPGGrenade *pGrenade ) = 0;
@@ -208,6 +209,7 @@ public:
 	// Retail 0x6c0cf0 / 0x6c5e30: live weapon familiarity and attack-scoped aura evasion.
 	virtual float GetWeaponAdaptation() const { return 0; }
 	virtual void SetAuraPerkICModifier( float f ) {}
+	virtual void SetIsAIPlayer( bool b ) {}
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 float GetCubesArea( const CVec3 &ptPos, vector<CVec3> *pCubes );
@@ -241,11 +243,14 @@ EToHitType GetToHitType( const NWorld::CUnit *pAttacker );
 // Jan03 nBullet cursor does not exist in retail); callers pass their burst-loop index.
 int GetToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDistance, const CVec3 &ptAttacker,
 	const NAI::SPosition &posTarget, NAI::EHitLocation eHL, int nExtraAP, const NWorld::CUnit *pTarget,
-	const vector<int> &accessibleHLs, int nHitCover, bool bFirstRound,
+	const vector<int> &accessibleHLs, float fHitCover, bool bFirstRound,
 	const CVec3 &ptIllumination = CVec3(1,1,1), bool bBackstab = false, int nBullet = 0, bool bNight = false );
 int GetTileToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDistance, const CVec3 &ptAttacker,
-	CVec3 ptTilePos, NAI::ETileHitLocation eHitLocation, int nExtraAP, int nHitCover, bool bFirstRound,
+	CVec3 ptTilePos, NAI::ETileHitLocation eHitLocation, int nExtraAP, float fHitCover, bool bFirstRound,
 	const CVec3 &ptIllumination = CVec3(1,1,1), int nBullet = 0 );
+int GetTileToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDistance, const CVec3 &ptAttacker,
+	CVec3 ptTilePos, NAI::ETileHitLocation eHitLocation, int nExtraAP, float fHitCover, bool bFirstRound,
+	const CVec3 &ptIllumination, int nBullet, bool bNight );
 int GetGrenadeToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDistance, const CVec3 &ptAttacker,
 	bool bFirstRound, CVec3 ptTilePos, const CVec3 &ptIllumination = CVec3(1,1,1) );
 int GetRLauncherToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDistance, const CVec3 &ptAttacker,

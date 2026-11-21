@@ -441,6 +441,12 @@ struct SItem
 	SItem( CUnit *_pUnit, EPlacement _eType, const CTPoint<int> &_sPosition, NRPG::IInventoryItem* _pItem = 0 ): pUnit( _pUnit ), eType( _eType ), sPosition( _sPosition ), pItem( _pItem ) {}
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Retail weapon-switch cleanup; no command payload (save ID 0x23074b40).
+class CCmdDropItemFromHand: public CCmd
+{
+	OBJECT_BASIC_METHODS(CCmdDropItemFromHand);
+};
+////////////////////////////////////////////////////////////////////////////////////////////////////
 class CCmdArrangeInventory: public CCmd
 {
 	OBJECT_BASIC_METHODS(CCmdArrangeInventory);
@@ -597,7 +603,8 @@ enum ECollectSnipeAP
 	CSAP_1AP,
 	CSAP_10AP,
 	CSAP_MAX,
-	CSAP_ALL
+	CSAP_ALL,
+	CSAP_PRECISE
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class CCmdCollectSnipeAP: public CCmd
@@ -606,10 +613,11 @@ class CCmdCollectSnipeAP: public CCmd
 public:
 	ZDATA
 	ECollectSnipeAP eAP;
-	ZEND int operator&( CStructureSaver &f ) { f.Add(2,&eAP); return 0; }
+	int nAP;
+	ZEND int operator&( CStructureSaver &f ) { f.Add(2,&eAP); f.Add(3,&nAP); return 0; }
 	//
-	CCmdCollectSnipeAP() {}
-	CCmdCollectSnipeAP( ECollectSnipeAP _eAP ): eAP( _eAP ) {}
+	CCmdCollectSnipeAP(): eAP(CSAP_1AP), nAP(0) {}
+	CCmdCollectSnipeAP( ECollectSnipeAP _eAP, int _nAP = 0 ): eAP( _eAP ), nAP( _nAP ) {}
 	virtual bool IsSkippable() const { return false; }
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////

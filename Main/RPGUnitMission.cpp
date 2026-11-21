@@ -22,11 +22,13 @@
 #include "RPGDiplomacy.h"
 #include "rpgCheatConstants.h"
 #include "rpgPerkConstants.h"
+#include "rpgPerk.h"
 #include "../DBFormat/DataRpgConstants.h"
 #include "../DBFormat/DataMisc.h"   // NDb::CRPGAP (GetActionAP RPGAP-table costs) + CRPGPicklock (AC_PICK_LOCK nAPToUse)
 
 #include "RPGUnitMission.h"
 #include "RPGAttackSession.h"
+#include "ModManager.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NRPG
 {
@@ -42,7 +44,7 @@ struct SCriticalType
 };
 typedef vector<SCriticalType> TCriticalSet;
 static vector<TCriticalSet> criticalBar( NDb::N_CL ); //[NDb::N_CL];
-static bool bCBarInitialized = false;
+static int nCriticalBarVersion = -1;
 int Round( float f ) { return int( f + 0.5f ); }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // EToHitType moved to RPGUnitMission.h -- the composite tile to-hit / cover entry points
@@ -79,8 +81,9 @@ class CUnitMission: public CUnitMissionForMedals, public IUnitMission
 	friend class CRLauncherToHitCalcer;
 	// release migration: the free-fn to-hit dispatch reaches GetToHitWeaponType / GetSnipeAP /
 	// GetMeleeToHit / bLogActive (all private) -- befriend it (no visibility change to the class).
-	friend int GetToHit( const NWorld::CUnit*, NAI::EPose, int, const CVec3&, const NAI::SPosition&, NAI::EHitLocation, int, const NWorld::CUnit*, const vector<int>&, int, bool, const CVec3&, bool, int, bool );
-	friend int GetTileToHit( const NWorld::CUnit*, NAI::EPose, int, const CVec3&, CVec3, NAI::ETileHitLocation, int, int, bool, const CVec3&, int );
+	friend int GetToHit( const NWorld::CUnit*, NAI::EPose, int, const CVec3&, const NAI::SPosition&, NAI::EHitLocation, int, const NWorld::CUnit*, const vector<int>&, float, bool, const CVec3&, bool, int, bool );
+	friend int GetTileToHit( const NWorld::CUnit*, NAI::EPose, int, const CVec3&, CVec3, NAI::ETileHitLocation, int, float, bool, const CVec3&, int );
+	friend int GetTileToHit( const NWorld::CUnit*, NAI::EPose, int, const CVec3&, CVec3, NAI::ETileHitLocation, int, float, bool, const CVec3&, int, bool );
 	friend int GetGrenadeToHit( const NWorld::CUnit*, NAI::EPose, int, const CVec3&, bool, CVec3, const CVec3& );
 	friend int GetRLauncherToHit( const NWorld::CUnit*, NAI::EPose, int, const CVec3&, CVec3, NAI::ETileHitLocation, int, bool, const CVec3& );
 	friend EToHitType GetToHitType( const NWorld::CUnit* );
@@ -222,7 +225,7 @@ public:
 	virtual bool IsDead() const;
 	virtual NDb::EWeaponType GetWeaponType() const;
 	virtual NDb::CAnimWeaponType* GetDBAnimWeapon() const;
-	virtual int  GetActionAP( NAI::EPose pose, EAction action ) const;
+	virtual int  GetActionAP( NAI::EPose pose, EAction action, IInventoryItem *pItem = 0 ) const;
 	virtual int GetAP() const;
 	virtual bool CanSpendAP( int nAP ) const;
 	virtual void SpendAP( int nAP );
@@ -320,6 +323,7 @@ public:
 	virtual bool IsHero() const;
 	virtual bool IsHiding() const { return bHiding; }
 	virtual void SetHiding( bool _bHiding );
+	virtual void TakePerk( int nPerkID );
 	virtual bool HasPerk( int nPerkID, 
 		float *pParam1 = 0, float *pParam2 = 0, float *pParam3 = 0 ) const;
 	virtual int GetGrenadeTrapDC( NDb::CRPGGrenade *pGrenade );
@@ -400,6 +404,23 @@ const wstring& CUnitMission::GetName() const
 void CUnitMission::InitAsCorpse( bool bDead )
 {
 	bUnconscious = !bDead;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Apply adaptation when it is acquired while already wearing a suit.
+// Retail v1.1 0x6c3040 clears every PK modifier here, including bonuses.
+// Preserve bonuses and the shell's own VP adjustment; only negate penalties.
+void CUnitMission::TakePerk( int nPerkID )
+{
+	pRPGUnit->GetPerksTree()->TakePerk( nPerkID );
+	if ( nPerkID != 0x1d || !HasPerk( 0x1d ) )
+		return;
+	for ( vector<CObj<CSkillModifier> >::iterator i = pkModifiers.begin(); i != pkModifiers.end(); )
+	{
+		if ( IsValid( *i ) && (*i)->fAdd < 0 && (*i)->pSkill != &pRPGUnit->Skills( NDb::ST_VP ) )
+			i = pkModifiers.erase( i );
+		else
+			++i;
+	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CUnitMission::HasPerk( int nPerkID, 
@@ -507,7 +528,6 @@ void CUnitMission::RegisterAction( EAction action )
 		action = AC_SHOOT;
 		nLastActionTimes = 0;
 	}
-    eLastAction = action;
 
 	if ( action != AC_END_SHOOT && action != AC_SHOOT && action != AC_BURST )
 		nLastActionTimes = 0;
@@ -529,7 +549,8 @@ void CUnitMission::RegisterAction( EAction action )
 			UseSkill( NDb::ST_SHOOTING );
 			break;
 		case AC_BURST:
-			UseSkill( NDb::ST_BURST );
+			if ( eLastAction != AC_BURST )
+				UseSkill( NDb::ST_BURST );
 			break;
 		case AC_HIDE:
 			// Retail v1.2 0x6c218f: entering Hide practices Stealth, with upgrade ack/log.
@@ -548,7 +569,6 @@ void CUnitMission::RegisterAction( EAction action )
 			// Retail v1.2 0x6c21a1: all six engineering actions share this handler.
 			UseSkill( NDb::ST_ENGINEERING );
 			break;
-		case AC_MOVE_DIAGONAL:
 		case AC_MOVE_SIDE:
 			// retail @0x34edb0: the nMoveInLastTurn accounting moved to DoAction (gated on RUN pose); here we
 			// only spend the AP-skill use. (Old code added it unconditionally here, with a diagonal fall-through
@@ -556,16 +576,21 @@ void CUnitMission::RegisterAction( EAction action )
 			UseSkill( NDb::ST_AP );
 			break;
 	}
+	eLastAction = action;
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int CUnitMission::GetFallDamage( float fHDiff ) 
 {
-	// crap
+	// Retail Steam 0x6beee0: zero range consumes no RNG, qualifying falls
+	// still cause at least two damage. FallFromHigh owns the height threshold.
 	int nHit = ( fHDiff - 2.8f ) * 50;
+	int nRange = nHit / 4;
 	int nRet = 0;
-	for ( int i = 0; i < 3; ++i )
-		nRet += random.Get( 0, nHit / 4 ); 
-	return nRet;
+	if ( nRange != 0 )
+		for ( int i = 0; i < 3; ++i )
+			nRet += random.Get( 0, nRange );
+	return Max( nRet, 2 );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUnitMission::SpendAP( int nAP )
@@ -629,10 +654,18 @@ void CUnitMission::StartNewTurn( const CVec3 &ptCP )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUnitMission::StartRealTime()
 {
+	nTurnCounter = 0; // Retail Steam 0x6bfa72.
 	ResetUnitParameters();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action ) const
+// Retail action costs are records, including movement/stance coefficients.
+static int GetBaseActionAP( int nRecordID )
+{
+	NDb::CRPGAP *pAP = NDb::GetRPGAP( nRecordID );
+	return pAP ? pAP->nAP : 0;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action, IInventoryItem *pItem ) const
 {
 	// ORIGINAL RETAIL BUG FIXED: paid costs have a 1-AP floor AFTER skill and
 	// perk reductions, so UI/AI planning and execution agree. Explicitly free
@@ -641,13 +674,14 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action ) const
 	switch ( action )
 	{
 		case AC_NONE: return 0;
-		case AC_HIDE: return 14;
+		case AC_HIDE: return GetBaseActionAP( 14 );
 		case AC_PREPARE: 
 		{
 			// Retail v1.2 0x6c0f81..0x6c1010: base preparation depends on the
 			// weapon type. Its original zero-parameter perk bug is corrected below.
 			int nAP = 0;
-			CWeaponItem *pWeapon = pRPGUnit->GetWeaponItem();
+			// The AI evaluates inventory candidates before equipping them.
+			CWeaponItem *pWeapon = pItem ? CDynamicCast<CWeaponItem>( pItem ).GetPtr() : pRPGUnit->GetWeaponItem();
 			if ( IsValid( pWeapon ) )
 				nAP = pWeapon->GetDBWeapon()->pWeaponType->nPrepareCost;
 			if ( nAP <= 0 )
@@ -663,8 +697,8 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action ) const
 			}
 			return Min( 8, Max( 1, nAP ) );
 		}
-		case AC_SHOOT:   return pRPGUnit->GetWeaponAP();
-		case AC_PREPARE_AND_SHOOT:	return GetActionAP( curPose, AC_PREPARE ) + GetActionAP( curPose, AC_SHOOT );
+		case AC_SHOOT:   return pRPGUnit->GetWeaponAP( pItem ? CDynamicCast<CWeaponItem>( pItem ).GetPtr() : 0 );
+		case AC_PREPARE_AND_SHOOT:	return GetActionAP( curPose, AC_PREPARE, pItem ) + GetActionAP( curPose, AC_SHOOT, pItem );
 		case AC_EXPLODE: return 2;
 		case AC_THROW_GRENADE:
 		{
@@ -679,14 +713,14 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action ) const
 				nAP = int( ( 1.0 - double( fParam ) ) * nAP );
 			return Max( 1, nAP );
 		}
-		case AC_CLIMB_1: return 10;
-		case AC_CLIMB_2: return 12;
-		case AC_CLIMB_3: return 14;
-		case AC_CLIMB_4: return 15;
-		case AC_JUMP: return 10;
-		case AC_TAKE_CORPSE: return 12;
-		case AC_TRAP_OBJECT: return 30;
-		case AC_DISARM_TRAP: return 30;
+		case AC_CLIMB_1: return GetBaseActionAP( 15 );
+		case AC_CLIMB_2: return GetBaseActionAP( 16 );
+		case AC_CLIMB_3: return GetBaseActionAP( 17 );
+		case AC_CLIMB_4: return GetBaseActionAP( 18 );
+		case AC_JUMP: return GetBaseActionAP( 19 );
+		case AC_TAKE_CORPSE: return GetBaseActionAP( 1 );
+		case AC_TRAP_OBJECT: return GetBaseActionAP( 2 );
+		case AC_DISARM_TRAP: return GetBaseActionAP( 3 );
 		case AC_SET_MINE: 
 			{
 				NRPG::IInventoryItem *pItem = pRPGUnit->GetInventory()->GetActive();
@@ -696,7 +730,7 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action ) const
 			}
 			return 0;
 		case AC_DISARM_MINE:
-			return 30;
+			return GetBaseActionAP( 4 );
 
 		case AC_FIRSTAID: 
 			{
@@ -709,7 +743,7 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action ) const
 		case AC_THROW_KNIFE:
 		case AC_MELEE:
 			{
-				CMeleeWeaponItem *pMelee = pRPGUnit->GetMeleeWeaponItem();
+				CMeleeWeaponItem *pMelee = pItem ? CDynamicCast<CMeleeWeaponItem>( pItem ).GetPtr() : pRPGUnit->GetMeleeWeaponItem();
 				if ( !pMelee )
 					return 0;
 				NDb::CRPGMeleeWeapon *pW = pMelee->GetDBMeleeWeapon();
@@ -727,9 +761,9 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action ) const
 		case AC_RELOAD:
 			return pRPGUnit->GetWeaponReloadActionAP();
 		case AC_OPEN_CLOSE:
-			return 4;
+			return GetBaseActionAP( 20 );
 		case AC_APPROACH_CANNON:
-			return 4;
+			return GetBaseActionAP( 6 );
 
 		case AC_POSE_CRAWL:
 		case AC_POSE_CROUCH:
@@ -740,7 +774,7 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action ) const
 				action = AC_POSE_WALK;
 			if ( curPose == NAI::RUN )
 				curPose = NAI::WALK;
-			int nCoeff = 4;
+			int nCoeff = GetBaseActionAP( 21 );
 			//
 			float fParam;
 			if ( HasPerk( N_PERK_CHEAP_CHANGE_POSE, &fParam ) )
@@ -750,22 +784,22 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action ) const
 			return nChanges == 0 ? 0 : Max( 1, nChanges * nCoeff );
 		}
 		case AC_LADDER:
-			return 2;
+			return GetBaseActionAP( 22 );
 		case AC_LADDER_MOVE:
-			return 2;
+			return GetBaseActionAP( 23 );
 		case AC_END_SHOOT:
 			return 0;
 		case AC_ENTER_PK:
-			return 10;
+			return GetBaseActionAP( 7 );
 		case AC_LEAVE_PK:
-			return 6;
+			return GetBaseActionAP( 8 );
 		case AC_ROTATE:
 			{
 				float fParam;
 				if ( HasPerk( N_PERK_CHEAP_ROTATE, &fParam ) )
 					return fParam == 0 ? 0 : Max( 1, int( fParam ) );
 				else
-					return curPose == NAI::CRAWL? 4 : 2;
+					return GetBaseActionAP( curPose == NAI::CRAWL ? 24 : 25 );
 			}
 		// @0x2c0bd0 -- retail sources these from the RPGAP DB table (NDb::GetRPGAP, ids 11/12/13)
 		case AC_ITEM_TAKE:
@@ -822,7 +856,7 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action ) const
 		case NAI::WALK:
 		case NAI::RUN:
 		{
-			int nPose = ( NAI::RUN - curPose + 1 ) * 2;
+			int nPose = ( NAI::RUN - curPose + 1 ) * GetBaseActionAP( 26 );
 			float fCorpseAP;
 			if ( ( action == AC_MOVE_CORPSE_SIDE || action == AC_MOVE_CORPSE_DIAGONAL ) &&
 				HasPerk( N_PERK_CORPSE_TRACKER, &fCorpseAP ) )
@@ -899,7 +933,7 @@ int CUnitMission::GetUnconsciousProbability( IUnitMissionInfo *pAttacker,
 // retail @0x2c2100: returns whether an attack was created (melee branch: always true). The Jan03
 // "burst not finished -> false" ShootMode switch is GONE in retail -- burst pacing lives entirely
 // in the shoot exec's timed-bullet schedule (nBulletGone / tNextBullet*), and no live caller reads
-// the return on the shoot path.
+// the old burst-completion return on the shoot path. Failure still returns false.
 bool CUnitMission::CreateAttack( vector<CAttackPortion> *pRes, bool bSpendAmmo,
 	bool bAnonymous, IUnitMissionInfo *pTarget, bool bBackStab, bool bAdaptWeapon )
 {
@@ -919,7 +953,7 @@ bool CUnitMission::CreateAttack( vector<CAttackPortion> *pRes, bool bSpendAmmo,
 		if ( pWeapon->GetDBWeapon()->pWeaponType->bTwoHanded && !CanUseTwoHanded() )
 		{
 			// we currently cannot use a two-handed weapon
-			return true;
+			return false;
 		}
 		// retail @0x6c21cc/@0x6c221b (weapon-branch head): "+ N Ranged Dmg" (perk 26, flat add applied
 		// below when damage lands) and "Better critical chance" (perk 36, nCrtical x(Param1+1)).
@@ -932,8 +966,11 @@ bool CUnitMission::CreateAttack( vector<CAttackPortion> *pRes, bool bSpendAmmo,
 		if ( HasPerk( N_PERK_BETTER_CRIT_CHANCE, &fPerkCrit ) )
 			fCritChanceMult = fPerkCrit + 1.f;
 		//
+		const int nFirstPortion = pRes->size();
 		pWeapon->CreateNewAttackPortion( pRes, bSpendAmmo );
-		for ( int i = 0; i < pRes->size(); ++i )
+		if ( pRes->size() == nFirstPortion )
+			return false;
+		for ( int i = nFirstPortion; i < pRes->size(); ++i )
 		{
 			int nSnipeSkill = pRPGUnit->Skills( NDb::ST_SNIPE );
 			CAttackPortion &a = (*pRes)[i];
@@ -1180,6 +1217,9 @@ void CUnitMission::WearBrokenPK()
 CReceivedDmg CUnitMission::ProcessAttack( NWorld::IWorld *pWorld, int nUserID, CAttackPortion *pAttack,
 	NDb::CRPGArmor *pRealArmor )
 {
+	// Retail Steam 0x6c3e29..0x6c3e53 rejects the hit before damage or criticals.
+	if ( pRPGUnit->IsCheatEnabled( CHEAT_GODMODE ) )
+		return CReceivedDmg();
 	if ( GetRPGPers()->pPanzerklein ) // this is a PK on the zone and not on the pers, i.e. this pers is itself a PK
 	{
 		if ( !pPanzerklein )
@@ -1436,7 +1476,7 @@ EToHitType GetToHitType( const NWorld::CUnit *pAttacker )
 // CUnitServer*). Incidental bullets supply the retail night flag explicitly.
 int GetToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDistance, const CVec3 &ptAttacker,
 	const NAI::SPosition &posTarget, NAI::EHitLocation hl, int nExtraAP, const NWorld::CUnit *pTarget,
-	const vector<int> &accessibleHLs, int nHitCover, bool bFirstRound, const CVec3 &ptIllumination, bool bBackstab,
+	const vector<int> &accessibleHLs, float fHitCover, bool bFirstRound, const CVec3 &ptIllumination, bool bBackstab,
 	int nBullet, bool bNight )   // retail @0x2b4ae0: explicit burst index and night flag
 {
 	CDynamicCast<NWorld::CUnitServer> pUS( const_cast<NWorld::CUnit*>( pAttacker ) );
@@ -1453,20 +1493,22 @@ int GetToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDistance,
 	switch ( pMission->GetToHitWeaponType() )
 	{
 		case TH_THROWING:
-			pToHitCalcer = new CThrowKnifeUnitToHitCalcer( pUS, curPose, nDistance, ptAttacker, (float)nHitCover,
-				bFirstRound, bNight, ptIllumination, pUSTarget, hl, posTarget, nExtraAP, bBackstab );
+			pToHitCalcer = new CThrowKnifeUnitToHitCalcer( pUS, curPose, nDistance, ptAttacker, fHitCover,
+				bFirstRound, bNight, CVec3(1,1,1), pUSTarget, hl, posTarget, nExtraAP, bBackstab );
 			break;
 		case TH_MELEE:
+			if ( fHitCover <= 0 )
+				return 0;
 			return pMission->GetMeleeToHit( ptAttacker, posTarget, pTargetRPG, hl, accessibleHLs, bBackstab );
 		case TH_SHOOT:
 			pToHitCalcer = new CUnitToHitCalcer(
 				pUS, curPose, nDistance, ptAttacker,
-				posTarget, nExtraAP, pMission->GetSnipeAP( pTargetRPG ), (float)nHitCover,
+				posTarget, nExtraAP, pMission->GetSnipeAP( pTargetRPG ), fHitCover,
 				bFirstRound, bNight, ptIllumination, hl, pUSTarget, nBullet, bBackstab );
 			break;
 		case TH_RLAUNCHER:
 			pToHitCalcer = new CRLauncherToHitCalcer(
-				pUS, curPose, nDistance, ptAttacker, (float)nHitCover, nExtraAP,
+				pUS, curPose, nDistance, ptAttacker, fHitCover, nExtraAP,
 				bFirstRound, bNight, ptIllumination, CVec3(1,1,1) );
 			break;
 		default:
@@ -1548,8 +1590,17 @@ float CUnitMission::GetWeaponSkill( CObjectBase *pItem, int nExtraAP, int nBulle
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int GetTileToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDistance, const CVec3 &ptAttacker,
-	CVec3 ptTilePos, NAI::ETileHitLocation eHitLocation, int nExtraAP, int nHitCover, bool bFirstRound,
+	CVec3 ptTilePos, NAI::ETileHitLocation eHitLocation, int nExtraAP, float fHitCover, bool bFirstRound,
 	const CVec3 &ptIllumination, int nBullet )   // retail @0x2b4df0 param (see GetToHit)
+{
+	CDynamicCast<NWorld::CUnitServer> pUS( const_cast<NWorld::CUnit*>( pAttacker ) );
+	return GetTileToHit( pAttacker, curPose, nDistance, ptAttacker, ptTilePos, eHitLocation,
+		nExtraAP, fHitCover, bFirstRound, ptIllumination, nBullet, pUS->GetWorld()->GetGame()->IsNight() );
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+int GetTileToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDistance, const CVec3 &ptAttacker,
+	CVec3 ptTilePos, NAI::ETileHitLocation eHitLocation, int nExtraAP, float fHitCover, bool bFirstRound,
+	const CVec3 &ptIllumination, int nBullet, bool bNight )   // retail @0x2b4df0 param (see GetToHit)
 {
 	CDynamicCast<NWorld::CUnitServer> pUS( const_cast<NWorld::CUnit*>( pAttacker ) );
 	// retail RPGUnitGetTileToHit @0x2b4df0: same script-forced to-hit head gate as the unit-target
@@ -1557,13 +1608,12 @@ int GetTileToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDista
 	if ( pUS && pUS->GetScriptToHit() >= 0 )
 		return pUS->GetScriptToHit();
 	CUnitMission *pMission = CDynamicCast<CUnitMission>( pUS->GetUnitRPG() );
-	const bool bNight = pUS->GetWorld()->GetGame()->IsNight();
 	CPtr<IToHitCalcer> pToHitCalcer;
 	switch ( pMission->GetToHitWeaponType() )
 	{
 		case TH_THROWING:
 			// the release drops the tile knife calcer's hit-location (eHitLocation unused here).
-			pToHitCalcer = new CThrowKnifeTileToHitCalcer( pUS, curPose, nDistance, ptAttacker, (float)nHitCover,
+			pToHitCalcer = new CThrowKnifeTileToHitCalcer( pUS, curPose, nDistance, ptAttacker, fHitCover,
 				bFirstRound, bNight, ptIllumination, ptTilePos, nExtraAP );
 			break;
 		case TH_MELEE:
@@ -1572,20 +1622,15 @@ int GetTileToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDista
 			// cover walk lets anything through (`fucompp fHitCover, 0.0f` -> equal returns 0,
 			// otherwise returns 100). The previous `return 0` made every melee attack at
 			// ground/walls/objects a guaranteed miss and showed a constant 0% on the cursor.
-			// NOTE <= not ==: retail GetHitCover (@0x2b4390) returns exactly 0.0 for a fully
-			// blocked ray set, but the dev GetHitCover encodes that case as the -1 BLOCKED
-			// marker (consumed by CToHitCalcer::GetToHit's retail-faithful `fHitCover <= 0
-			// -> 0%` gate, @0x2b85e0), which must read as a miss here too -- otherwise melee
-			// through a wall would show 100%.
-			return nHitCover <= 0 ? 0 : 100;
+			return fHitCover <= 0 ? 0 : 100;
 		case TH_SHOOT:
 			pToHitCalcer = new CTileToHitCalcer(
-				pUS, curPose, nDistance, ptAttacker, nExtraAP, (float)nHitCover, bFirstRound,
+				pUS, curPose, nDistance, ptAttacker, nExtraAP, fHitCover, bFirstRound,
 				bNight, ptIllumination, ptTilePos, nBullet );
 			break;
 		case TH_RLAUNCHER:
 			pToHitCalcer = new CRLauncherToHitCalcer(
-				pUS, curPose, nDistance, ptAttacker, (float)nHitCover, nExtraAP, bFirstRound,
+				pUS, curPose, nDistance, ptAttacker, fHitCover, nExtraAP, bFirstRound,
 				bNight, ptIllumination, ptTilePos );
 			break;
 		default:
@@ -1638,7 +1683,7 @@ int GetGrenadeToHit( const NWorld::CUnit *pAttacker, NAI::EPose curPose, int nDi
 int CUnitMission::GetBulletsQuantityInShot() const
 {
 	EToHitType type = GetToHitWeaponType();
-	if ( type == TH_MELEE || type == TH_THROWING )
+	if ( type == TH_MELEE || type == TH_THROWING || type == TH_GRENADE )
 		return 1;
   CWeaponItem *pW = pRPGUnit->GetWeaponItem();
 	if ( !pW )
@@ -1661,7 +1706,7 @@ int CUnitMission::GetBulletsQuantityInShot() const
 			return 1;
 		case NDb::SM_ShortBurst:
 		case NDb::SM_LongBurst:
-			return pDBW->nRoF / 6;
+			return Max( 1, pDBW->nRoF / 6 );
 	}
 	return 1;
 }
@@ -1837,7 +1882,9 @@ int CUnitMission::CheckInterrupt( const IUnitMission *pEnemy, bool bIsMutual, bo
 	csRPG << CC_YELLOW << GetName() << CC_WHITE << " interrupt "<< CC_YELLOW << pEnemy->GetName() << CC_WHITE
 		  << " probability " << nProbability << "% Check:" << nCheck << endl;
 	UseSkill( NDb::ST_INTERRUPT );
-	return nProbability - nCheck;
+	if ( nCheck > nProbability )
+		return -1;
+	return pRPGUnit->Skills( NDb::ST_INTERRUPT );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUnitMission::Kill()
@@ -2033,10 +2080,12 @@ float CUnitMission::GetCriticalDmgModifier( NWorld::IWorld *pWorld, NAI::EHitLoc
 	if ( nCriticalProbability == 0 )
 		return 0;
 	static SRand rand;
-	if ( !bCBarInitialized )
+	if ( nCriticalBarVersion != CModManager::GetBaseVersion() )
 	{
+		nCriticalBarVersion = CModManager::GetBaseVersion();
+		for ( int i = 0; i < criticalBar.size(); ++i )
+			criticalBar[i].clear();
 		InitializeCriticals();
-		bCBarInitialized = true;
 	}
 	const int nRoll = rand.Get( 100 );
 	float fCriticalResist = pPanzerklein ? 1.f - pPanzerklein->fCriticalResist : 1.f;
@@ -2077,6 +2126,9 @@ float CUnitMission::GetCriticalDmgModifier( NWorld::IWorld *pWorld, NAI::EHitLoc
 	case NAI::HL_RHAND:
 	case NAI::HL_LHAND: fDamage *= 0.5f; break;
 	}
+	IUnitMissionForMedals *pMedals = dynamic_cast<IUnitMissionForMedals*>( pAttacker );
+	if ( pMedals )
+		pMedals->AddAttackToAttackSession( this, true, true );
 	ApplyCritical( pCritical, nSeverity );
 	return fDamage * fCriticalResist * fCriticalDamageMultiplier;
 }
@@ -2150,6 +2202,8 @@ float CUnitMission::HealCritical( const SHealCriticalInfo &info )
 		if ( c.eCritical == info.eCritical && c.eCl == info.eCl &&
 			( (*i)->CanBeSuspended() || c.eCritical == NDb::C_BLEEDING ) )
 		{
+			csRPG << "\tCured: \t";
+			DumpCritical( *i );
 			fHealed += c.nDC;
 			i = criticals.erase( i );
 		}
@@ -2185,7 +2239,10 @@ bool CUnitMission::LoadWeapon( IWeaponItemInfo *pWeapon, IClipItem *pClip )
 	if ( !pWeaponItem->CanLoad( pClip ) )
 		return false;
 
-	if ( pWeaponItem->HasAmmo() && !pWeaponItem->Unload( pRPGUnit->GetInventory() ) )
+	// Matching ammunition tops up the installed clip; only a color change unloads it.
+	if ( pWeaponItem->HasAmmo() &&
+		pWeaponItem->GetInnerClip()->GetDBAmmo()->color != pClip->GetDBAmmo()->color &&
+		!pWeaponItem->Unload( pRPGUnit->GetInventory() ) )
 		return false;
 
 	return pWeaponItem->Load( pClip );
@@ -2433,7 +2490,8 @@ void CUnitMission::DoRegenerations( NWorld::IWorld *pWorld, int *pnBleed )
 	fa.fdVP = pPanzerklein->fRegenerationValue;
 	fa.nMaxVP = N_MAX_VP;
 	HealVP( fa );
-	HealCriticals( N_MAX_DC );
+	// Retail Steam 0x6c4b61: regeneration does not bypass bleeding critical DC.
+	HealCriticals( N_MAX_DC, false );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CUnitMission::IsHero() const
@@ -2526,12 +2584,12 @@ IUnitMission* CreateUnit( CUnit *pSrc )
 // Variant for creating a monster
 // pInHandItem/pBackpack = the map builder's rolled loot (retail NRPG::CreateUnit @0x2c4f50 params
 // 4/5 from SMapUnit); they thread into the CUnit ctor and replace the pers-default equipment.
-IUnitMission* CreateUnit( NDb::CRPGPers *pSrc, NDb::CRPGItem *pInHandItem, NDb::CRPGChestReal *pBackpack )
+IUnitMission* CreateUnit( NDb::CRPGPers *pSrc, NDb::CRPGItem *pInHandItem, NDb::CRPGChestReal *pBackpack, NDb::CDBDifficulty *pDifficulty )
 {
 	static int nUnitN = 0;
 	CUnitMission *pRes = new CUnitMission();
 	// v1.2 0x6c5131: map-created units do not collect medals (mercenaries do).
-	pRes->pRPGUnit = new CUnit( pSrc, 0, false, 0, pInHandItem, pBackpack, true );
+	pRes->pRPGUnit = new CUnit( pSrc, 0, false, 0, pInHandItem, pBackpack, true, pDifficulty );
 	if ( IsValid( pSrc->pDefaultWearsPanzerklein ) )
 		pRes->GetRPGUnit()->pPanzerklein = pSrc->pDefaultWearsPanzerklein;
 	NStr::ToDotString( &pRes->sID, ++nUnitN );

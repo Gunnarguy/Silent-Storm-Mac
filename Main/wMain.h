@@ -61,6 +61,7 @@ namespace NDb
 	class CAISound;
 	struct SAISound;
 	class CDBAckSequence;
+	class CUIHint;
 	class CScript;
 	class CDBCamera;
 	class CRPGArmor;
@@ -573,6 +574,7 @@ public:
 	virtual void GetActiveUnits( IPlayer *pPlayer, list<CUnit*> *pRes );
 	virtual bool IsFirstTurn() const { return TTBSWorld::IsFirstTurn(); }
 	virtual bool IsInterrupt() const { return TTBSWorld::IsInterrupt(); }
+	virtual bool NeedShowInterrupt() const;
 	// retail CWorld::IsSequence @0x376ff0 -> CTBSWorld::IsSequence @0x375a30: "non-empty interrupt stack
 	// with an OWNERLESS top". luac_BeginSequence @0x2f1890 pushes that ownerless entry (StartSequence
 	// @0x375dd0), luaEndSequence @0x2f1a60 pops it (EndOfTurn) -- true for exactly the
@@ -605,6 +607,7 @@ public:
 	void AddUICommand( CUICmd* pCmd );
 	void ScriptWantTurnBased( bool bWant );   // retail @0x361c00 -- the WantTurnBased("b") script binding
 	void DelayGameStart( int bDelay );        // retail IWorld vtbl+0x1d8 -- script start control (c_StartGameEx(0)/c_DelayGameStartEx(1))
+	void AddUIHint( NDb::CUIHint *pHint );
 	void AddNextUIHint( bool bSilent );        // retail @0x368140 IWorld vtbl+0x118 -- advance the sequential-hint cursor (lua AddHints)
 	ETimeOfDay GetTimeOfDay();                // retail @0x361bb0 -- read the TOD marker from createFlags
 	void SetTimeOfDay( ETimeOfDay tod );      // retail @0x362b90 -- rewrite the TOD marker + re-light every object
@@ -613,7 +616,7 @@ public:
 	// pRPGGrenade and a live pRPGEngGrenade (contact-fused eng server, thrower's ENG skill).
 	CObjectBase *ThrowGrenade( const CVec3 &vFrom, const CVec3 &vSpeed, STime tThrow, float fTFly,
 		NDb::CModel *pModel, NDb::CRPGGrenade *pRPGGrenade, CUnitServer *pUnitServer,
-		NDb::CRPGEngGrenade *pRPGEngGrenade = 0 );
+		NDb::CRPGEngGrenade *pRPGEngGrenade = 0, const CQuat &rotation = QNULL );
 	CObjectBase *ThrowKnife( const NRPG::SAttackRayInfo &rayInfo, float fSpeed, STime tThrow, float fDistance,
 		NDb::CModel *pModel, NRPG::IInventoryItem *pIItem );
 	CObjectBase *LaunchRocket( const CVec3 &vFrom, const CVec3 &vSpeed,

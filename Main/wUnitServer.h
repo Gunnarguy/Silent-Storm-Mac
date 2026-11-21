@@ -178,6 +178,8 @@ private:
 	void CancelHeal();
 	
 public:
+	// Record stable support before an action can change the navigation grid.
+	void RememberSupportPosition();
 	int GetScriptToHit() const { return nScriptToHit; }			// UnitSetToHit override (-1 = none)
 	void SetScriptToHit( int n ) { nScriptToHit = n; }
 	bool IsWalkingWithoutWeapon() const { return bWalkWithoutWeapon; }
@@ -248,6 +250,9 @@ public:
 	virtual NRPG::IUnitMissionInfo* GetRPG() const;
 	virtual const NAI::SUnitPosition& GetPosition() const { return GetUnitPosition(); }
 	virtual NAI::SUnitPosition GetSetPosePosition() const { return GetUnitSetPosePosition(); }   // retail @0x3c6a00
+	// The expansion's executable 0x7c5f00: a matching preference is not enough if the current
+	// pose differs (for example, while a stance transition is still pending).
+	virtual bool NeedChangePose( NAI::EPose pose ) const { return pose != GetWishPose() || pose != GetPosition().GetPose(); }
 	virtual void GetRealPosition( CVec3 *pRes ) { GetRealUnitPosition( pRes ); }
 	virtual void AddVisitableChildren( vector<IVisObj*> *pRes ) { AddMiscObjects( pRes ); }
 	virtual bool GetCurrentCommandName( string *pName ) const;
@@ -274,6 +279,8 @@ public:
 	// The path-conflict remover of this unit's current executor (pExec -> IExecMove), or null.
 	// Used by CPathConflictsRemover::CheckLockerState to walk the who-locks-whom chain.
 	CPathConflictsRemover* GetPathConflictsRemover();
+	bool CanVacatePathTile(); // Running, affordable movement that is not waiting for a route.
+	bool IsWaitingForPath(); // Only the currently eligible movement can hold animation retirement.
 	// retail @0x3c32e0: takes the SAISound descriptor (record + tile type + silencer)
 	bool CanHearSound( const CVec3 &ptFrom, const NDb::SAISound &sound, CUnitServer *pWho );
 	void CallTimeLabel() { bCallTimeLabel = true; }

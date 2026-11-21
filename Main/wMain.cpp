@@ -4,6 +4,7 @@
 #include "InterfaceConst.h"
 #include "MapBuild.h"
 #include "wUnitServer.h"
+#include "wCheckTooMuchCorpses.h"
 #include "RPGGame.h"
 #include "RPGBullet.h"
 #include "RPGGlobal.h"
@@ -682,7 +683,7 @@ CUnitServer* CWorld::AddUnit( const NAI::SPathPlace &aiPos,	NRPG::IUnitMission *
 		NRPG::CUnit *pUnit = pUS->GetUnitRPG()->GetRPGUnit();
 		if ( pUnit->pPanzerklein )
 		{
-			CPtr<CUnitServer> pPKServer = AddUnit( pUS->GetPosition().pos.p, NRPG::CreateUnit( pUnit->pPanzerklein ), 0 );
+			CPtr<CUnitServer> pPKServer = AddUnit( pUS->GetPosition().pos.p, NRPG::CreateUnit( pUnit->pPanzerklein, 0, 0, pGlobalGame->pDifficulty ), 0 );
 			if ( pPKServer->WearAsPK( true ) )
 				pUS->FlipPanzerklein( pPKServer, false, false );	// retail @0x366510: no unload, no inventory link
 		}
@@ -1157,6 +1158,11 @@ void CWorld::UpdateVisible( bool bForce )
 		bCallUpdateVisible = true;
 		return;
 	}
+	// Retail 0x76741c: only scan after the ground grid has been constructed.
+	NAI::IPathNetwork *pNet = GetPathNetwork();
+	CVec3 ptMin, ptMax;
+	if ( pNet && pNet->GetNumLayers() > 0 && pNet->GetMinMaxPoint( &ptMin, &ptMax ) )
+		CheckTooMuchCorpses( ptMin, ptMax, units );
 	// retail @0x366c00: every completed visibility refresh derives the global sight multiplier and the
 	// RPG night flag from the world's time-of-day marker before asking any unit to update perception.
 	float fVisionMultiplier = 1.0f;
@@ -1525,7 +1531,7 @@ void CWorld::CreateAIUnits( const SMapInfo &mapInfo, const ClueToSlot &personClu
 		// hand the map builder's rolled chest loot (WeaponInHand/WeaponInBackpack rolls) to the
 		// unit factory -- retail CreateAIUnits passes the whole SMapUnit into NRPG::CreateUnit
 		// @0x2c4f50, which consumes +108/+112 as the in-hand item / backpack chest
-		CPtr<NRPG::IUnitMission> pRPG = NRPG::CreateUnit( i->pPers, i->pInHandItem, i->pBackpack );
+		CPtr<NRPG::IUnitMission> pRPG = NRPG::CreateUnit( i->pPers, i->pInHandItem, i->pBackpack, pGlobalGame->pDifficulty );
 		int nLevel = Max( 0, nMobsLevel + i->nRelativeLevel + pGlobalGame->pDifficulty->nAIUnitsLevel );
 		if ( !IsValid( i->pPers->pPanzerklein ) )
 		{
@@ -1558,12 +1564,13 @@ void CWorld::CreateAIUnits( const SMapInfo &mapInfo, const ClueToSlot &personClu
 			pRPG->GetRPGUnit()->CalcDeathVP( pGlobalGame->pDifficulty->fClueDeathCoeff );
 
 		ASSERT( IsValid( pUnitServer ) );
-		// create routes
-		if ( IsValid( pUnitServer ) && !pUnitServer->IsEmptyPK() )
+		// Retail v1.1 CreateUnitAI 0x433b40: only AI-controlled map units
+		// receive routes and reactions; human/sequence units keep their own control.
+		if ( IsValid( pUnitServer ) && pUnitServer->IsAIUnit() && !pUnitServer->IsEmptyPK() )
 		{
 			// CAITaskCommander removal: the map-deploy route glue is now the free NAI::CreateUnitRoute
 			// @0x96d20, which resolves the AI commander + unit itself and installs a per-unit CAIRouteLogic
-			// (a routeless UL_DEFAULT unit gets nothing).
+			// (routeless units receive the default stand/return/wait route).
 			NAI::CreateUnitRoute( pUnitServer, i );
 			// AI-convergence Stage 2 (the reaction cliff fix): install the map-prescribed per-unit reaction
 			// (NAI::CreateUnitReaction @0x919d0 -- UL_EMPTY->guard, UL_DEFAULT/UL_ROAMING->normal, UL_FEAR->
@@ -2485,6 +2492,19 @@ void CWorld::ScriptWantTurnBased( bool bWant )
 	WantTurnBased( pls.back() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Retail Steam 0x7688a0: item-specific hints are shown once without advancing the book sequence.
+void CWorld::AddUIHint( NDb::CUIHint *pHint )
+{
+	NRPG::CGlobalGame *pGlobalGame = GetGlobalGame();
+	if ( !IsValid( pHint ) || !IsValid( pGlobalGame ) )
+		return;
+	for ( int i = 0; i < pGlobalGame->hintsSet.size(); ++i )
+		if ( pGlobalGame->hintsSet[i].GetPtr() == pHint )
+			return;
+	pGlobalGame->hintsSet.push_back( pHint );
+	AddUICommand( new CUICmdShowHint( pHint ) );
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // LUA convergence (hint machinery): retail NWorld::CWorld::AddNextUIHint @0x368140 (IWorld vtbl+0x118).
 // Walk the CUIHint table and pick the not-yet-shown hint with the smallest nSequenceID strictly greater
 // than the global game's cursor (nHintSequenceID); advance the cursor onto it and remember it in hintsSet.
@@ -3008,8 +3028,10 @@ CObjectBase *CWorld::PerformRangedAttack( const NRPG::CAttackPortion &ap, const 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CObjectBase *CWorld::ThrowGrenade( const CVec3 &vFrom, const CVec3 &vSpeed, STime tThrow,
 	float fTFly, NDb::CModel *pModel, NDb::CRPGGrenade *pRPGGrenade, CUnitServer *pUnitServer,
-	NDb::CRPGEngGrenade *pRPGEngGrenade )
+	NDb::CRPGEngGrenade *pRPGEngGrenade, const CQuat &rotation )
 {
+	if ( !IsValid( pModel ) || !IsValid( pModel->pGeometry ) )
+		return 0;
 	// retail @0x764140: a valid regular record flies as the timed grenade; otherwise a valid
 	// engineer record flies as the contact-fused eng grenade, carrying the thrower's
 	// ENGINEERING skill for the explosion (read here, at throw time).
@@ -3017,7 +3039,7 @@ CObjectBase *CWorld::ThrowGrenade( const CVec3 &vFrom, const CVec3 &vSpeed, STim
 	if ( IsValid( pRPGGrenade ) )
 	{
 		pBullet = CreateGrenadeServer( this, vFrom, vSpeed, tThrow,
-			fTFly, pModel, pRPGGrenade, pUnitServer );
+			fTFly, pModel, pRPGGrenade, pUnitServer, rotation );
 	}
 	else if ( IsValid( pRPGEngGrenade ) )
 	{
@@ -3025,7 +3047,7 @@ CObjectBase *CWorld::ThrowGrenade( const CVec3 &vFrom, const CVec3 &vSpeed, STim
 		if ( IsValid( pUnitServer ) )
 			nEngSkill = pUnitServer->GetUnitRPG()->GetRPGUnit()->Skills( NDb::ST_ENGINEERING );
 		pBullet = CreateGrenadeServer( this, vFrom, vSpeed, tThrow,
-			fTFly, pModel, pRPGEngGrenade, pUnitServer, nEngSkill );
+			fTFly, pModel, pRPGEngGrenade, pUnitServer, nEngSkill, rotation );
 	}
 	if ( pBullet )
 		miscObjects.push_back( pBullet );
@@ -3045,6 +3067,8 @@ CObjectBase *CWorld::LaunchRocket( const CVec3 &vFrom, const CVec3 &vSpeed,
 		STime tThrow, float fDistance, NDb::CModel *pModel, NRPG::CAttackPortion &attack, 
 		NRPG::IClipItem *pRocket, CUnitServer *pIgnored, NDb::CEffect *pEffect   )
 {
+	if ( !IsValid( pRocket ) || !IsValid( pModel ) || !IsValid( pModel->pGeometry ) )
+		return 0;
 	IDynamicObject *pBullet = CreateRocketServer( this, vFrom, vSpeed, tThrow,
 		fDistance, pModel, attack, pRocket, pIgnored, pEffect );
 	miscObjects.push_back( pBullet );
@@ -3120,16 +3144,12 @@ void CWorld::AddGrenadeExplosion( const CVec3 &vStartPosition, NDb::CRPGGrenade 
 	//AttachMiscObject( new CDFlash( vStartPosition + CVec3(0,0,5), CVec3(1,1,1), 10, 3 ) );
 	if ( pRPGGrenade->pSound.p[ nSoundType ] )
 		MakeSound( vStartPosition, pRPGGrenade->pSound.p[ nSoundType ]->GetSound( &rnd )->pSound );
-	// retail @0x364610: the blast is ENQUEUED into the explosion master (IExplosionMaster vtbl+0x14)
-	// with an already-FILLED modifiers struct -- a pre-placed source (mine / trapped door) passes the
-	// PLACER's stored modifiers via pMods (the placer may be gone by detonation); a live thrower's
-	// explosive perks are Filled HERE (W5: moved from the dev tracker ctor -- retail's ctor @0x356ff0
-	// receives the struct filled).
+	// Retail callers supply finalized modifiers: placed mines retain their stored
+	// values; unattributed and rocket-impact blasts use neutral defaults.
 	SPerkMineModifiers sModifiers;
 	if ( pMods )
 		sModifiers = *pMods;
-	if ( IsValid( pUnitServer ) )
-		sModifiers.Fill( pUnitServer->GetRPG()->GetRPGUnit() );
+
 	if ( IsValid( pExplosionMaster ) )
 		pExplosionMaster->AddExplosion( vStartPosition, pIgnitionObject, pRPGGrenade, pUnitServer, sModifiers );
 	// retail tail @0x764739..0x764898: the camera-shake event (gated on game_eq_on_grenades,
@@ -3164,13 +3184,11 @@ void CWorld::AddGrenadeExplosion( const CVec3 &vStartPosition, NDb::CRPGEngGrena
 		CreateParticle( vStartPosition, CQuat(random.GetFloat(0,10000),CVec3(0,0,1)), pRPGEngGrenade->pEffect.p[ nEffectType ]->GetEffect( &rnd ) );
 	if ( pRPGEngGrenade->pSound.p[ nSoundType ] )
 		MakeSound( vStartPosition, pRPGEngGrenade->pSound.p[ nSoundType ]->GetSound( &rnd )->pSound );
-	// retail @0x3648c0: enqueue into the explosion master (IExplosionMaster vtbl+0x10, the ENG
-	// overload) with the modifiers Filled here like the regular overload (W5).
+	// Engineer explosions also retain the caller-provided modifiers.
 	SPerkMineModifiers sModifiers;
 	if ( pMods )
 		sModifiers = *pMods;
-	if ( IsValid( pUnitServer ) )
-		sModifiers.Fill( pUnitServer->GetRPG()->GetRPGUnit() );
+
 	if ( IsValid( pExplosionMaster ) )
 		pExplosionMaster->AddExplosion( vStartPosition, pIgnitionObject, pRPGEngGrenade, pUnitServer, sModifiers, nEngSkill );
 	// retail tail @0x7649ee..0x764b4d: byte-for-byte the regular overload's shape, off the eng record
@@ -3336,21 +3354,8 @@ void CWorld::CheckSpot( const vector< CPtr<CPlayer> > &players )
 				for ( typename vector< CPtr<CUnit> >::iterator e = enemies.begin(); e != enemies.end(); ++e )
 				{
 					CDynamicCast<CUnitServer> pEnemyUS( e->GetPtr() );
-					if ( IsValid( pEnemyUS ) && pEnemyUS->GetDiplomacyState( (*u) ) == NDb::DS_ENEMY &&
-						pEnemyUS->CanFight() && GetGame()->CheckVisibility( pEnemyUS, *u, true ) )
-					{
-						float fDistance = fabs( pEnemyUS->GetPosition().GetCP() - (*u)->GetPosition().GetCP() ) / FP_GRID_STEP;
-						int nProbability = pEnemyUS->GetUnitRPG()->GetUnhideProbability( (*u)->GetUnitRPG(), fDistance,
-							GetGame()->IsNight() );
-						int nCheck = random.Get( 0,100 );
-						if ( nCheck < nProbability )
-						{
-							csSystem << CC_RED << 
-								"Hiding unit detected: probability = " << nProbability << ", check = " << nCheck << endl;
-							(*u)->Hide( false );
-							bUpdate = true;
-						}
-					}
+					if ( IsValid( pEnemyUS ) && pEnemyUS->CheckSpot( *u ) )
+						bUpdate = true;
 					//
 					if ( !(*u)->GetUnitRPG()->IsHiding() )
 						break;
@@ -3394,6 +3399,13 @@ void CWorld::OnPassControlNotify( CPlayer *pPlayer )
 	GetPlayersList( &players );
 	for ( int k = 0; k < players.size(); ++k )
 		players[k]->GetCommander()->OnPassControl( pPlayer );
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+bool CWorld::NeedShowInterrupt() const
+{
+	// Retail v1.1 0x762140: hide an AI interrupt until its first command.
+	CPlayer *pPlayer = GetTBSCurrentPlayer();
+	return !IsValid( pPlayer ) || !NAI::IsAIPlayer( pPlayer ) || HasCommandFromCurrentPlayer();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CWorld::ProcessTBSEvents()

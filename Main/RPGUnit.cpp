@@ -78,10 +78,39 @@ void CSkilledObject::AddXP( float fXPToAdd )
 	UpdateSkills();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Retail Steam 0x6bc7d0: initialize empty cells, derive bases, then apply explicit persona values.
+void CSkilledObject::InitSkills( const NDb::SRPGSkills &base, const NDb::SRPGSkills &caps, float fBaseXP )
+{
+	fXP = 0;
+	skills.resize( NDb::SKILL_TYPE_NUMBERS );
+	cap.resize( NDb::SKILL_TYPE_NUMBERS );
+	for ( int i = 0; i < NDb::SKILL_TYPE_NUMBERS; ++i )
+	{
+		cap[i] = caps.skills[i];
+		skills[i] = new CDynamicSkill( base.skills[i] );
+		if ( i != NDb::ST_VP && i != NDb::ST_AP )
+		{
+			Skills(i).FreezeToMax( true );
+			Skills(i).Update();
+		}
+	}
+	for ( int i = NDb::ST_STR; i < NDb::SKILL_TYPE_NUMBERS; ++i )
+		Skills(i).SetNewBaseValue( base.skills[i] );
+	AddXP( fBaseXP );
+	UpdateSkills();
+	for ( int i = 0; i < NDb::ST_STR; ++i )
+	{
+		if ( base.skills[i] == 0 )
+			Skills(i).SetXPPart( GetSkillByCap( cap[i], fXP ) );
+		else
+			Skills(i).SetXPPart( base.skills[i] - int( Skills(i) ) );
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // CDynamicSkill (retail modifier-list model; RPGUnit.obj)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// x87 round-to-nearest for the skill math (retail Update/Upgrade fistp under the default CW).
-static inline int SkillRound( float f ) { return int( f + ( f < 0 ? -0.5f : 0.5f ) ); }
+// x87 round-to-nearest for the skill math (retail Update fistp under the default CW).
+static inline int SkillRound( float f ) { return Float2Int( f ); }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // retail @0x2bbb20: recompute the cap from base+XP and every live modifier, sweeping dead
 // (released) modifier entries out of the weak list, then clamp the live value DOWN to the cap.
@@ -180,11 +209,11 @@ bool CDynamicSkill::Upgrade( float fAddToProgress, float fCap )
 	return false;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// retail CWorld::CreateAIUnits @0x36b2b0 (inline): cap = ROUND(current * coeff); live value
+// Retail Steam CWorld::CreateAIUnits 0x76bf3b/0x76bfac: truncate current * coeff; live value
 // clamped to the new cap (a direct write past Update -- faithful to the retail flow).
 void CDynamicSkill::ScaleForDifficulty( float fCoeff )
 {
-	int nScaled = SkillRound( float( int( *this ) ) * fCoeff );
+	int nScaled = int( float( int( *this ) ) * fCoeff );
 	nMaxValue = nScaled;
 	if ( nValue < nScaled )
 		nScaled = nValue;
@@ -229,7 +258,7 @@ float CUnit::GetXPForSkill( NDb::ESkillType eSkill, int nLvl )
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CUnit::CUnit( NDb::CRPGPers *_pPers, NDb::CComplexHead *_pHead, bool _bHero, NDb::CModel *_pOverrideModel,
-	NDb::CRPGItem *_pInHandItem, NDb::CRPGChestReal *_pBackpack, bool bMedalsDisabled ):
+	NDb::CRPGItem *_pInHandItem, NDb::CRPGChestReal *_pBackpack, bool bMedalsDisabled, NDb::CDBDifficulty *pDifficulty ):
 	CMedalsGainer( _pPers, bMedalsDisabled ), pPers( _pPers ), nHealedVP( 0 ), nCheats( 0 ),
 	nDeathVP( 0 ), bUnconscious( false ), bHero( _bHero ),
 	fAdaptationCounter( 0 ), fCurrentAdaptation( 0 ), nVoice( 0 )
@@ -259,17 +288,10 @@ CUnit::CUnit( NDb::CRPGPers *_pPers, NDb::CComplexHead *_pHead, bool _bHero, NDb
 	pPerksTree = IsValid( pPers->pClass ) ? CreatePerksTree( pPers->pClass->nPerkTreeID ) : 0;
 	pInventory = CreateInventory(this);
 	NDb::CRPGBaseValue &baseValues = *pPers->pBaseValue;
-	skills[NDb::ST_STR] = new CDynamicSkill( baseValues.skills[NDb::ST_STR], baseValues.skills[NDb::ST_STR] );
-	skills[NDb::ST_DEX] = new CDynamicSkill( baseValues.skills[NDb::ST_DEX], baseValues.skills[NDb::ST_DEX] );
-	skills[NDb::ST_INT] = new CDynamicSkill( baseValues.skills[NDb::ST_INT], baseValues.skills[NDb::ST_INT] );
-	fXP = baseValues.nBaseXP;
 
 	pClass = pPers->pClass;
 	pUniform = pPers->pUniform;                    // release-new (CUnit::pUniform)
 	pBiography = pPers->pBiography;                // retail CUnit::CUnit @0x2bc980: seed the unit's bio from the persona record
-	if ( IsValid( pClass ) )                        // cap stays 0 (resize default) for a classless persona
-		for ( int iCap = 0; iCap < NDb::SKILL_TYPE_NUMBERS; ++iCap )
-			cap[iCap] = pClass->skills[iCap];      // CSkilledObject::cap from the class caps
 	// retail CUnit::CUnit @0x2bc980: the merc's voice is the GENDER-DEFAULT, not pPers->nVoice -- the ctor sets
 	// nVoice=0 then +3 for a female persona (i.e. SetVoice(0) == 0 male / 3 female), and never reads pPers->nVoice
 	// (@0xb0/176). The old SetVoice(pPers->nVoice) DOUBLE-counted the female +3 for any persona whose DB "Voice"
@@ -329,6 +351,8 @@ CUnit::CUnit( NDb::CRPGPers *_pPers, NDb::CComplexHead *_pHead, bool _bHero, NDb
 		{
 			if ( !IsValid( it->pItem ) || !IsValid( it->pItem->pSuccessor ) )
 				continue;
+			if ( it->pDifficulty && it->pDifficulty != pDifficulty )
+				continue;
 			for ( int i = 0; i < it->nQuantity; ++i )
 			{
 				CPtr<NRPG::IInventoryItem> pItem = CreateItem( it->pItem->pSuccessor );
@@ -341,6 +365,8 @@ CUnit::CUnit( NDb::CRPGPers *_pPers, NDb::CComplexHead *_pHead, bool _bHero, NDb
 	for ( typename vector<NDb::SItemAssign>::const_iterator it = pPers->items.begin(); it != pPers->items.end(); ++it )
 	{
 		const NDb::SItemAssign &assign = *it;
+		if ( assign.pDifficulty && assign.pDifficulty != pDifficulty )
+			continue;
 		for( int i = 0; i < assign.nQuantity; ++i )
 		{
 			if ( IsValid( assign.pItem ) )
@@ -363,28 +389,8 @@ CUnit::CUnit( NDb::CRPGPers *_pPers, NDb::CComplexHead *_pHead, bool _bHero, NDb
 		}
 	}
 
-	for ( int i = 0; i < NDb::ST_STR; ++i )
-		skills[i] = new CDynamicSkill( baseValues.skills.skills[i], GetSkillBaseStatValue( NDb::ESkillType(i) ) );
-	// Retail v1.2 InitSkills 0x6bc8a8: only VP/AP retain an expendable current value.
-	for ( int i = 0; i < NDb::SKILL_TYPE_NUMBERS; ++i )
-	{
-		if ( i != NDb::ST_VP && i != NDb::ST_AP )
-		{
-			Skills(i).FreezeToMax( true );
-			Skills(i).Update();
-		}
-	}
-	if ( pClass )
-	{
-		for ( int i = NDb::ST_MELEE; i < NDb::ST_STR; ++i )
-		{
-			if ( baseValues.skills.skills[i] == 0 )
-			{
-				Skills(i).SetXPPart( GetSkillCap( NDb::ESkillType(i), fXP ) );
-				Skills(i).Reset();
-			}
-		}
-	}
+	NDb::SRPGSkills emptyCaps;
+	InitSkills( baseValues.skills, IsValid( pClass ) ? pClass->skills : emptyCaps, baseValues.nBaseXP );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // GetName/SetName now live on the CNamedObject base (inline). GetRPGPersID reads the persona

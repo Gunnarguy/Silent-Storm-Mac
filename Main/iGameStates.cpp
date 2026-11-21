@@ -2,6 +2,7 @@
 #include "Gfx.h"
 #include "wInterface.h"
 #include "aiJob.h"
+#include "aiPath.h"
 #include "wMisc.h"			// NWorld::GetDMeshUnit/GetDMeshPos -- heard-noise-marker attack target
 #include "GView.h"
 #include "Sound.h"
@@ -171,6 +172,8 @@ void ShowError( IMission *pMission, NWorld::EUnitCommandResult eResult )
 	case NWorld::UCR_NOT_ENOUGH_AP: nStringID = 18853; break;
 	case NWorld::UCR_PATH_NOT_FOUND:
 		nStringID = pMission->GetWorld()->GetAIJobManager()->HasPassCalcerJobs() ? 21061 : 18844;
+		if ( nStringID == 21061 )
+			pMission->RequestPathCalculationNotification();
 		break;
 	case NWorld::UCR_NEED_RELOAD: nStringID = 18846; break;
 	case NWorld::UCR_NO_EQUIPMENT: nStringID = 18847; break;
@@ -294,6 +297,13 @@ bool CStateWait::Initialize( IMission *pMission )
 	CStateBase::Initialize( pMission );
 	// v1.2 0x5d7d60: GameStep explicitly installs this state while not ready.
 	return true;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Retail v1.1 0x5d5970 / v1.2 0x5d6390: release the temporary wait state when ready.
+void CStateWait::Step()
+{
+	if ( GetMission()->IsReady() )
+		GetMission()->ResetState();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 NUI::SCursorInfo CStateWait::GetCursorInfo() const
@@ -2195,9 +2205,6 @@ NWorld::CCmd* CStateFirstAid::GetTargetCmd()
 	if ( !IsValid( pUnit ) )
 		return 0;
 
-	if ( pUnit->GetPlayer() != GetMission()->GetActivePlayer()->GetPlayer() )
-		return 0;
-
 	return new NWorld::CCmdHeal( pUnit );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2252,9 +2259,24 @@ bool CStatePose::Initialize( IMission *pMission )
 	pMission->GetSelectedUnits( &unitsSet );
 	for ( typename vector< CPtr<NGame::IUnitTracker> >::iterator iTemp = unitsSet.begin(); iTemp != unitsSet.end(); iTemp++ )
 	{
+		// The expansion's executable 0x4b87e8..0x4b87ff skips both commands when the requested
+		// and current poses already match, in realtime and turn-based play alike.
+		if ( !(*iTemp)->GetUnit()->NeedChangePose( ePose ) )
+			continue;
 		// retail @0x1db700 anchors the re-path on GetSetPosePosition (CUnit vtbl+0x48), NOT GetPosition:
 		// a moving unit re-paths from the tile it is stepping INTO, not backwards to the one it left.
 		NAI::SUnitPosition uPos = (*iTemp)->GetUnit()->GetSetPosePosition();
+		// The expansion's executable CStatePose::Initialize (0x4b8821..0x4b890b): a realtime
+		// stance change keeps the moving unit's destination. Rebuild the route
+		// for the new pose through the ordinary path/AP/interrupt handling.
+		if ( pMission->IsRealTime() && (*iTemp)->GetUnit()->IsMoving() )
+		{
+			CObj<NAI::CPath> pPath( (*iTemp)->GetUnit()->GetCurrentPath() );
+			// The final travel command has no preview path. Keep its next-step
+			// anchor: the tracker's fallback is still the tile we are leaving.
+			if ( IsValid( pPath ) && !pPath->points.empty() )
+				uPos.pos.p = pPath->points.back();
+		}
 		uPos.SetPose( ePose );
 		pMission->Command( (*iTemp)->GetUnit(), new NWorld::CCmdWishPose( ePose ) );
 		pMission->Command( (*iTemp)->GetUnit(), new NWorld::CCmdPath( uPos.pos, NAI::PF_USE_POSEDIR ) );

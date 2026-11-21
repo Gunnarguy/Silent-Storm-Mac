@@ -400,7 +400,18 @@ void CVoxelExpl::ApplyWaveDamage()
 									FillAttackModifiers( &att, pTracker->sMineModifiers );
 								pAtt->ProcessAttack( pWorld, o.nUserID, &att, di.rDir.ptDir, o.pArmor );
 								if ( ( !IsValid( pThrower ) || pUS->GetPlayer() != pThrower->GetPlayer() ) && ( !IsValid(pUS) || pUS->GetUnitRPG()->IsDead() ) )
-									++nEnemyUnitsKilled;
+								{
+									// Retail Steam 0x7567a3: only witnessed kills count for the ack.
+									bool bSeen = true;
+									if ( IsValid( pThrower ) )
+									{
+										list< CPtr<CUnit> > visible;
+										pThrower->GetPlayer()->GetVisible( &visible );
+										bSeen = find( visible.begin(), visible.end(), static_cast<CUnit*>(pUS.GetPtr()) ) != visible.end();
+									}
+									if ( bSeen )
+										++nEnemyUnitsKilled;
+								}
 							}
 						}
 						// retail @0x355ba0: on the FIRST ring (nCurrentWave == 0, retail 0-based) the blast pushes
@@ -487,11 +498,11 @@ void CVoxelExpl::GetTouchedObjects( vector<CVec3> *pRes )
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // retail GetVolume (inlined @0x3562c0 as radius*3.125 == FP_GRID_STEP/F_VOXEL_SIZE, then
-// ROUND(4/3 * pi * r^3) -- Float2Int is the same fistp round-to-nearest)
+// truncate(4/3 * pi * r^3), with the retail double-precision coefficient)
 int CVoxelExpl::GetVolume( float fRadius )
 {
 	float fRealRadius = fRadius * FP_GRID_STEP / F_VOXEL_SIZE;
-	return Float2Int( 4.f / 3.f * PI * fRealRadius * fRealRadius * fRealRadius );
+	return int( double(fRealRadius) * fRealRadius * fRealRadius * (4.0 / 3.0 * PI) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CVoxelExplTracker

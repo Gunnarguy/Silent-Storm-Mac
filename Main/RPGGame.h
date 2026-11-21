@@ -5,6 +5,7 @@
 #endif // _MSC_VER > 1000
 #include "../DBFormat/DataFormat.h"
 #include "../DBFormat/DataRPG.h"
+#include "wTSFlags.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NAI
 {
@@ -20,6 +21,7 @@ namespace NAI
 namespace NWorld
 {
 	class CUnit;
+	class CUnitServer;
 }
 namespace NBuilding
 {
@@ -27,6 +29,7 @@ namespace NBuilding
 }
 namespace NDb
 {
+	class CDBDifficulty;
 	class CRPGChestReal;	// rolled chest loot (DataChest.h)
 }
 struct STerrainInfo;
@@ -97,9 +100,11 @@ public:
 	// while firing keeps the full trail geometry beyond the target.
 	virtual CCoverInfo* CalcCovers( const CVec3 &src, const CAttackPortion &attack, 
 		NWorld::CUnit *pIgnore, CObjectBase *pDest, int nTargetUserID, float fMinClearDistance,
-		bool bAIMode = false, float fTraceDistance = 30.f ) = 0;
+		bool bAIMode = false, float fTraceDistance = 0.f,
+		int nTraceFlags = NWorld::TS_COVER | NWorld::TS_ITEM_BLOCKER ) = 0;
 	virtual CCoverInfo* CalcCoversForTile( const CVec3 &src, const CAttackPortion &attack, NWorld::CUnit *pIgnore,
-	const CVec3 &ptTarget, float fMinClearDistance ) = 0;
+	const CVec3 &ptTarget, float fMinClearDistance, float fTraceDistance = 0.f,
+		int nTraceFlags = NWorld::TS_COVER | NWorld::TS_ITEM_BLOCKER ) = 0;
 	virtual void ProcessMeleeAttackPortion( const CAttackPortion &a, const CRay &ray, const vector<IAttackable*> &ignores ) = 0;
 	// retail keeps the per-attack range cap on SAttackRayInfo.fMaxRange (TraceLooseRaySegment @0x292010
 	// gates fEnter/fExit on it and places the terminal trail point at origin+dir*fMaxRange); this tree's
@@ -155,7 +160,7 @@ public:
 	// nPoses - bit mask, 1-lay, 2-croach, 4-stand
 	virtual void GetVisibleFromArea( vector<SVisibilitySpot> *pRes, const NWorld::CUnit *pTarget, CVec3 &vNear, float fRadius, int nPoses = 7 ) = 0;
 	virtual float GetCoverForAIUnit( CVec3 ptFrom, NWorld::CUnit *pIgnore,
-		NWorld::CUnit *pTarget, const NRPG::CAttackPortion &AttackPortion, NAI::EHitLocation HitLocation ) = 0;
+		NWorld::CUnit *pTarget, const NRPG::CAttackPortion &AttackPortion, NAI::EHitLocation HitLocation, float fMinClearDistance ) = 0;
 
 	virtual CVec3 GetIllumination( const vector<CVec3> &unit ) = 0;
 	virtual IVisionTracker* GetVisionTracker() = 0;
@@ -171,13 +176,16 @@ public:
 IUnitMission* CreateUnit( CUnit *pSrc );
 // pInHandItem/pBackpack = rolled chest-loot equipment (retail @0x2c4f50 params 4/5, from
 // SMapUnit); null = pers defaults
-IUnitMission* CreateUnit( NDb::CRPGPers *pSrc, NDb::CRPGItem *pInHandItem = 0, NDb::CRPGChestReal *pBackpack = 0 );
+IUnitMission* CreateUnit( NDb::CRPGPers *pSrc, NDb::CRPGItem *pInHandItem = 0, NDb::CRPGChestReal *pBackpack = 0, NDb::CDBDifficulty *pDifficulty = 0 );
 IObject* CreateObject( int nStages, NDb::CModel *pModel, int nStartStage = 0 ); // pModel - for counting the object's hits
 IObject* CreateObject( NDb::CObject *pDBObject, int nStartStage = 0 );
 CObjectBase* CreateBuilding( NBuilding::CBuildingGrid *pGrid );
 NDb::CRPGArmor* GetTerrainArmor();
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CanShoot( CCoverInfo *pCover );
+class IWeaponItem;
+bool CanShootRocketSafely( NWorld::CUnitServer *pUS, const NAI::SUnitPosition &from,
+	const CVec3 &ptTarget, IWeaponItem *pWeapon );
 bool PeekRayForRocket( CCoverInfo *pCover, CRay *pRes, bool bHit );
 bool PeekRay( CCoverInfo *pCover, CRay *pRes, float fHit, bool *bIsMiss, bool bStickTo_pRes = false );
 // retail @0x2b5220/@0x2b53d0: the check fns carry the burst bullet index (default 0 -- one-shot

@@ -229,6 +229,11 @@ class CExecMove: public CPathConflictsRemover
 	ENeedActiveItem eNeedActive;   // release-new (tag 14): the path's active-item constraint, kept saved
 	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CPathConflictsRemover*)this); f.Add(2,&commandsQueue); f.Add(3,&pCurCmd); f.Add(4,&bLastCommand); f.Add(5,&result); f.Add(10,&desired); f.Add(11,&eParams); f.Add(12,&pathActions); f.Add(13,&bCheckCanRotate); f.Add(14,&eNeedActive); return 0; }
 
+	// Transient: identifies commands replaced during collision callbacks.
+	unsigned nPathRevision = 0;
+	// Transient: reroutes in a row that still start on a blocked step.
+	int nBlockedReroutes = 0;
+
 	void DoGameMove( const NAI::SUnitPosition &dst );
 	void CheckDoors( const NAI::SUnitPosition &dst );
 	NRPG::EAction GetAction( const NAI::SUnitPosition &dst ) const
@@ -250,15 +255,75 @@ class CExecMove: public CPathConflictsRemover
 
 	bool TestSingleGameMove( CCmdTravel *pCmd )
 	{
-		if ( !CanDoMove(pCmd) )
+		unsigned nRevision = nPathRevision;
+		bool bCanMove = CanDoMove( pCmd );
+		if (!IsValid(this))
 			return false;
-		if ( !HaveEnoughAP( pCmd->pos ) )
+		// A successful reroute clears bWaiting, but does not authorize the
+		// old destination. Neither execute nor requeue that obsolete command.
+		if (nRevision != nPathRevision)
 		{
-			StopAction();
-			//commandsQueue.push_front( pCmd );
+			// Retail still runs the interrupted command after a reroute. That is
+			// unsafe for a step to another place (a ledge drop onto a landing that
+			// became occupied), but harmless for a pose change or turn on the
+			// unit's own place -- and required: a crouched squad packed together
+			// can only stand up this way before walking off its new route.
+			if (bCanMove && IsInPlace(pCmd) && HaveEnoughAP(pCmd->pos))
+			{
+				nBlockedReroutes = 0;
+				return true;
+			}
+			ParkIfRerouteBlocked();
 			return false;
 		}
-		return true;
+		if ( bCanMove && !HaveEnoughAP( pCmd->pos ) )
+		{
+			StopAction();
+			bCanMove = false;
+		}
+		if ( !bCanMove )
+			commandsQueue.push_front( pCmd );
+		else
+			nBlockedReroutes = 0;
+		return bCanMove;
+	}
+
+	bool IsInPlace(CCmdTravel * pCmd) const
+	{
+		const NAI::SPathPlace & cur = pUS->GetPosition().pos.p, &dst = pCmd->pos.pos.p;
+		return cur.GetX() == dst.GetX() && cur.GetY() == dst.GetY() && cur.GetLayer() == dst.GetLayer();
+	}
+	
+	// A reroute whose first step is free continues at once (the next Segment
+	// iteration runs it). If the new route still starts on a blocked cell --
+	// e.g. the locker is a moving unit, which FindPath does not treat as an
+	// obstacle -- park on that step. Otherwise CUnitServer::Segment sees
+	// neither an animation nor a wait and re-enters DoCommand -> reroute
+	// until the nDoNotFreeze guard. Cancel leaves only an ender queued and
+	// FullCancel empties the queue, so neither is parked.
+	// A wait on a locker that cannot step aside (e.g. a ledge drop whose
+	// landing and retreat are both taken) never ends: after a few attempts
+	// give the order up like the no-route case, returning control to the
+	// player/AI.
+	void ParkIfRerouteBlocked()
+	{
+		if (GetState() != RUNNING || commandsQueue.empty())
+			return;
+		CDynamicCast<CCmdTravel> pNext(commandsQueue.front());
+		if (!pNext || pUS->CanDoGameMove(pNext->pos) == CMR_YES)
+			return;
+		CObjectBase * pLocker = pUS->GetWorld()->GetPathNetwork()->GetWhoLocksThisPlace(pNext->pos.pos.p);
+		CDynamicCast<CUnitServer> pWho(pLocker);
+		bool bLockerCanMove = IsValid(pWho) && pWho.GetPtr() != pUS && pWho->GetPathConflictsRemover() != 0;
+		if (++nBlockedReroutes >= (bLockerCanMove ? 10 : 3))
+		{
+			FullCancel();
+			return;
+		}
+		bWaiting = true;
+		posToWait = pNext->pos;
+		if (nTimeToWait <= 0)
+			nTimeToWait = 10;
 	}
 
 	bool TestNextGameMove( CCmdTravel *pCmd )
@@ -376,7 +441,8 @@ bool CPathConflictsRemover::CheckCanDoMove( NAI::SUnitPosition *reqPos )
 	if ( bWaiting )
 		return false;
 	bAfterWaiting = true;
-	pUS->animator.PlaceUnit( pUS->GetPosition() );
+	if ( pUS->GetPosition().pos.p.GetPose() != NAI::CM_INACTIVE )
+		pUS->animator.PlaceUnit( pUS->GetPosition() );
 	return true;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -412,6 +478,18 @@ void CPathConflictsRemover::TryToSetNewPath()
 		// No route: FullCancel marks the move finished with a failed result.
 		// It leaves bWaiting set, but v1.2 releases the action token immediately.
 		FullCancel();
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+bool CUnitServer::IsWaitingForPath()
+{
+	CPathConflictsRemover *pRemover = GetPathConflictsRemover();
+	return IsValid( pRemover ) && pRemover->IsWaitingForPath();
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+bool CUnitServer::CanVacatePathTile()
+{
+	CPathConflictsRemover *pRemover = GetPathConflictsRemover();
+	return pRemover && !pRemover->IsWaitingForPath();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // @0x3cc280 -- decide whether we may defer to the unit locking us. If it has no remover of its own it
@@ -507,10 +585,7 @@ bool CExecMove::ProcessFirstMove( CCmdMove *pMove )
 	if ( commandsQueue.empty() )
 		return false;
 	if ( !TestSingleGameMove( pMove ) )
-	{
-		commandsQueue.push_front( pMove );
 		return false;
-	}
 	bWaiting = false;
 	bAfterWaiting = false;
 	nTimeToWait = 0;
@@ -651,10 +726,7 @@ void CExecMove::DoCommand()
 					DoGameMove(pClimb->pos);
 				}
 				else
-				{
-					commandsQueue.push_front(pCmd);
 					return;
-				}
 			}
 			else {
 				CDynamicCast<CCmdJump> pJump(pCmd);
@@ -672,10 +744,7 @@ void CExecMove::DoCommand()
 						// fall deferred to the START of the next DoCommand pass (retail @0x3b87fc)
 					}
 					else
-					{
-						commandsQueue.push_front(pCmd);
 						return;
-					}
 				}
 				else {
 					CDynamicCast<CCmdRotate> pRotate(pCmd);
@@ -700,10 +769,7 @@ void CExecMove::DoCommand()
 							DoGameMove(pRotate->pos);
 						}
 						else
-						{
-							commandsQueue.push_front(pCmd);
 							return;
-						}
 					}
 					else {
 						CDynamicCast<CCmdChangePose> pChangePose(pCmd);
@@ -714,20 +780,25 @@ void CExecMove::DoCommand()
 							CheckDoors( pChangePose->pos );
 							if (TestSingleGameMove(pChangePose))
 							{
+								if ( position.GetPose() != pChangePose->pos.GetPose() )
+									pUS->GetWorld()->AddUICommand( new CUICmdUnitCamera( pUS, PR_UNIT_ACTION, false, 1.0f, 0 ) );
 								animator.ChangePose(position, pChangePose->pos);
 								pCurCmd = pCmd;
 								DoGameMove(pChangePose->pos);
 							}
 							else
-							{
-								commandsQueue.push_front(pCmd);
 								return;
-							}
 						}
 						else {
 							CDynamicCast<CCmdActivateItem> pActivateItem(pCmd);
 							if (pActivateItem)
 							{
+								// Retail 0x7bbcb5: mounted weapons own the hand animation.
+								if ( animator.GetCannon() )
+								{
+									pCurCmd = pCmd;
+									return;
+								}
 								ASSERT(!animator.IsActiveItem());
 								pCurCmd = pCmd;
 								NRPG::IUnitMission* pRPG = pUS->GetUnitRPG();
@@ -786,10 +857,7 @@ void CExecMove::DoCommand()
 											DoGameMove(pMoveLadder->pos);
 										}
 										else
-										{
-											commandsQueue.push_front(pCmd);
 											return;
-										}
 									}
 									else {
 										CDynamicCast<CCmdEnterLadder> pEnterLadder(pCmd);
@@ -806,10 +874,7 @@ void CExecMove::DoCommand()
 												DoGameMove(pEnterLadder->pos);
 											}
 											else
-											{
-												commandsQueue.push_front(pCmd);
 												return;
-											}
 										}
 										else {
 											CDynamicCast<CCmdLeaveLadder> pLeaveLadder(pCmd);
@@ -826,10 +891,7 @@ void CExecMove::DoCommand()
 													DoGameMove(pLeaveLadder->pos);
 												}
 												else
-												{
-													commandsQueue.push_front(pCmd);
 													return;
-												}
 											}
 										}
 									}
@@ -927,6 +989,7 @@ void CExecMove::Cancel()
 	CDynamicCast<CCmdJump> pWasJump( pCurCmd );
 	if ( pWasJump )
 		return;
+	++nPathRevision;
 	CDynamicCast<CCmdMove> pWasMove( pCurCmd );
 	CDynamicCast<CCmdRotate> pWasRotate( pCurCmd );
 	commandsQueue.clear();
@@ -943,6 +1006,7 @@ void CExecMove::Cancel()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CExecMove::FullCancel()
 {
+	++nPathRevision;
 	commandsQueue.clear();
 	result = FAILED;
 	pCurCmd = 0;
@@ -955,6 +1019,7 @@ void CExecMove::FullCancel()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CExecMove::SetNewPath( NAI::CPath *pPath, NAI::EFindPathParams _eParams, ENeedActiveItem eActive )
 {
+	++nPathRevision;
 	// Keep the interrupted command alive while a waiting reroute clears pCurCmd.
 	CObj<CCommand> pHoldCur( pCurCmd );
 	CDynamicCast<CCmdMove> pWasMove( pCurCmd );
@@ -965,7 +1030,9 @@ void CExecMove::SetNewPath( NAI::CPath *pPath, NAI::EFindPathParams _eParams, EN
 		bWaiting = false;
 		bAfterWaiting = false;
 		pCurCmd = 0;
-		pUS->animator.PlaceUnit( pUS->GetPosition() );
+		// Keep the ledge animation frozen until the new retreat/descent starts.
+		if ( pUS->GetPosition().pos.p.GetPose() != NAI::CM_INACTIVE )
+			pUS->animator.PlaceUnit( pUS->GetPosition() );
 		nTimeToWait = 0;
 		//StopAction();
 	}	
@@ -1150,6 +1217,13 @@ void CExecMove::ConvertPath( NAI::CPath *pPath, ENeedActiveItem eActive )
 				commandsQueue.push_back( new CCmdDeactivateItem( pUS, nSlot ) );
 				bActive = false;
 			}
+			// Retail 0x7ba47e: finish walking before starting the climb.
+			if ( pLastMove )
+			{
+				commandsQueue.push_back( new CCmdEndMove( pLastMove ) );
+				pLastMove = 0;
+			}
+			bMoving = false;
 			// climb
 			NAI::ETransitionType type = NAI::GetTransitionType( pNet, prev, cur );
 			bool bReal = true;
@@ -1219,8 +1293,17 @@ void CExecMove::ConvertPath( NAI::CPath *pPath, ENeedActiveItem eActive )
 		pLastMove = new CCmdMove( pUS, pos, true, pPath->bStrafePath );
 		commandsQueue.push_back( pLastMove );
 	}
-	if ( bMoving )
-		commandsQueue.push_back( new CCmdEndMove( pLastMove ) );
+	if ( bMoving && pLastMove )
+	{
+		// Retail 0x7bac50: end the final step before subsequent pose/turn commands.
+		// Keep our final inter-grid step/ender pairing: retail could lose that step.
+		for ( list<CObj<CCommand> >::reverse_iterator i = commandsQueue.rbegin(); i != commandsQueue.rend(); ++i )
+			if ( CDynamicCast<CCmdMove>( *i ) )
+			{
+				commandsQueue.insert( i.base(), new CCmdEndMove( pLastMove ) );
+				break;
+			}
+	}
 
 	if ( eActive == ITEM_ACTIVE && !bActive && !bInactivePose )
 		commandsQueue.push_back( new CCmdActivateItem( pUS, nSlot ) );

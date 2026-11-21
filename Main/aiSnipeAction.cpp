@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 //
 #include "aiUnit.h"
+#include "RPGUnitMission.h"
 #include "aiState.h"
 #include "aiUnitState.h"      // NAI::SAIUnitState: pEnemy / pPossibleEnemy
 #include "aiPosition.h"       // NAI::SUnitPosition::GetCP, fabs( CVec3 )
@@ -22,12 +23,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Snipe actions: Begin, bank AP (CollectAP), fire (Shot), and abort when the enemy
-// gets too close (Cancel). Begin's weapon and escape scan match v1.2 0x4a4a90.
+// gets too close or cannot be hit (Cancel). Begin matches v1.2 0x4a4a90.
 //
-// One documented dev<->release divergence: the release reads the snipe AP pool + the unit's current AP from
-// the RPG skill block; the dev-native CUnitStateSniping caches the pool as nBaseAP (set at snipe start). The
-// AP CAP is the unit's CURRENT AP (pU->GetAP()), read PLACE-INDEPENDENTLY exactly as the release does -- the
-// release GetInfoInner @0x4a4490 ignores its `place` arg entirely. (Earlier this capped by place.nUnitAP.)
+// Planning reads the current RPG snipe skill and live AP, not cached start-of-aim values.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NAI
 {
@@ -63,6 +61,22 @@ static IAIUnit *SnipeGetAIUnit( NWorld::CUnitServer *pServer )
 	return pCommander->GetAIUnit( pServer );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Use the real stored target and shot calculation, including banked aiming AP.
+// The simplified AI weapon probe omits that bonus and can reject a viable shot.
+static bool CanHitSnipeTarget( IAIUnit *pU )
+{
+	if ( !IsValid( pU ) || !IsValid( pU->GetUnitServer() ) )
+		return false;
+	NWorld::CUnitServer *pUS = pU->GetUnitServer();
+	NWorld::CUnitStateSniping *pSnipe = pUS->GetSnipingState();
+	if ( !pUS->IsSniping() || !pSnipe )
+		return false;
+	NWorld::CUnitServer *pTarget = pSnipe->GetTarget();
+	if ( !IsValid( pTarget ) || pTarget->IsDead() )
+		return false;
+	return pUS->GetWorld()->GetGame()->GetCompositeToHit( pUS, pTarget, pSnipe->GetHitLocation(), false ) > 0;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // CAIBeginSnipeAction::GetInfoInner @0x4a4810: decide to start sniping. Not already sniping; the best snipe
 // weapon must exist + be live; CanSnipe; the to-hit against the state's enemy at HL_ANY must be positive (aim
 // HL_HEAD when that also connects); and the KILL-ZONE SCAN must confirm the sniper can still SEE every place
@@ -72,7 +86,7 @@ static IAIUnit *SnipeGetAIUnit( NWorld::CUnitServer *pServer )
 //
 // Use the chosen snipe weapon, even when another weapon is currently held. Cover
 // remains floating point through GetToHit, as in retail's direct snipe probe.
-void CAIBeginSnipeAction::GetInfoInner( const SPlaceWithAP &, SInfo *pInfo ) const
+void CAIBeginSnipeAction::GetInfoInner( const SPlaceWithAP &place, SInfo *pInfo ) const
 {
 	pInfo->bCanDo = false;
 	IAIUnit *pU = GetUnit();
@@ -95,14 +109,6 @@ void CAIBeginSnipeAction::GetInfoInner( const SPlaceWithAP &, SInfo *pInfo ) con
 	IAIUnit *pEnemy = pState->pEnemy.GetPtr();
 	if ( !IsValid( pEnemy ) || !IsValid( pEnemy->GetUnitServer() ) )
 		return;
-	// to-hit gate: must connect at HL_ANY; aim the head when that also connects.
-	SUnitPosition selfPos = pU->GetUnitPosition();
-	pInfo->hitLocation = HL_ANY;
-	if ( pU->GetToHit( pEnemy, selfPos, HL_ANY, pInfo->pWeapon ) <= 0 )
-		return;
-	if ( pU->GetToHit( pEnemy, selfPos, HL_HEAD, pInfo->pWeapon ) > 0 )
-		pInfo->hitLocation = HL_HEAD;
-	// kill-zone scan: the sniper must still SEE every place the target could flee to next turn.
 	NWorld::CWorld *pWorld = pUS->GetWorld();
 	if ( !IsValid( pWorld ) )
 		return;
@@ -110,16 +116,26 @@ void CAIBeginSnipeAction::GetInfoInner( const SPlaceWithAP &, SInfo *pInfo ) con
 	IPathNetwork *pNet = pWorld->GetPathNetwork();
 	if ( !IsValid( pGame ) || !IsValid( pNet ) )
 		return;
+	// Evaluate the pose selected by the action search, facing the target as the
+	// shot will. Checking the current pose can approve a crouch behind cover.
+	SUnitPosition selfPos = place.place;
+	const SUnitPosition &enemyPos = pEnemy->GetUnitServer()->GetPosition();
+	EDirection direction = pNet->GetClosestDir( selfPos.pos.p, enemyPos.pos.p );
+	selfPos.pos.p.SetDirection( direction );
+	pInfo->hitLocation = HL_ANY;
+	if ( pU->GetToHit( pEnemy, selfPos, HL_ANY, pInfo->pWeapon ) <= 0 )
+		return;
+	if ( pU->GetToHit( pEnemy, selfPos, HL_HEAD, pInfo->pWeapon ) > 0 )
+		pInfo->hitLocation = HL_HEAD;
+	// kill-zone scan: the sniper must still SEE every place the target could flee to next turn.
 	// retail @0xa4810: the sniper's range/FOV hoisted once (game vtbl+0x34 + GetSightFOV @0x2ba6c0),
 	// then the 4-arg CheckPositionVisibility per flee place.
 	NRPG::CUnit *pRPG = pU->GetRPGUnit();
 	float fRange = pGame->GetUnitSightDistance( pRPG );
 	float fFOV = IsValid( pRPG ) ? pRPG->GetSightFOV() : FP_2PI;
 	vector<SPathPlace> places;
-	const SUnitPosition &enemyPos = pEnemy->GetUnitServer()->GetPosition();
 	// Retail v1.2 0x4a4c66/0x4a4d23: test each escape place facing from the
 	// sniper toward the target, rather than retaining the flood's direction bits.
-	EDirection direction = pNet->GetClosestDir( selfPos.pos.p, enemyPos.pos.p );
 	// Retail v1.2 0x4a4cdb: RUN, four AP, not the target's full turn budget.
 	GetNearestPlaces( pEnemy->GetUnitServer(), enemyPos.pos.p, 4, NAI::RUN, &places );
 	for ( typename vector<SPathPlace>::const_iterator i = places.begin(); i != places.end(); ++i )
@@ -137,7 +153,7 @@ void CAIBeginSnipeAction::Do( CAILog *pLog ) const                       // @0x4
 	if ( !IsValid( pLog ) )
 		return;
 	SInfo info;
-	GetInfoInner( GetCurrentPlace(), &info );
+	GetInfo( GetCurrentPlace(), &info );
 	if ( !info.bCanDo )
 		return;
 	IAIUnit *pU = GetUnit();
@@ -147,9 +163,8 @@ void CAIBeginSnipeAction::Do( CAILog *pLog ) const                       // @0x4
 		*pLog << new CAILogChangeWeapon( pU, pWeapon );
 	*pLog << new CAILogChangeShootMode( pU, pWeapon, NDb::SM_Snipe );   // shoot-mode 5 = snipe
 	*pLog << new CAILogBeginSnipe( pU, info.pTarget.GetPtr(), info.hitLocation );
-	// (the release also flips the RPG-side "snipe started" mark here -- pU->GetUnitMission() vtbl+0x7c(1);
-	//  elided like the cannon Undock mark: it only sets the SIMULATED is-sniping flag for same-think chaining,
-	//  observationally inert under build-validation -- the real state flips when the logged snipe-aim executes.)
+	// Retail 0x4a5222: spend one real AP so the next planning pass sees the change.
+	pU->GetUnitMission()->SpendAP( 1 );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CAICollectSnipeAPAction::GetInfoInner @0x4a4490: while sniping, bank AP into the snipe pool -- collect
@@ -165,18 +180,15 @@ void CAICollectSnipeAPAction::GetInfoInner( const SPlaceWithAP &place, SInfo *pI
 	if ( !IsValid( pUS ) || !pUS->IsSniping() )
 		return;
 	NWorld::CUnitStateSniping *pSnipe = pUS->GetSnipingState();
-	if ( pSnipe == 0 )
+	if ( pSnipe == 0 || !CanHitSnipeTarget( pU ) )
 		return;
-	int nPool = pSnipe->GetBaseSnipeAP();
+	int nPool = pUS->GetUnitRPG()->GetSkillValue( NDb::ST_SNIPE );
 	int nCollected = pSnipe->GetCollectedSnipeAP();
 	if ( nCollected >= nPool )
 		return;
 	int nAP = nPool - nCollected;
-	// @0x4a4490 -- the release caps by the unit's CURRENT AP (its RPG AP skill), read PLACE-INDEPENDENTLY:
-	// GetInfoInner never references its `place` arg (raw decode reads GetUnit()->GetRPG()+0x14+0x28). Oracle
-	// s2_aisnipeaction.h: Min( nPool - nCollected, GetUnitAPAsInt(pU) ). Was: place.nUnitAP, which the per-place
-	// SActionInfo cache memoizes separately and which diverges for non-current candidate places (move-cost reduced).
-	int nCurAP = pU->GetAP();        // IAIUnit::GetAP() == the unit's current AP (same getter aiAction.cpp seeds nUnitAP with)
+	// Retail uses real remaining AP, independent of the candidate/model budget.
+	int nCurAP = pUS->GetAP();
 	if ( nCurAP < nAP )
 		nAP = nCurAP;
 	pInfo->nAP = nAP;
@@ -188,12 +200,12 @@ void CAICollectSnipeAPAction::Do( CAILog *pLog ) const                   // @0x4
 	if ( !IsValid( pLog ) )
 		return;
 	SInfo info;
-	GetInfoInner( GetCurrentPlace(), &info );
+	GetInfo( GetCurrentPlace(), &info );
 	if ( info.bCanDo )
 		*pLog << new CAILogCollectSnipeAP( GetUnit(), info.nAP );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// CAISnipeShotAction::GetInfoInner @0x4a4650: sniping -> the shot is ready.
+// Retail @0x4a4650 only tests IsSniping; reject shots with no current hit chance.
 void CAISnipeShotAction::GetInfoInner( const SPlaceWithAP &, SInfo *pInfo ) const
 {
 	pInfo->bCanDo = false;
@@ -203,7 +215,7 @@ void CAISnipeShotAction::GetInfoInner( const SPlaceWithAP &, SInfo *pInfo ) cons
 	NWorld::CUnitServer *pUS = pU->GetUnitServer();
 	if ( !IsValid( pUS ) )
 		return;
-	if ( pUS->IsSniping() )
+	if ( pUS->IsSniping() && CanHitSnipeTarget( pU ) )
 		pInfo->bCanDo = true;
 }
 void CAISnipeShotAction::Do( CAILog *pLog ) const                        // @0x4a4c90
@@ -211,7 +223,7 @@ void CAISnipeShotAction::Do( CAILog *pLog ) const                        // @0x4
 	if ( !IsValid( pLog ) )
 		return;
 	SInfo info;
-	GetInfoInner( GetCurrentPlace(), &info );
+	GetInfo( GetCurrentPlace(), &info );
 	if ( !info.bCanDo )
 		return;
 	IAIUnit *pU = GetUnit();
@@ -225,7 +237,8 @@ void CAISnipeShotAction::Do( CAILog *pLog ) const                        // @0x4
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CAICancelSnipeAction::GetInfoInner @0x4a4720: sniping, but the snipe conditions no longer hold (enemies
-// came too close) -> cancel.
+// came too close), the reaction chose another enemy, or the stored target can
+// no longer be hit -> cancel. Reaction refreshes preserve idle aiming until here.
 void CAICancelSnipeAction::GetInfoInner( const SPlaceWithAP &, SInfo *pInfo ) const
 {
 	pInfo->bCanDo = false;
@@ -235,7 +248,12 @@ void CAICancelSnipeAction::GetInfoInner( const SPlaceWithAP &, SInfo *pInfo ) co
 	NWorld::CUnitServer *pUS = pU->GetUnitServer();
 	if ( !IsValid( pUS ) )
 		return;
-	if ( pUS->IsSniping() && !CanSnipe( pU ) )
+	SAIUnitState *pState = pU->GetAIUnitState();
+	IAIUnit *pEnemy = pState ? pState->pEnemy.GetPtr() : 0;
+	NWorld::CUnitStateSniping *pSnipe = pUS->GetSnipingState();
+	if ( pUS->IsSniping() && ( !pSnipe || !IsValid( pEnemy ) ||
+		pSnipe->GetTarget() != pEnemy->GetUnitServer() ||
+		!CanSnipe( pU ) || !CanHitSnipeTarget( pU ) ) )
 		pInfo->bCanDo = true;
 }
 void CAICancelSnipeAction::Do( CAILog *pLog ) const                      // @0x4a4df0
@@ -243,7 +261,7 @@ void CAICancelSnipeAction::Do( CAILog *pLog ) const                      // @0x4
 	if ( !IsValid( pLog ) )
 		return;
 	SInfo info;
-	GetInfoInner( GetCurrentPlace(), &info );
+	GetInfo( GetCurrentPlace(), &info );
 	if ( info.bCanDo )
 		*pLog << new CAILogCancelAction( GetUnit() );
 }

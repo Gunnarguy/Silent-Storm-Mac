@@ -359,7 +359,9 @@ void CLayersGroup::RecalcSquare( int nX, int nY, IAIMap *pMap, char nLevel )
 					//sprintf( buf, "Marking already created ladder %d at %d, %d\n", j, upX, upY );
 					//OutputDebugString( buf );
 					passCalcer.MakeInactiveForLadder( x - region.minx, y - region.miny, upX - region.minx, upY - region.miny, 
-						(ladder.GetHeight() - 1) * F_LADDER_STEP, i );
+						// The array index is relative to this group's first floor.
+						// Retail v1.1 0x43f9f5 adds the offset for existing ladders too.
+						(ladder.GetHeight() - 1) * F_LADDER_STEP, i + nFirstFloor );
 				}
 			}
 		}
@@ -663,10 +665,12 @@ void CNodesLayer::GetSamePoints( const SPathPlace& p, vector<SPathPlace> *pRes )
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-int CNodesLayer::GetSamePoints( const SPathPlace& p, SPathPlace *places )
+int CNodesLayer::GetGeometricSamePoints( const SPathPlace& p, SPathPlace *places )
 {
+	// Zone connectivity describes coincident geometry, not usable destinations.
+	// Keep navigation filtering in GetSamePoints / IsLinkedSame.
 	STile &t1 = tiles[ p.GetY() ][ p.GetX() ];
-	if ( ( t1.nFlags & TF_HAS_SAME ) == 0 && t1.HasNavigationLinks() )
+	if ( ( t1.nFlags & TF_HAS_SAME ) == 0 )
 		return 0;
 	int nP = 0;
 	for ( int i = 0; i < N_MAX_FLOORS * N_MAX_LAYERS_PER_FLOOR; ++i )
@@ -677,7 +681,7 @@ int CNodesLayer::GetSamePoints( const SPathPlace& p, SPathPlace *places )
 		if ( pL == this )
 			continue;
 		STile &t2 = pL->tiles[ p.GetY() ][ p.GetX() ];
-		if ( t2.IsLinkedSame( t1 ) )
+		if ( t2.nHeight == t1.nHeight && t2.nDisplacement == t1.nDisplacement )
 		{
 			places[ nP ] = SPathPlace( p.GetX(), p.GetY(), pL->nLayer );
 			++nP;
@@ -851,7 +855,7 @@ void CNodesLayer::AddNearPoints( const SSphere &s, vector<SPathPlace> *pRes, boo
 						bool bBetter = ( t2.nPassable & t1.nPassable ) == t1.nPassable;
 						if ( t2.nPassable == t1.nPassable )
 							bBetter = pL->nLayer < nLayer;
-						if ( t2.IsLinkedSame( t1 ) && bBetter )
+						if ( t2.nHeight == t1.nHeight && t2.nDisplacement == t1.nDisplacement && bBetter )
 						{
 							bAdd = false;
 							break;
@@ -1988,6 +1992,9 @@ void CPathNetwork::DisableLocks( CObjectBase *pUnit )
 			if ( k->second.bLocked && IsLockerUnit( k->first ) )
 				for ( unsigned int n = 0; n < k->second.places.size(); ++n )
 					LockUnlockPoint( k->second.places[n], true );
+		// A selected mine remains an obstacle when a query releases an owner.
+		for ( vector<SPathPlace>::const_iterator p = mineTempLocks.begin(); p != mineTempLocks.end(); ++p )
+			LockUnlockPoint( *p, true );
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2087,8 +2094,15 @@ void CPathNetwork::LockSelected( const list<CObjectBase*> &selected )
 				CDynamicCast<NWorld::CMine> pMine(pLocker);
 				if (pMine)
 				{
-					//mineTempLocks.push_back( pMine->GetPlace().p );
-					//LockUnlockPoint( pMine->GetPlace().p, true );
+					// Steam 0x44c7e6: the sphere finds candidates; only cells that
+					// actually touch this mine become temporary path locks.
+					SSphere area( pMine->GetPlace(), 0.5f );
+					vector<SPathPlace> nearMine;
+					for ( unsigned int n = 0; n < layers.size(); ++n )
+						layers[n]->AddNearPoints( area, &nearMine, false );
+					for ( vector<SPathPlace>::const_iterator p = nearMine.begin(); p != nearMine.end(); ++p )
+						if ( pMine->IsTriggeredBy( GetCP( *p ) ) )
+							mineTempLocks.push_back( *p );
 				}
 				else
 				{
@@ -2097,11 +2111,17 @@ void CPathNetwork::LockSelected( const list<CObjectBase*> &selected )
 			}
 		}
 	}
+	for ( vector<SPathPlace>::const_iterator it = mineTempLocks.begin(); it != mineTempLocks.end(); ++it )
+		LockUnlockPoint( *it, true );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CPathNetwork::UnlockSelected()
 {
-	for ( typename CLocksHash::iterator i = lockedPlaces.begin(); i != lockedPlaces.end(); )
+	// Clear temporary boolean flags before restoring overlapping unit owners.
+	for ( vector<SPathPlace>::iterator it = mineTempLocks.begin(); it != mineTempLocks.end(); ++it )
+		LockUnlockPoint( *it, false );
+	mineTempLocks.clear();
+	for ( CLocksHash::iterator i = lockedPlaces.begin(); i != lockedPlaces.end(); )
 	{
 		// Lock may erase a stale corpse record; advance before that happens.
 		typename CLocksHash::iterator current = i++;
@@ -2109,9 +2129,6 @@ void CPathNetwork::UnlockSelected()
 	}
 	for ( typename vector<SFlipper>::iterator it = flippers.begin(); it != flippers.end(); ++it )
 		it->nFixedFlags &= ~F_VISIBLE_TRAP;
-	for ( typename vector<SPathPlace>::iterator it = mineTempLocks.begin(); it != mineTempLocks.end(); ++it )
-		LockUnlockPoint( *it, false );
-	mineTempLocks.clear();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 CObjectBase* CPathNetwork::GetWhoLocksThisPlace( const SPathPlace &p ) const
@@ -2131,6 +2148,15 @@ CObjectBase* CPathNetwork::GetWhoLocksThisPlace( const SPathPlace &p ) const
 	// nobody does? this function must be used only when we know truly that this place is locked, 
 	// because it's expencive
 	return 0; 
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Retail 0x43ed70: bounds only; callers may evaluate a currently locked tile.
+bool CPathNetwork::IsValidPoint( const SPathPlace &p ) const
+{
+	if ( p.GetLayer() >= layers.size() )
+		return false;
+	const CNodesLayer *pLayer = layers[p.GetLayer()];
+	return pLayer && p.GetX() < pLayer->tiles.GetXSize() && p.GetY() < pLayer->tiles.GetYSize();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CPathNetwork::IsValidDestination( const SPathPlace &p )
@@ -2732,6 +2758,18 @@ void CPathNetwork::Freeze( bool _bFreeze )
 	for ( typename vector< CObj<CNodesLayer> >::iterator it = layers.begin(); it != layers.end(); ++it )
 		if ( IsValid( *it ) )
 			(*it)->pGroup->bFreeze = bFreeze;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+bool CPathNetwork::GetMinMaxPoint( CVec3 *pMin, CVec3 *pMax ) const
+{
+	if ( layers.empty() || !IsValid( layers[0] ) )
+		return false;
+	const CNodesLayer &layer = *layers[0];
+	if ( layer.tiles.GetXSize() == 0 || layer.tiles.GetYSize() == 0 )
+		return false;
+	*pMin = GetCP( SPathPlace( 0, 0, 0 ) );
+	*pMax = GetCP( SPathPlace( layer.tiles.GetXSize() - 1, layer.tiles.GetYSize() - 1, 0 ) );
+	return true;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 SPathPlace CPathNetwork::GetDeployPlace( const SPathPlace &start, int nDisplacement )

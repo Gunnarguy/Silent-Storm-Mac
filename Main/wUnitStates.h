@@ -41,7 +41,7 @@ protected:
 public:
 	ZEND int operator&( CStructureSaver &f ) { f.Add(2,&pUS); return 0; }
 	CUnitState( CUnitServer *_pUS = 0 ): pUS(_pUS) {}
-	virtual CCommandExecute* CreateExecutor( CCmd *pCmd, EUnitCommandResult *pResult ) = 0;
+	virtual CCommandExecute* CreateExecutor( CCmd *pCmd, EUnitCommandResult *pResult );
 	virtual void ProcessCritical( NDb::ECritical eCA );
 	virtual bool IsCriticalsFailCommand( CCmd *pCmd, EUnitCommandResult *pResult );
 	virtual void OnActionFinish() {}
@@ -99,6 +99,7 @@ public:
 	virtual void ProcessCritical( NDb::ECritical eCA );
 
 	virtual CUnitServer *GetTarget() { return pTarget; }
+	NAI::EHitLocation GetHitLocation() const { return hitLocation; }
 	virtual void CollectSnipeAP( int _nAP );
 	virtual int GetCollectedSnipeAP() { return nSnipeAP; }
 	int GetBaseSnipeAP() const { return nBaseAP; } // the snipe-AP budget set at snipe start (the pool to fill)

@@ -18,6 +18,7 @@
 #include "../Misc/RandomGen.h"
 #include "RPGUnit.h"
 #include "aiPath.h"
+#include "aiNearestPosition.h"
 #include "aiGrid.h"               // forced relocation requires a tile with movement exits
 #include "aiMap.h"                // NAI::IAIMap::GetObjectBound (mine-LOS probe pull-back)
 #include "scScenarioTracker.h"
@@ -368,15 +369,15 @@ void CUnitServer::Do( CCommand *_pCmd )
 	ASSERT( CanFight() );
 	if ( !CanFight() )
 		return;
-	// TURN-STUCK FIX (dev-bugs s7): retail CUnitServer::Do @0x3c2390 has NO bIsRunningForcedAction
-	// refusal -- its only gate is CanFight + not-cannon (oracle s2_unitserver.h Do mirror). The Jan03
-	// early-return here was FATAL when the flag leaked: any direct pExec=0 drop of a RUNNING forced
-	// critical executor (e.g. the old TBS_RECALC_COMMAND arm, fired by OnPassControl right after
-	// turn-start bleed damage rolled a critical) left bIsRunningForcedAction latched TRUE with no
-	// executor -- and with this gate the unit then silently ignored EVERY later command forever
-	// (CheckCmdExecState, the only place that clears the flag, is unreachable without an executor).
-	// Retail self-heals instead: commands are accepted, and the next executor retire clears the flag.
-	ASSERT( !bIsRunningForcedAction );
+	// Retail 0x7c2e10 refuses orders while a forced critical action is active.
+	// Preserve recovery from old saves whose forced-action flag outlived the
+	// executor: without an executor, normal retirement cannot clear the latch.
+	if ( bIsRunningForcedAction )
+	{
+		if ( IsValid( pExec ) )
+			return;
+		bIsRunningForcedAction = false;
+	}
 	CDynamicCast<CCmdCancel> pCancel(_pCmd);
 	if (pCancel)
 	{
@@ -445,6 +446,19 @@ void CUnitServer::Do( CCommand *_pCmd )
 						return;
 					}
 					/// else OutputDebugString(" CCmdPath, pExec is valid and is not a MoveExec\n");
+				}
+				// The expansion's executable 0x7c994b..0x7c99c2 applies the movement preference
+				// without cancelling the mover. The following UI path order can
+				// then rebuild toward the same destination in the new stance.
+				CDynamicCast<CCmdWishPose> pPose( p->GetCmd() );
+				CDynamicCast<IExecMove> pMove( pExec );
+				if ( pPose && pMove && GetWorld()->IsRealTime() && !IsValid( pAutoRunCmd ) )
+				{
+					EUnitCommandResult eResult = UCR_OK;
+					CObj<CCommandExecute> pPoseExec = pState->CreateExecutor( pPose, &eResult );
+					if ( IsValid( pPoseExec ) )
+						pPoseExec->Run();
+					return;
 				}
 				pExec->Cancel();
 				pAutoRunCmd = p->GetCmd();
@@ -665,9 +679,13 @@ CUnit::EState CUnitServer::GetState()
 		case NDb::WT_SUB_MACHINE_GUN: return ST_NORMAL_SUB_MACHINE_GUN;
 		case NDb::WT_KNIFE: return ST_NORMAL_KNIFE;
 		case NDb::WT_PLAZMAGUN:
+		case NDb::WT_PK_PLAZMAGUN:
+		case NDb::WT_BOSS_PLAZMAGUN:
+		case NDb::WT_TERROR_SHOOTER:
 		case NDb::WT_MACHINE_GUN: return ST_NORMAL_HAND_MACHINE_GUN;
 		case NDb::WT_RLAUNCHER: return ST_NORMAL_RLAUNCHER;
 		case NDb::WT_MINE_DETECTOR:
+		case NDb::WT_TERROR_SPECIAL_GUN:
 		case NDb::WT_DEFAULT:
 			break;
 		default:
@@ -773,6 +791,12 @@ void CUnitServer::UpdateDeadPKSupport()
 	pNet->Lock( this, GetPosition().pos.p );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+void CUnitServer::RememberSupportPosition()
+{
+	fLastHeight = GetPosition().GetCP().z;
+	plLast = GetPosition().pos.p;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUnitServer::ForcedMove()
 {
 	csSystem << CC_RED << "FORCED MOVE\n";
@@ -861,6 +885,18 @@ void CUnitServer::ForcedMove()
 	KillUnit( CVec3(0,0,1) );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Retail 0x7c0660: a rebuilt layer may encode the same physical support elsewhere.
+static bool FindSupportAtHeight( const NAI::SPosition &from, float fHeight, NAI::SPathPlace *pOut )
+{
+	CVec3 oldSupport = from.GetCP();
+	oldSupport.z = fHeight;
+	NAI::SPosition nearest = NAI::GetNearestNativePosition( oldSupport, from.GetNetwork() );
+	if ( !nearest.IsValid() || fabs( nearest.GetCP() - oldSupport ) >= 0.1f )
+		return false;
+	*pOut = nearest.p;
+	return true;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUnitServer::OnTBSEvent( ETBSEvent event )
 {
 	switch ( event )
@@ -895,8 +931,7 @@ void CUnitServer::OnTBSEvent( ETBSEvent event )
 			// stop it from clearing a held aim on every shot) has moved to its RETAIL home below --
 			// CWorld::Segment now delivers TBS_GRID_INFO_UPDATED only when the path network actually
 			// changed, so the reseat no longer fires on every action-finish edge and needs no aim gate.
-			fLastHeight = GetPosition().GetCP().z;
-			plLast = GetPosition().pos.p;
+			RememberSupportPosition();
 			pState->OnActionFinish();
 			break;
 		case TBS_GRID_INFO_UPDATED:
@@ -921,9 +956,25 @@ void CUnitServer::OnTBSEvent( ETBSEvent event )
 					float fCurrentHeight = GetPosition().GetCP().z;
 					NAI::SPathPlace plCur = GetPosition().pos.p;
 					if ( plLast == plCur && fabs( fLastHeight - fCurrentHeight ) > 0.01f )
-						Fall();
+					{
+						if ( FindSupportAtHeight( GetPosition().pos, fLastHeight, &plCur ) )
+						{
+							NAI::SUnitPosition supported( GetPosition() );
+							plCur.SetPose( supported.pos.p.GetPose() );
+							plCur.SetDirection( supported.pos.p.GetDirection() );
+							supported.pos.p = plCur;
+							SetPosition( supported );
+							// SetPosition reserves the new tile. Exclude our own lock
+							// from the support recheck, as in the initial query above.
+							pNet->Unlock( this );
+						}
+						else
+							Fall();
+					}
 					fLastHeight = fCurrentHeight;
 					plLast = plCur;
+					if ( pNet->GetPassability( GetPosition().pos.p ) != NAI::AIP_YES )
+						ForcedMove();
 					pNet->Lock( this, GetPosition().pos.p );
 				}
 			}
@@ -1035,15 +1086,15 @@ void CUnitServer::Segment()
 {
 	STime tCur = GetWorld()->GetTime()->GetValue();
 	int nDoNotFreeze = 0;
+	// Retail Steam 0x7c3930: service once per tick, then recheck the executor.
+	// Servicing can replace it; animation retirement must use the current one.
+	if ( IsValid( pExec ) && pExec->IsExecuting() )
+		pExec->Segment();
 	while ( IsValid( pExec ) && pExec->IsExecuting() )
 	{
-		// Service the move wait-state (path-conflict recovery) each tick. The Jan03 inline locker/reroute
-		// pump now lives in CExecMove::CheckCanDoMove/CheckLockerState/TryToSetNewPath, driven from
-		// CPathConflictsRemover::Segment (@0x3cc670). Still waiting after servicing -> hold this tick.
-		pExec->Segment();
-		// Retail v1.2 0x7c3346: parked movement waits; normal retirement is
-		// driven by the animation boundary, not the executor's finish-state flag.
-		if ( pExec->IsWaitingForPath() )
+		// Only eligible movement may wait here. Normal retirement is driven
+		// by the animation boundary, not the executor's finish-state flag.
+		if ( IsWaitingForPath() )
 			break;
 		if ( bCallTimeLabel && tCur >= animator.GetTimeLabel1() )
 			bCallTimeLabel = pExec->TimeLabelReached();
@@ -1063,9 +1114,9 @@ void CUnitServer::Segment()
 		else
 			break;
 		++nDoNotFreeze;
-		if ( nDoNotFreeze > 100 )
-			__debugbreak(); // somehow we freezed here?
-		if ( nDoNotFreeze > 150 )
+		if ( nDoNotFreeze > 10 )
+			DebugTrace( "CUnitServer::Segment: ERROR: Unit server freezes the game!\n" );
+		if ( nDoNotFreeze >= 13 )
 			break;
 	}
 	if ( IsValid(pAutoRunCmd) && ( !IsPerformingAction() )  )
@@ -1074,6 +1125,9 @@ void CUnitServer::Segment()
 		pAutoRunCmd = 0;
 		Do( new CCmdSetCommand( this, new CCmdContinue ) );
 	}
+	// An automatic command may remove the unit (retail 0x7c3af8).
+	if ( !IsValid( this ) )
+		return;
 	CDumbUnitServer::Segment();
 	if ( GetWorld()->IsRealTime() )
 	{
@@ -1179,7 +1233,7 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 				if ( pEnemy->pPlayer == pPlayer )
 					continue;
 				//
-				if ( GetDiplomacyState( pEnemy ) == NDb::DS_ALLY )
+				if ( pEnemy->GetDiplomacyState( this ) == NDb::DS_ALLY )
 				{
 					visible.push_back( pEnemy );
 					continue;
@@ -1206,12 +1260,6 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 				continue;
 			} 
 			//
-			if ( GetDiplomacyState( pEnemy ) != NDb::DS_ENEMY )
-			{
-				visible.push_back( pEnemy );
-				continue;
-			}
-			//
 //			if ( !IsCheatEnabled( NRPG::CHEAT_SCRIPTSEQUENCE ) && !IsCheatEnabled( NRPG::CHEAT_NOAI ) )
 //			{
 			bool bWasHidden = ( find( hiddenAtSight.begin(), hiddenAtSight.end(), pEnemy ) != hiddenAtSight.end() );
@@ -1235,9 +1283,8 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 			if ( find_if( playerVisible.begin(), playerVisible.end(), SPtrTest(pEnemy) ) == playerVisible.end() )
 			{
 				lostUnits.erase( remove( lostUnits.begin(), lostUnits.end(), pEnemy ), lostUnits.end() );
-				if ( pEnemy->CanFight() )
+				if ( pEnemy->CanFight() && GetDiplomacyState( pEnemy ) == NDb::DS_ENEMY )
 				{
-					GetWorld()->GetGlobalAck()->OnEnemyBecomesVisible( this, pEnemy, GetWorld()->IsRealTime() );
 					pRes->AddEvent( this, pEnemy );
 				}
 			}
@@ -1245,7 +1292,8 @@ void CUnitServer::UpdateVisible( SInterruptInfo *pRes )
 			// retail CUnitServer::UpdateVisible: a unit that NEWLY sees an enemy raises CEventOnSeeNewEnemy, whose
 			// handler relays the enemy to allies within 5m as a possibleEnemy (squad spotting). Gate on the unit not
 			// having seen it last update so it fires once per acquisition.
-			if ( pEnemy->CanFight() && find( oldVisible.begin(), oldVisible.end(), pEnemy ) == oldVisible.end() )
+			if ( pEnemy->CanFight() && GetDiplomacyState( pEnemy ) == NDb::DS_ENEMY &&
+				find( oldVisible.begin(), oldVisible.end(), pEnemy ) == oldVisible.end() )
 				NGlobal::ThrowEvent( NWorld::CEventOnSeeNewEnemy( this, pEnemy, GetWorld()->IsRealTime() ) );
 			visible.push_back( pEnemy );
 		}
@@ -1640,41 +1688,58 @@ int CUnitServer::ProcessAttack( NWorld::IWorld *pWorld, int nUserID, NRPG::CAtta
 {
 	if ( bIsPKWhichIsWeared )
 		return 0;
+	CWorld *pOwnerWorld = GetWorld();
+	CPtr<CCannon> pCannon = animator.GetCannon();
 	bool isDead = GetUnitRPG()->IsDead();
 	bool isUnconscious = IsUnconscious();
 	CUnitServer *pAttacker = IsValid( pAttack->pAttacker ) ?
 		GetWorld()->GetUnitServer( pAttack->pAttacker ) : 0;
+	const NDb::EDiplomacyState eAttackerRelation = IsValid( pAttacker ) ?
+		pAttacker->GetDiplomacyState( this ) : NDb::DS_NEUTRAL;
 	// Retail v1.2 0x7c3845..0x7c3892: snapshot the hostile attacker's
 	// eligible squad and reward before damage can change the units or diplomacy.
 	list< CPtr<CUnitServer> > xpUnits;
 	float fXP = 0;
-	if ( IsValid( pAttacker ) && pAttacker->GetDiplomacyState( this ) == NDb::DS_ENEMY &&
+	if ( IsValid( pAttacker ) && eAttackerRelation == NDb::DS_ENEMY &&
 		pAttacker->GetTBSPlayer() )
 	{
 		pAttacker->GetTBSPlayer()->GetUnitsThatCanFight( &xpUnits );
 		fXP = GetUnitRPG()->GetXP( xpUnits.size() );
-	}
-	int nRet = CDumbUnitServer::ProcessAttack( pWorld, nUserID, pAttack, vDir, pArmor );
-	if ( !IsValid( this ) )
-	{
-		// Retail 0x7c3a93..0x7c3abc also pays the prepared reward if damage
-		// removes the target entirely; do not access the invalid target here.
-		for ( typename list< CPtr<CUnitServer> >::iterator i = xpUnits.begin(); i != xpUnits.end(); ++i )
-			(*i)->GetUnitRPG()->GetRPGUnit()->AddXP( fXP );
-		return nRet;
 	}
 	CUnitServer *pPKUnit = 0;
 	if ( IsWearingPK() )
 		pPKUnit = pWearingPK;
 	if ( IsEmptyPK() )
 		pPKUnit = this;
+	const bool bWasPKDisabled = !pPKUnit ||
+		pPKUnit->GetUnitRPG()->GetRPGUnit()->Skills( NDb::ST_VP ) < 0;
+	bool bPKDisabled = false;
+	int nRet = CDumbUnitServer::ProcessAttack( pWorld, nUserID, pAttack, vDir, pArmor );
+	if ( !IsValid( this ) )
+	{
+		if ( IsValid( pAttacker ) && eAttackerRelation != NDb::DS_NEUTRAL )
+			pAttacker->GetUnitRPG()->GetRPGUnit()->AddMedalPoints( pOwnerWorld->GetGlobalGame(),
+				eAttackerRelation == NDb::DS_ALLY ? NRPG::MPC_KILLED_ALLY : NRPG::MPC_KILLED_ENEMY, 0 );
+		// Retail 0x7c3a93..0x7c3abc also pays the prepared reward if damage
+		// removes the target entirely; do not access the invalid target here.
+		for ( list< CPtr<CUnitServer> >::iterator i = xpUnits.begin(); i != xpUnits.end(); ++i )
+			(*i)->GetUnitRPG()->GetRPGUnit()->AddXP( fXP );
+		return nRet;
+	}
+	// Retail 0x7c3fa9..0x7c4093: frame hits on non-AI units; heroes get priority.
+	if ( nRet > 0 && ( !IsValid( GetPlayer() ) || !NAI::IsAIPlayer( GetPlayer() ) ) )
+	{
+		const float fImportance = GetRPG()->IsHero() ? 1000.0f : float( nRet / 10 + 1 );
+		pOwnerWorld->AddUICommand( new CUICmdUnitCamera( IsValid( pAttacker ) ? pAttacker : this,
+			PR_OUR_UNIT_IS_HIT, false, fImportance, this ) );
+	}
 	NDb::CPanzerklein *pPK = 0;
 	if ( pPKUnit )
 		pPK = pPKUnit->GetUnitRPG()->GetRPGPers()->pPanzerklein;
 	if ( pPK )
 	{	
 		NRPG::CDynamicSkill &pkVP = pPKUnit->GetUnitRPG()->GetRPGUnit()->Skills( NDb::ST_VP );
-		if ( pPK->pSelfExplosion && pkVP < 0 )
+		if ( pPK->pSelfExplosion && pkVP <= 0 )
 		{
 			GetWorld()->AddGrenadeExplosion( GetPosition().GetCP(), pPK->pSelfExplosion );
 			if ( IsEmptyPK() )
@@ -1689,8 +1754,14 @@ int CUnitServer::ProcessAttack( NWorld::IWorld *pWorld, int nUserID, NRPG::CAtta
 				}
 			}
 		}
-		if ( pkVP < 0 )
+		if ( pkVP <= 0 )
+		{
 			animator.IdleBan( NAnimation::E_NO_IDLE_WHEN_STUNNED, true );
+			bPKDisabled = true;
+			if ( !bWasPKDisabled && IsValid( pAttacker ) && eAttackerRelation != NDb::DS_NEUTRAL )
+				pAttacker->GetUnitRPG()->GetRPGUnit()->AddMedalPoints( pOwnerWorld->GetGlobalGame(),
+					eAttackerRelation == NDb::DS_ALLY ? NRPG::MPC_DISABLED_ALLY_PK : NRPG::MPC_DISABLED_ENEMY_PK, 0 );
+		}
 	}
 
 	if ( !isDead && GetUnitRPG()->IsDead() )
@@ -1702,6 +1773,12 @@ int CUnitServer::ProcessAttack( NWorld::IWorld *pWorld, int nUserID, NRPG::CAtta
 					pGlobalPlayer->deployData.unitsDeployData[ GetUnitRPG()->GetRPGUnit() ].bCorpseAlive = false;
 		}
 		GetWorld()->GetGlobalGame()->pScenarioTracker->OnScenarioClueDestroyed( this->GetUnitRPG()->GetRPGPersID(), true );
+		if ( IsValid( pAttacker ) && eAttackerRelation != NDb::DS_NEUTRAL )
+		{
+			const NRPG::EMedalPointCases eCase = eAttackerRelation == NDb::DS_ALLY ? NRPG::MPC_KILLED_ALLY :
+				!bWasPKDisabled && !bPKDisabled ? NRPG::MPC_KILLED_ENEMY_NOT_DISABLED_PK : NRPG::MPC_KILLED_ENEMY;
+			pAttacker->GetUnitRPG()->GetRPGUnit()->AddMedalPoints( pOwnerWorld->GetGlobalGame(), eCase, 0 );
+		}
 	}
 	// Retail v1.2 0x7c3e2d..0x7c3e64: notify the scenario on a new knockout,
 	// even when discovery already ran before the attack.
@@ -1717,6 +1794,12 @@ int CUnitServer::ProcessAttack( NWorld::IWorld *pWorld, int nUserID, NRPG::CAtta
 		// not subsequent attacks that kill an already-unconscious body.
 		for ( typename list< CPtr<CUnitServer> >::iterator i = xpUnits.begin(); i != xpUnits.end(); ++i )
 			(*i)->GetUnitRPG()->GetRPGUnit()->AddXP( fXP );
+		// Retail 0x7c455e: release the snapshotted mounted gun after incapacitation.
+		if ( IsValid( pCannon ) )
+		{
+			GetUnitRPG()->SetCannonItem( 0 );
+			pCannon->SetCurrentUnit( 0 );
+		}
 	}
 	return nRet;
 }
@@ -1737,8 +1820,8 @@ bool CUnitServer::IsMoving() const
 int CUnitServer::GetCarefulShotExtraAP()
 {
 	CDynamicCast<NRPG::IWeaponItem> pWeaponItem( GetUnitRPG()->GetWeaponItem() );
-		if ( IsValid( pWeaponItem ) && pWeaponItem->GetShootMode() != NDb::SM_Careful )
-			return 0;
+	if ( !IsValid( pWeaponItem ) || pWeaponItem->GetShootMode() != NDb::SM_Careful )
+		return 0;
 	//
 	int nRes = 0;
 	//
@@ -2004,6 +2087,9 @@ void CUnitServer::SetPlayer( CPlayer *_pPlayer )
 	pPlayer = _pPlayer;
 	// Retail 0x7c1340: the medal relation query uses the mission's owner ID.
 	GetUnitRPG()->SetScenarioPlayerID( IsValid( pPlayer ) ? pPlayer->GetScenarioPlayerID() : -1 );
+	const bool bAI = NAI::IsAIPlayer( pPlayer );
+	GetUnitRPG()->GetRPGUnit()->SetCheat( 0x80, bAI ); // Retail AI severe-wound policy.
+	GetUnitRPG()->SetIsAIPlayer( bAI );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUnitServer::SetDialog( const string &szDialogCode )

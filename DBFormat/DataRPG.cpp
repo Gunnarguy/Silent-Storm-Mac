@@ -33,6 +33,10 @@ const char *pszSubTypes[N_SUBTYPES] =
 	"RifleAmmo",
 	"MGAmmo",
 	"HeavyAmmo",
+	"SMGAmmoAllies",
+	"SMGAmmoAxis",
+	"RifleAmmoAllies",
+	"RifleAmmoAxis",
 };
 const char *pszUniformPlaces[N_ITEM_PLACES] = 
 {
@@ -374,6 +378,12 @@ EWeaponType GetAnimationType( const string &szAWT )
 		return WT_PLAZMAGUN;
 	else if ( szAWT == "PK_Plazmagun" )
 		return WT_PK_PLAZMAGUN;
+	else if ( szAWT == "BossPlazmagun" )
+		return WT_BOSS_PLAZMAGUN;
+	else if ( szAWT == "TerrorShooter" )
+		return WT_TERROR_SHOOTER;
+	else if ( szAWT == "TerrorSpecialGun" )
+		return WT_TERROR_SPECIAL_GUN;
 	else
 		return WT_DEFAULT;
 }

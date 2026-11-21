@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 //
 #include "aiUnit.h"
+#include "aiMap.h"
 #include "aiState.h"
 #include "aiUnitState.h"      // SAIUnitState::pEnemy
 #include "aiActionBase.h"      // SPlaceWithAP, CAIAction (new substrate base - phase 3)
@@ -15,6 +16,7 @@
 #include "wMainMoves.h"        // NWorld::GetMoveActionType (path-AP calcer)
 #include "wMainPath.h"         // NWorld::FindPath / NWorld::PrepareAllPaths decls
 #include "wUnitAttack.h"       // NWorld::GetMeleeAttackPlaces (the enemy melee ring)
+#include "RPGUnit.h"
 #include "RPGGame.h"           // NRPG::GetShootDirection (face the candidate place at the enemy) @0x8e5e0
 #include "RPGCover.h"          // NRPG::GetObjectsThatMayBeDamaged (live shot-raster query)
 #include "RPGItemSet.h"        // CWeaponItem::CreateNewAttackPortion
@@ -95,10 +97,14 @@ bool CUnitArea::Prepare()                                                    // 
 	// (same idiom CAINearEnemyPlaceSource::Prepare uses); restore after the flood.
 	NAI::EPose nOldWish = pUS->GetWishPose();
 	pUS->SetWishPose( (NAI::EPose)wishPose );
+	if ( wishPose == CRAWL )
+		pUS->SetStrafe( false );
 	CMultiMovesTable movesTable;
 	list<SPathPlace>  reach;
-	NWorld::PrepareAllPaths( pNet, &movesTable, &reach, pUS, place, nAPRadius, pUS, true );
+	NWorld::PrepareAllPaths( pNet, &movesTable, &reach, pUS, place, nAPRadius, pUS, false, true );
 	pUS->SetWishPose( nOldWish );
+	if ( nOldWish == CRAWL )
+		pUS->SetStrafe( false );
 	// @0x74880 -- clear, then keep every reachable place whose pose is neither CM_INACTIVE(3) nor
 	// CM_LAY(0); key on the normalized GetHash so direction/moving bits do not fragment the set
 	// (release: `places[GetHash(*i)] = 1`).
@@ -185,13 +191,11 @@ bool CAIActionPlaceSource::IsPassable( IPathNetwork *pNet, const SPathPlace &p )
 	if ( !IsValid( pNet ) )
 		return false;
 	EPassable e = pNet->GetPassability( p );
-	if ( e == AIP_NOT_PASSABLE || e == AIP_CANNOT_LAY )
+	if ( e == AIP_NOT_PASSABLE )
 		return false;
-	// AIP_LOCKED/AIP_DOOR fall through to the ownership test: only a FOREIGN lock rejects.
-	CObjectBase *pLocker = pNet->GetWhoLocksThisPlace( p );
-	if ( pLocker != 0 && pLocker != (CObjectBase *)pUnit->GetUnitServer() )
-		return false;
-	return true;
+	// Retail 0x48e2c0: only a locked tile needs an ownership check.
+	// CANNOT_LAY and DOOR remain candidates for a standing/crouching unit.
+	return e != AIP_LOCKED || pNet->GetWhoLocksThisPlace( p ) == (CObjectBase *)pUnit->GetUnitServer();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // IsInUnitDir @0x0048e120 - is `place` in the direction the unit at `pUS` is facing? Free helper that the
@@ -211,7 +215,7 @@ bool IsInUnitDir( NWorld::CUnitServer *pUS, const SPathPlace &place )
 	CPtr<IPathNetwork> pNet = pUS->GetWorld()->GetPathNetwork();
 	if ( !IsValid( pNet ) )
 		return false;
-	if ( !pNet->IsValidDestination( place ) )                            // release vtbl+0xb0 point-validity probe
+	if ( !pNet->IsValidPoint( place ) )                            // release vtbl+0xb0 point-validity probe
 		return false;
 	const SUnitPosition &uPos = pUS->GetPosition();
 	const int   nDir   = (int)pNet->GetClosestDir( uPos.pos.p, place );  // EDirection 0..7 (src=unit, dst=place)
@@ -249,7 +253,7 @@ bool CAIActionPlaceSource::AddAllPoses( const SPathPlace &p, int nMoveAP, int nM
 	CPtr<NWorld::CUnitServer> pUS  = pUnit->GetUnitServer();
 	CPtr<IPathNetwork>        pNet = pUS->GetWorld()->GetPathNetwork();
 	CPtr<NRPG::IUnitMission>  pRPG = pUS->GetUnitRPG();
-	if ( !IsValid( pNet ) || !IsValid( pRPG ) )
+	if ( !IsValid( pNet ) || !IsValid( pRPG ) || !pNet->IsValidPoint( p ) )
 		return false;
 	//
 	// @0x0048e5e0 - bArg (bFaceEnemy, passed true at every call site) orients each added place toward the
@@ -271,10 +275,10 @@ bool CAIActionPlaceSource::AddAllPoses( const SPathPlace &p, int nMoveAP, int nM
 	}
 	//
 	const int  nCurAP    = pUnit->GetAP();
-	const bool bCanCrouch = !pUnit->HasInactivePose();   // @0x0048e5e0 gates crouch on vtbl 0x20 (inferred)
+	const bool bCanCrouch = !pUS->IsWearingPK();   // retail 0x48ea8a
 	//
 	// stand/walk pose
-	const int nWalkCost = nMoveAP + pRPG->GetActionAP( ( NAI::EPose )p.GetPose(), NRPG::AC_POSE_WALK );
+	const int nWalkCost = nMoveAP + pRPG->GetActionAP( GetUnitPos( p, pNet ).GetPose(), NRPG::AC_POSE_WALK );
 	bool bAddedWalk = false;
 	if ( nWalkCost <= nMaxAP )
 	{
@@ -288,7 +292,7 @@ bool CAIActionPlaceSource::AddAllPoses( const SPathPlace &p, int nMoveAP, int nM
 		}
 	}
 	// crouch pose (the release reuses the walk passability when the walk pose was added at this tile)
-	const int nCrouchCost = nMoveAP + pRPG->GetActionAP( ( NAI::EPose )p.GetPose(), NRPG::AC_POSE_CROUCH );
+	const int nCrouchCost = nMoveAP + pRPG->GetActionAP( GetUnitPos( p, pNet ).GetPose(), NRPG::AC_POSE_CROUCH );
 	if ( bCanCrouch && nCrouchCost <= nMaxAP )
 	{
 		SPathPlace pp = p;
@@ -309,8 +313,9 @@ bool CAIActionPlaceSource::IsPosDangerousForAllies( const SUnitPosition &pos, CA
 	IAIUnit *pU = GetUnit();
 	IAIUnit *pEnemy = GetEnemy();
 	SAIState *pState = GetAIState();
-	if ( !IsValid( pU ) || !IsValid( pU->GetUnitServer() ) || !IsValid( pState ) ||
-		 !IsValid( pEnemy ) || !IsValid( pEnemy->GetUnitServer() ) || !pEnemy->GetUnitServer()->CanFight() )
+	if ( !IsValid( pEnemy ) || !IsValid( pEnemy->GetUnitServer() ) )
+		return false;
+	if ( !IsValid( pU ) || !IsValid( pU->GetUnitServer() ) || !IsValid( pState ) )
 		return true;
 	if ( !IsValid( pWeapon ) || !IsValid( pWeapon->GetItem() ) )
 		return false;
@@ -368,7 +373,8 @@ void CAIAttackPlaceSource::Prepare()                                    // @0x00
 	ClearPlaces();
 	IAIUnit *pU     = GetUnit();
 	IAIUnit *pEnemy = GetEnemy();
-	if ( !IsValid( pU ) || !IsValid( pU->GetUnitServer() ) )
+	if ( !IsValid( pU ) || !IsValid( pU->GetUnitServer() ) ||
+		!IsValid( pEnemy ) || !IsValid( pEnemy->GetUnitServer() ) || !IsValid( GetAIState() ) )
 		return;
 	CPtr<NWorld::CUnitServer> pUS    = pU->GetUnitServer();
 	CPtr<NWorld::CWorld>      pWorld = pUS->GetWorld();
@@ -384,6 +390,8 @@ void CAIAttackPlaceSource::Prepare()                                    // @0x00
 	if ( !bCheckDangerousForAllies || !IsPosDangerousForAllies( pU->GetUnitPosition(), pFireArm ) )
 		AddAllPoses( curPlace, 0, nMaxAP, true );
 	//
+	NAI::EPose oldWish = pUS->GetWishPose();
+	pUS->SetWishPose( pUS->IsWearingPK() ? NAI::WALK : NAI::RUN );
 	// (2) shooting places along the approach to the enemy: find a path and AddAllPoses at each place
 	// within nMaxAP. Mirrors the dev twin CAIFindGoodPlacesJob::PreparePlaces.
 	if ( IsValid( pEnemy ) && IsValid( pEnemy->GetUnitServer() ) )
@@ -391,22 +399,23 @@ void CAIAttackPlaceSource::Prepare()                                    // @0x00
 		vector<SPathPlace> dest;
 		dest.push_back( pEnemy->GetUnitServer()->GetPosition().pos.p );
 		CPtr<NAI::CPath> pPath = NWorld::FindPath( pNet, pUS, curPlace, dest, pUS,
-			false, NAI::PF_DEFAULT, false, true, true );   // release uses PF_USE_DIR
+			false, NAI::PF_DEFAULT, false, true, true );   // retail PF_DEFAULT
 		if ( IsValid( pPath ) )
 		{
 			CPathAPCalcerLocal calcer( pWorld, pRPG, pU->GetUnitPosition(), false );
-			for ( typename vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
+			SPathPlace last = curPlace;
+			for ( vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
 			{
 				calcer.AddPoint( *i );
 				if ( calcer.GetResult() > nMaxAP )
 					break;
-				// @0x0048f900: skip the unit's own tile (already added by (1)) and special/climbing-pose
+				// @0x48fe2d: skip consecutive repetitions of the same tile and special/climbing-pose
 				// tiles (nPose==3). The old `& 0xc000` mask never matched (GetPose() is a 2-bit field).
 				if ( (*i).GetPose() != 3 &&
-					!( (*i).GetX() == curPlace.GetX() && (*i).GetY() == curPlace.GetY() &&
-					   (*i).GetLayer() == curPlace.GetLayer() ) &&
+					( ( (*i).GetData() ^ last.GetData() ) & 0x1feffff ) != 0 &&
 					( pArea == 0 || pArea->IsInArea( *i ) ) )    // area gate (pArea==0 -> no gate)
 				{
+					last = *i;
 					SUnitPosition candidate = GetUnitPos( *i, pNet );
 					if ( bCheckDangerousForAllies && IsPosDangerousForAllies( candidate, pFireArm ) )
 						continue;
@@ -420,11 +429,8 @@ void CAIAttackPlaceSource::Prepare()                                    // @0x00
 	// (3) @0x0048f900 — the FLANKING wave. The release floods the reachable set within only min(nMaxAP,8)
 	// wave-AP (NOT the full nMaxAP) and keeps a place only when its direction from the unit is within
 	// +-10 degrees of PERPENDICULAR to the unit->enemy axis (|cos| <= sin(10deg) = 0.1737, the load-bearing
-	// constant @0x4b42b0): it offers FLANKING arcs, it does not blanket every reachable tile. Two release
-	// The friendly-fire pre-filter is applied below. CanHitFromPlace (weapon range + sight-FOV engage
-	// probe) remains redundant here because the shoot action's GetInfoInner performs the authoritative
-	// LOS/range/to-hit scoring for every candidate. pArea==0 means the ordinary attack source has no
-	// guard-area restriction, matching its retail (unit,14,true) factory overload.
+	// constant @0x4b42b0): it offers flanking arcs rather than every reachable tile.
+	// Flanking positions must also pass the observer's actual sight range/FOV and visibility test.
 	if ( IsValid( pEnemy ) && IsValid( pEnemy->GetUnitServer() ) )
 	{
 		const int   nBudget = nMaxAP > 7 ? 8 : nMaxAP;                       // @0x0048f900 wave budget cap (8 AP)
@@ -435,27 +441,33 @@ void CAIAttackPlaceSource::Prepare()                                    // @0x00
 		list<SPathPlace>      reach;
 		// Retail @0x48fd5a: flank wave skips suicide checks and transient unit locks.
 		NWorld::PrepareAllPaths( pNet, &movesTable, &reach, pUS, curPlace, nBudget, pUS, false, true );
-		for ( typename list<SPathPlace>::const_iterator i = reach.begin(); i != reach.end(); ++i )
+		SPathPlace last = curPlace;
+		for ( list<SPathPlace>::const_iterator i = reach.begin(); i != reach.end(); ++i )
 		{
 			if ( (*i).GetPose() == 3 )                                       // skip special/climbing-pose tiles
 				continue;
-			if ( (*i).GetX() == curPlace.GetX() && (*i).GetY() == curPlace.GetY() &&
-				(*i).GetLayer() == curPlace.GetLayer() )                     // own tile already added by (1)
+			if ( ( ( (*i).GetData() ^ last.GetData() ) & 0x1feffff ) == 0 )
 				continue;
 			if ( !( pArea == 0 || pArea->IsInArea( *i ) ) )                  // area gate (pArea==0 -> no gate)
 				continue;
-			CVec2 dirUP = GetUnitPos( *i, pNet ).GetCPNoHeight() - unitCP;
+			last = *i;
+			SUnitPosition candidate = GetUnitPos( *i, pNet );
+			candidate.pos.p.SetDirection( NRPG::GetShootDirection( pNet, *i, pEnemy->GetUnitPosition().GetCP() ) );
+			CVec2 dirUP = candidate.GetCPNoHeight() - unitCP;
 			Normalize( &dirUP );
 			const float fDot    = dirUP * dirUE;                            // cos(angle to the unit->enemy axis)
 			const float fAbsDot = fDot < 0.0f ? -fDot : fDot;
 			if ( fAbsDot > 0.1737f )                                         // keep only ~perpendicular (flanking)
 				continue;
-			SUnitPosition candidate = GetUnitPos( *i, pNet );
 			if ( bCheckDangerousForAllies && IsPosDangerousForAllies( candidate, pFireArm ) )
 				continue;
-			AddAllPoses( *i, movesTable.GetCost( *i ), nMaxAP, true );
+			if ( !pWorld->GetGame()->CheckPositionVisibility( candidate, pEnemy->GetUnitPosition().pos,
+				pWorld->GetGame()->GetUnitSightDistance( pU->GetRPGUnit() ), pU->GetRPGUnit()->GetSightFOV() ) )
+				continue;
+			AddAllPoses( candidate.pos.p, movesTable.GetCost( *i ), nMaxAP, true );
 		}
 	}
+	pUS->SetWishPose( oldWish );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CAICurrentPlaceSource - just the unit's current place (all poses).
@@ -536,12 +548,14 @@ void CAINearEnemyPlaceSource::Prepare()                                 // @0x00
 	// restored only on the success path -- the empty-targets / no-path early returns leave it clobbered.
 	NAI::EPose nOldWish = pUS->GetWishPose();
 	pUS->SetWishPose( IsValid( pUS->GetWearingDBPK() ) ? NAI::WALK : NAI::RUN );   // release IsUnitBusy == IsInPK
-	// the enemy's melee ring (places adjacent to the enemy to melee it from). The release read it from the
-	// AIMap GetMeleeAttackPlaces(world, enemy); the in-tree generator is attacker-centred, so it is called
-	// centred on the enemy -- the only deviation is the melee-reach x2, which keys off the enemy's PK status
-	// rather than this unit's (negligible: it differs only when the enemy itself wears a panzerklein).
+	// Retail 0x48f0d2: reach belongs to the attacker, centred on the
+	// target's body collider point (not its path-grid centre).
+	CVec3 ptTarget;
+	IAIMap *pMap = pWorld->GetAIMap();
+	if ( !IsValid( pMap ) || !pMap->GetUnitHLPos( &ptTarget, pMap->GetHull( pEnemyUS ), HL_BODY ) )
+		return;
 	vector<SPathPlace> targets;
-	NWorld::GetMeleeAttackPlaces( pEnemyUS, pEnemyUS->GetPosition().GetCP(), &targets );
+	NWorld::GetMeleeAttackPlaces( pUS, ptTarget, &targets );
 	if ( targets.empty() )
 		return;
 	// path to the ring, ignoring the enemy as an obstacle (else it blocks its own ring).
@@ -553,10 +567,7 @@ void CAINearEnemyPlaceSource::Prepare()                                 // @0x00
 		false, NAI::PF_DEFAULT, false, true, true );
 	if ( !IsValid( pPath ) || pPath->points.empty() )
 		return;
-	CPathAPCalcerLocal calcer( pWorld, pRPG, pU->GetUnitPosition(), false );
-	for ( typename vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
-		calcer.AddPoint( *i );
-	AddPlace( pPath->points.back(), pU->GetAP() - calcer.GetResult() );
+	AddPlace( pPath->points.back(), pU->GetAP() - GetPathAP( pUS, pPath ) );
 	pUS->SetWishPose( nOldWish );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -592,23 +603,27 @@ void CAIToPlacePlaceSource::Prepare()                                   // @0x00
 	NAI::EPose nOldWish = pUS->GetWishPose();
 	pUS->SetWishPose( IsValid( pUS->GetWearingDBPK() ) ? NAI::WALK : NAI::RUN );
 	CPtr<NAI::CPath> pPath = NWorld::FindPath( pNet, pUS, selfPlace, dest, pUS,
-		false, NAI::PF_DEFAULT, false, true, true );   // release uses PF_USE_DIR
+		false, NAI::PF_DEFAULT, false, true, true );
 	if ( !IsValid( pPath ) )
 		return;   // ORIGINAL BUG (@0x0048f0e0): wish pose intentionally NOT restored on this early return
+	SPathPlace lastPlace = selfPlace;
 	CPathAPCalcerLocal calcer( pWorld, pRPG, pU->GetUnitPosition(), false );
 	for ( typename vector<SPathPlace>::const_iterator i = pPath->points.begin(); i != pPath->points.end(); ++i )
 	{
 		calcer.AddPoint( *i );
 		if ( calcer.GetResult() > nMaxAP )
 			break;
-		// @0x0048f0e0 -- skip the unit's OWN tile (already offered above; release masks pose/dir/moving via
-		// IsSamePlace mask 0x1feffff) and CM_INACTIVE tiles (release: nPose != 3). The prior
-		// `GetPose() & 0xc000` was a no-op: GetPose() is the 2-bit nPose, so the skip never fired.
-		if ( ( ( (*i).GetData() ^ selfPlace.GetData() ) & 0x01feffff ) != 0 &&
+		// Keep one candidate per consecutive tile, even when the path turns or changes pose.
+		if ( ( ( (*i).GetData() ^ lastPlace.GetData() ) & 0x01feffff ) != 0 &&
 			(*i).GetPose() != NAI::CM_INACTIVE )
+		{
+			lastPlace = *i;
 			AddAllPoses( *i, calcer.GetResult(), nMaxAP, true );
+		}
 	}
-	pUS->SetWishPose( nOldWish );   // restored only here on success (the early returns above leave it clobbered)
+	pUS->SetWishPose( nOldWish );
+	if ( nOldWish == CRAWL )
+		pUS->SetStrafe( false );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CAIOnePlacePlaceSource - exactly the one held place (defence holds a spot).
@@ -640,7 +655,7 @@ void CAIOnePlacePlaceSource::Prepare()                                  // @0x00
 	if ( !bCrouch )
 		AddAllPoses( place, nMoveAP, 0xffff, true );                 // stand: both poses at the spot
 	else
-		AddPlace( place, GetUnit()->GetMaxAP() - nMoveAP );          // crouch: the single held place
+		AddPlace( place, GetUnit()->GetUnitServer()->GetAP() - nMoveAP );          // crouch: the single held place
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // operator& for the subclasses (parent chunk + own members)

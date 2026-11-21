@@ -57,6 +57,7 @@ public:
 	virtual SPosition GetPosition() = 0;
 	virtual SUnitPosition GetUnitPosition() = 0;
 	virtual NDb::EDiplomacyState GetDiplomacyState( IAIUnit *pUnit ) = 0;
+	virtual void SetPosition( const SUnitPosition &_position ) = 0;
 	virtual void SetPosition( SPosition _pPosition ) = 0;
 	virtual void SetPosition( SPathPlace _pPosition ) = 0;
 	virtual SPosition GetPrevPosition() = 0;
@@ -162,11 +163,12 @@ public:
 	// drop any combat logic. UnitKeepMoving is the script-facing caller.
 	virtual void ContinueRoute() {}
 	// release CAIUnit per-unit runaway-AI guard (IAIUnit vtbl 0x90/0x94): GetNonFreezeCounter @0xaef20 /
-	// ClearNonFreezeCounter @0xaef30. The commander's IsPossibleFreeze @0x33ad0 weights each unit's counter
-	// (x200) into its 5000-cap freeze test; ClearNonFreezeCounters @0x33a90 zeroes them each real-time
+	// ClearNonFreezeCounter @0xaef30. The commander's IsPossibleFreeze @0x33ad0 adds each unit's counter
+	// directly into its 5000-cap freeze test; ClearNonFreezeCounters @0x33a90 zeroes them each real-time
 	// segment. The counter bumps on every per-unit logic/reaction churn (SetReaction / SetLogic). Non-pure
-	// defaults (vtable-order append) so other IAIUnit impls are unaffected; CAIUnit overrides both.
+	// defaults (vtable-order append) so other IAIUnit impls are unaffected; CAIUnit overrides them.
 	virtual int GetNonFreezeCounter() { return 0; }
+	virtual void AddNonFreezeCounter( int n ) {}
 	virtual void ClearNonFreezeCounter() {}
 	// release CAIUnit shoot-mode disable machinery (IAIUnit vtbl 0x7c/0x80/0x84 == DisableShootMode
 	// @0xad740 / EnableShootMode @0xad770 / IsShootModeDisabled @0xad590; hash_map<int,int> @CAIUnit+0xec,

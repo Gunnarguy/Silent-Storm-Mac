@@ -241,6 +241,8 @@ void CBuildingGrid::AddHP( const SPoint3 &pt, BYTE hp )
 {
 	if ( !IsValidCoord( pt ) )
 		return;
+	if ( At( pt ) == N_INDESTRUCTIBLE )
+		return;
 	int nNewHP = At( pt ) + hp;
 	//ASSERT( nNewHP <= N_MAX_HP );
 	At( pt ) = Min( N_MAX_HP, nNewHP );
@@ -311,7 +313,8 @@ void CBuildingGrid::GetUpdatedParts( vector<SPart> *pParts )
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 inline SPart CBuildingGrid::Point2Part( const SPoint3 &pt )
 {
-	const int z = pt.z - 1;
+	// Retail Steam 0x4c375f: negative cellar nodes skip the boundary decrement.
+	const int z = pt.z < 0 ? pt.z : pt.z - 1;
 	return SPart( z < 0 ? z/4 - 1 : z/4, pt.x / 2, pt.y / 2 );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////

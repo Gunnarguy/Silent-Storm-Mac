@@ -329,7 +329,7 @@ public:
 public:
 	const CPathNetwork *GetNetwork() const { return pGroup->pNet; }
 	void GetSamePoints( const SPathPlace& p, vector<SPathPlace> *pRes );
-	int GetSamePoints( const SPathPlace& p, SPathPlace *places ); // quicker version: places is an array having enough memory
+	int GetGeometricSamePoints( const SPathPlace& p, SPathPlace *places ); // zone graph only; array must fit all group layers
 	bool RefreshLadder( int nLadder, IAIMap *pMap );   // retail @0x408b0: true = a recalc actually ran
 
 	char GetLocks( int x, int y ) const { return tiles[y][x].nLocks; }
@@ -506,6 +506,7 @@ public:
 	virtual void SetOnLayer( SObjectPosition *pRes, int nLayer, const CVec3 &pos );
 	virtual bool SetOnFloor( SPosition *pRes, int nFloor, const CVec3 &pos );
 	virtual int GetNumLayers() const { return layers.size(); }
+	virtual bool GetMinMaxPoint( CVec3 *pMin, CVec3 *pMax ) const;
 	virtual void GetPassability( CArray2D<bool> *pRes, int nLayer );
 	virtual void GetNetworkFragment( const SPosition &pos, bool bOneColorOnly, vector<SShowPoint> *pKnots, vector<SShowLink> *pLinks );
 	virtual int GetFloor( int nLayer ) const;
@@ -521,6 +522,7 @@ public:
 	virtual void ClearDynamicLocks( CObjectBase *pUnit );
 	virtual void RestoreDynamicLocks( CObjectBase *pUnit );
 	virtual void ChangeDynamicLocks( CObjectBase *pUnit, const vector<SPathPlace> &points );
+	virtual bool IsValidPoint( const SPathPlace &p ) const;
 	virtual bool IsValidDestination( const SPathPlace &p );
 	virtual bool IsPassable( const SPathPlace &p );
 	virtual EPassable GetPassability( const SPathPlace &p );   // @0x42e30 granular sibling; IsPassable == (GetPassability==AIP_YES)

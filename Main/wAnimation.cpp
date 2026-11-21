@@ -28,7 +28,6 @@ const float F_HEIGHT_MAP_SIZE = 2.5f;
 // retail CUnitAnimator::Rotate @0x33d0f0: 3*PI rad/s (~540 deg/s). Dev's old 700.0 was ~74x too fast.
 const float F_DEFAULT_TURN_SPEED = 7.0f;   // v1.2 Rotate @0x73d7b5, constant0x8c97f4
 const float F_DEFAULT_MOVE_SPEED = 1.f;
-const float F_DEFAULT_AIM_SPEED = 0.8f;
 			STime N_DEFAULT_TRANSIT_TIME = 300;
 const STime N_FORCED_MOVE_TIME = 1500;
 const STime N_DEFAULT_ACTIVATE_TIME = 100;
@@ -212,7 +211,7 @@ CUnitAnimator::CUnitAnimator( CFuncBase<STime> *_pTime, const NAI::SUnitPosition
 	pAnimState->state.pTerrain = pTerrainFunc;
 	pAnimState->state.cIdleBannedFlags = 0;
 	eAnimationWeaponType = NDb::WT_DEFAULT;
-	bHasPKSkeleton = false;
+	bHasPKSkeleton = IsValid( pPers ) && IsValid( pPers->pPanzerklein );
 	pFloor = new NGScene::CCInt(-5);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -554,9 +553,9 @@ void CUnitAnimator::SetBreathOnlyIdle( bool bOn )
  	IdleBan( NAnimation::E_BREATH_ONLY_IDLE, bOn );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-NAnimation::CAnimator* CUnitAnimator::PutOnTerrain( NAnimation::CAnimator *pAnim )
+NAnimation::CAnimator* CUnitAnimator::PutOnTerrain( NAnimation::CAnimator *pAnim, bool bSpecial )
 {
-	if ( pose == NAI::CRAWL )
+	if ( pose == NAI::CRAWL || bSpecial )
 	{
 		NAnimation::CATerrainCrawl *pT = new NAnimation::CATerrainCrawl;
 		pT->pSkeleton = pAnimator->pSkeleton;
@@ -768,13 +767,13 @@ void CUnitAnimator::Move(
 			STime tBegin = tEnd;
 			if ( fStartLeft < fMoveDistance )
 			{
-				tEnd += fStartLeft * 1000 / pStartAnim->GetVelocity();
+				tEnd += fStartLeft / pStartAnim->GetVelocity() * 1000;
 				tAnim = 0;
 				fMoveDistance -= fStartLeft;
 			}
 			else
 			{
-				STime t = fMoveDistance * 1000 / pStartAnim->GetVelocity();
+				STime t = fMoveDistance / pStartAnim->GetVelocity() * 1000;
 				tEnd += t;
 				tAnim += t;
 				fStartLeft -= fMoveDistance;
@@ -825,7 +824,7 @@ void CUnitAnimator::Move(
 		pSeq->Insert( tEnd, pCycleAnim );
 
 		STime tBegin = tEnd;
-		STime t = fMoveDistance * 1000 / fVelocity;
+		STime t = fMoveDistance / fVelocity * 1000;
 		tEnd += t;
 		tAnim += t;
 		fStartLeft = 0;
@@ -1043,14 +1042,14 @@ void CUnitAnimator::Attack( const NAI::SUnitPosition &cmdPos, const CRay &ray, b
 		else
 		{
 			CVec3 cross = aimDir ^ shootDir;
-			tTransit = asin( fabs(cross) ) / F_DEFAULT_AIM_SPEED * 1000;
+			tTransit = asin( fabs(cross) ) * 1250.0f;
 		}
 	}
 	else if ( bAimedStrafe )
 	{
 		CVec3 dir( cos(fCurAngle), sin(fCurAngle), 0 );
 		CVec3 cross = dir ^ shootDir;
-		tTransit = asin( fabs(cross) ) / F_DEFAULT_AIM_SPEED * 1000 + N_DEFAULT_TRANSIT_TIME;
+		tTransit = asin( fabs(cross) ) * 1250.0f + N_DEFAULT_TRANSIT_TIME;
 	}
 	else
 	{
@@ -1087,6 +1086,9 @@ void CUnitAnimator::Attack( const NAI::SUnitPosition &cmdPos, const CRay &ray, b
 	if ( !pAtAnim )
 	{
 		DefaultAction( cmdPos );
+		aimDir = shootDir;
+		bAimed = true;
+		bAimedStrafe = true;
 		return;
 	}
 	tLabel1 = pAtAnim->GetTimeLabel1();
@@ -1165,7 +1167,7 @@ void CUnitAnimator::Attack( const NAI::SUnitPosition &cmdPos, const CRay &ray, b
 	bAimed = true;
 	bAimedStrafe = true;
 
-	pAnimator->AddTransit( tEnd, tEnd + tTransit, PutOnTerrain( pTurn ), NAnimation::PARABOLA );
+	pAnimator->AddTransit( tEnd, tEnd + tTransit, PutOnTerrain( pTurn, pAtAnim->GetRecordID() == 0x925 ), NAnimation::PARABOLA );
 	tEnd += tTransit;
 	if ( !bNoShoot )
 		tEnd += pAtAnim->GetTime();
@@ -1178,7 +1180,7 @@ const char* GetAnimHeightParams( const NAI::SUnitPosition &cmdPos, NAI::EBlowHei
 	const char *pszParams = 0;
 	NAI::EPose pose = cmdPos.GetPose();
 	if ( pose == NAI::CRAWL )
-		return 0;
+		return "Height1";
 	switch (eBHeight)
 	{
 		case NAI::BH_BOTTOM:
@@ -1516,7 +1518,7 @@ void CUnitAnimator::Fall( const NAI::SUnitPosition &cmdPos, float fPrevHeight )
 	
 	pAnimator->Updated();
 	IdleOn( cmdPos );
-
+	bInactivePose = cmdPos.pos.p.GetPose() == NAI::CM_INACTIVE;   // retail v1.2 0x73e94b..0x73e965
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUnitAnimator::Jump( const NAI::SUnitPosition &prevPos, const NAI::SUnitPosition &cmdPos, bool bRealJump, bool bJumpBack )
@@ -1525,17 +1527,29 @@ void CUnitAnimator::Jump( const NAI::SUnitPosition &prevPos, const NAI::SUnitPos
 	CPtr<NAnimation::CAnimator> pResult = 0;
 	STime t = 0;
 	pose = cmdPos.GetPose();
+	// Original retail bug: the climb can finish crouched with standing idle flags.
+	CalculateAnimFlags();
 	if ( !bRealJump )
 	{
 		pTerrainFunc->Move( prevPos, cmdPos );
+		bool bRetreat = prevPos.pos.GetNetwork()->GetDir( prevPos.pos.p, cmdPos.pos.p ) ==
+			( ( prevPos.pos.p.GetDirection() + 4 ) & 7 );
 		CPtr<NAnimation::CAnimation> pAnim = pAnimator->CreateAnimation(
-			pSkeleton->GetAnimation( NDb::CAnimation::CLIMB_FINISH, 0 ), tEnd );
+			pSkeleton->GetAnimation( bRetreat ? NDb::CAnimation::JUMP_START : NDb::CAnimation::CLIMB_FINISH, 0 ), tEnd );
 		if ( !pAnim )
 		{
 			DefaultAction( cmdPos );
 			return;
 		}
-		pAnim->SetStand( tEnd, prevPos.GetCPNoHeight(), prevPos.GetDirection() );
+		// Reverse the approach clip at its original starting tile. Reversing
+		// its time also reverses the root motion, preserving the ledge pose.
+		if ( bRetreat )
+		{
+			pAnim->SetStand( tEnd, cmdPos.GetCPNoHeight(), prevPos.GetDirection() );
+			pAnim->SetTimeFunction( new NAnimation::CAFunctionLinear( tEnd, tEnd + pAnim->GetTime(), 1.f, 0.f ) );
+		}
+		else
+			pAnim->SetStand( tEnd, prevPos.GetCPNoHeight(), prevPos.GetDirection() );
 		pResult = PutOnTerrain(pAnim);
 		t = pAnim->GetTime();
 	}
@@ -1746,12 +1760,12 @@ void CUnitAnimator::ActivateItem( const NAI::SUnitPosition &cmdPos,
 	bActiveItem = !bHide;
 	if ( bHide )
 		eAWT = NDb::WT_DEFAULT;
+	SetWeaponAnimation( eAWT );
+	CalculateAnimFlags();
 	bool bTransit = false;
 	CPtr<NAnimation::CAnimation> pAnim;
 	if ( bHeavy )
 	{
-		SetWeaponAnimation( eAWT );
-		CalculateAnimFlags();
 		if ( bBackpack )
 			pAnim = pAnimator->CreateAnimation(
 				pSkeleton->GetAnimation( NDb::CAnimation::GET_BACKPACK, nAnimFlagsPoseWeapon, 0, nAnimFlagsClassSex, pSide ),
@@ -1771,8 +1785,6 @@ void CUnitAnimator::ActivateItem( const NAI::SUnitPosition &cmdPos,
 			pAnim = pAnimator->CreateAnimation(
 				pSkeleton->GetAnimation( NDb::CAnimation::ACTIVATE, nAnimFlagsPoseWeapon, 
 					pszActivateAnimParams[place], nAnimFlagsClassSex, pSide ), tEnd );
-		SetWeaponAnimation( eAWT );
-		CalculateAnimFlags();
 		if ( eAnimationWeaponType != NDb::WT_DEFAULT )
 			bTransit = true;
 	}
@@ -1990,12 +2002,12 @@ void CUnitAnimator::PlayAnimation( const NAI::SUnitPosition &cmdPos,
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CUnitAnimator::PlayAnimation( const NAI::SUnitPosition &cmdPos, 
-	int nType, const char *pszParams, bool bInstantly )
+	int nType, const char *pszParams, bool bInstantly, bool bStandFirst )
 {
 	CPtr<NAnimation::CAnimation> pAnim = pAnimator->CreateAnimation(
 		pSkeleton->GetAnimation( (NDb::CAnimation::EType)nType, nAnimFlagsPoseWeapon, pszParams, 
 			nAnimFlagsClassSex, pSide ), tEnd );
-	PlayAnimation( cmdPos, pAnim, bInstantly );
+	PlayAnimation( cmdPos, pAnim, bInstantly, bStandFirst );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // retail @0x33f4c0: play the DB clip, then -- if bFreezeAfterLastFrame -- BAN the internal idle so
@@ -2023,7 +2035,7 @@ void CUnitAnimator::OpenWindowDoor( const NAI::SUnitPosition &cmdPos )
 // @0x3409d0 -- single-step clip, no trailing IdleOn/Stand
 void CUnitAnimator::MoveOneStep( const NAI::SUnitPosition &cmdPos )
 {
-	PlayAnimation( cmdPos, NDb::CAnimation::MOVE_ONE_STEP );
+	PlayAnimation( cmdPos, NDb::CAnimation::MOVE_ONE_STEP, 0, false, false );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // @0x33f5a0 -- kneel-and-place: MINE_TILE (ground mine) or MINE_OBJECT (object/door trap)
@@ -2101,7 +2113,8 @@ void CUnitAnimator::ReturnCannonToDefault()
 		CVec3 defaultDir = CVec3( cos( fCannonDir ), sin( fCannonDir ), 0 );
 		CVec3 cross = aimDir ^ defaultDir;
 
-		STime tTransit = asin( fabs(cross) ) / F_DEFAULT_AIM_SPEED * 1000;
+		// Retail v1.1 0x73b301: multiply by 1250 before truncating milliseconds.
+		STime tTransit = asin( fabs(cross) ) * 1250.0f;
 		CPtr<NAnimation::CAnimation> pCannonAnim = pCAnimator->CreateAnimation(
 			pCSkeleton->GetAnimation( NDb::CAnimation::POSE, 0 ), tEnd + tTransit );
 		if ( pCannonAnim )
@@ -2211,7 +2224,7 @@ void CUnitAnimator::AttackCannon( const NAI::SUnitPosition &cmdPos, const CRay &
 	if ( !bInstant )
 	{
 		CVec3 cross = aimDir ^ shootDir;
-		tTransit = asin( fabs(cross) ) / F_DEFAULT_AIM_SPEED * 1000;
+		tTransit = asin( fabs(cross) ) * 1250.0f;
 	}
 
 	aimDir = shootDir;
@@ -2431,6 +2444,10 @@ void CUnitAnimator::EnterLadder( const NAI::SUnitPosition &prevPos, const NAI::S
 void CUnitAnimator::LeaveLadder( const NAI::SUnitPosition &prevPos, const NAI::SUnitPosition &cmdPos, bool bUp )
 {
 	bLadder = false;
+	// Fix of a retail v1.2 bug: Climb (0x73e110) raises bInactivePose for the ledge step before
+	// a downward ladder, and no ladder transition (0x740c40/0x740ca0) lowers it -> after the
+	// descent CanActivateItem() stays false until the next Jump.
+	bInactivePose = false;
 	NDb::CAnimation::EType type = bUp ? NDb::CAnimation::LEAVE_LADDER_UP : NDb::CAnimation::LEAVE_LADDER_DOWN;
 	pTerrainFunc->Move( cmdPos );
 	if ( !PlayLadderAnimation( prevPos, type ) )
@@ -2465,6 +2482,10 @@ void CUnitAnimator::MoveLadder( const NAI::SUnitPosition &prevPos, const NAI::SU
 void CUnitAnimator::JumpFromLadder( const NAI::SUnitPosition &prevPos, const NAI::SUnitPosition &cmdPos )
 {
 	bLadder = false;
+	// Fix of a retail v1.2 bug: Climb (0x73e110) raises bInactivePose for the ledge step before
+	// a downward ladder, and no ladder transition (0x740c40/0x740ca0) lowers it -> after the
+	// descent CanActivateItem() stays false until the next Jump.
+	bInactivePose = false;
 	float fHeightDiff = prevPos.GetCP().z - cmdPos.GetCP().z;
 	if ( fHeightDiff < 0 )
 		fHeightDiff = 0;

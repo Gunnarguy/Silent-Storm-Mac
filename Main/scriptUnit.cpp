@@ -69,7 +69,7 @@ BEGIN_SCRIPT_COMMAND( CreateUnit, "nnssn" )
 			CDBPtr<NDb::CRPGPers> pRPGPers = NDb::GetPers( nPersID );
 			if ( IsValid( pRPGPers ) )
 			{
-				CPtr<NRPG::IUnitMission> pRPGUnit = NRPG::CreateUnit( pRPGPers );
+				CPtr<NRPG::IUnitMission> pRPGUnit = NRPG::CreateUnit( pRPGPers, 0, 0, pScript->pWorld->GetGlobalGame()->pDifficulty );
 				if ( IsValid( pRPGUnit ) )
 				{
 					pRPGUnit->GetRPGUnit()->SetXPLevel( nLevel );
@@ -458,7 +458,7 @@ END_SCRIPT_COMMAND
 BEGIN_SCRIPT_COMMAND( UnitTakePerk, "un" )
 	CDynamicCast<NWorld::CUnitServer> pUS(luaParams[0].p);
 	if (pUS)
-		pUS->GetUnitRPG()->GetRPGUnit()->GetPerksTree()->TakePerk( luaParams[ 1 ].n );
+		pUS->GetUnitRPG()->TakePerk( luaParams[ 1 ].n );
 	return 0;
 END_SCRIPT_COMMAND
 ////////////////////////////////////////////////////////////////////////////////////////////////////

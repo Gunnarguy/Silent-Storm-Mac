@@ -62,7 +62,7 @@ void CExecReload::FindReloadClip()
 	sClip = SItem( pUS, SItem::VACUUM, 0 );
 	sClip.sPosition = CTPoint<int>( 0, 0 );
 	CDynamicCast<NRPG::CWeaponItem> weapon( pWeapon );
-	if ( !IsValid( pUS ) || !IsValid( weapon ) )
+	if ( !IsValid( pUS ) || !IsValid( weapon ) || !IsValid( weapon->GetInnerClip() ) )
 		return;
 	NRPG::SFindClipResult found;
 	NRPG::IInventory *inventory = pUS->GetUnitRPG()->GetInventory();
@@ -108,32 +108,35 @@ void CExecReload::Run()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 bool CExecReload::TimeLabelReached()
 {
-	//return false;
-	pUS->GetUnitRPG()->Reload();
-	CDynamicCast<NRPG::IWeaponItem> pW(pWeapon);
-	if (pW)
+	CPtr<NRPG::IWeaponItem> pW = pUS->GetUnitRPG()->GetWeaponItem();
+	if ( !IsValid( pW ) || !IsValid( pW->GetInnerClip() ) )
+		return false;
+	CPtr<NRPG::IClipItem> pInnerClip = pW->GetInnerClip();
+	CDynamicCast<NRPG::CWeaponItem> weapon( pW );
+	// Retail 0x795583: consume the saved selection before searching for more.
+	while ( pInnerClip->GetIncQuantity() < pInnerClip->GetMaxIncQuantity() )
 	{
-		NDb::CSound *pSound = pW->GetDBWeapon()->pSoundReload;
-		NDb::SAISound sound = { NDb::GetAISound( 26 ), 0, 1.0f };   // retail @0x394b70: no silencer on reload
-		pUS->GetWorld()->MakeAISound( sound, pUS, pSound );
+		if ( !LoadClip() || !IsValid( weapon ) )
+			break;
+		NRPG::SFindClipResult found;
+		if ( !weapon->FindProperClip( pUS->GetUnitRPG()->GetInventory(), &found, bSameColor ) )
+			break;
+		sClip = SItem( pUS, found.eSource == NRPG::SFindClipResult::SLOT ? SItem::SLOT : SItem::BACKPACK,
+			found.eSource == NRPG::SFindClipResult::SLOT ? int(found.eSlot) : 0, found.pItem );
+		sClip.sPosition = CTPoint<int>( 0, 0 );
 	}
+	NDb::CSound *pSound = pW->GetDBWeapon()->pSoundReload;
+	NDb::SAISound sound = { NDb::GetAISound( 26 ), 0, 1.0f };
+	pUS->GetWorld()->MakeAISound( sound, pUS, pSound );
 	pUS->Update();
 	return false;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 EUnitCommandResult CExecReload::CanDoIt()
 {
-	CDynamicCast<NRPG::IWeaponItem> pW(pWeapon);
-	if (pW)
-	{
-		if ( !pW->CanReload( pUS->GetUnitRPG()->GetInventory() ) )
-			return UCR_NO_EQUIPMENT;
-
-		return UCR_OK;
-	}
-
-	// retail CExecReloadWeapon::CanDoIt @0x394970: no weapon resolved -> NO_EQUIPMENT
-	return UCR_NO_EQUIPMENT;
+	if ( !IsValid( pWeapon ) || sClip.eType == SItem::VACUUM || !IsValid( sClip.pItem ) )
+		return UCR_NO_EQUIPMENT;
+	return CExecLoadWeapon::CanDoIt();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CExecCriticalLostWeapon
@@ -212,8 +215,7 @@ public:
 				return;
 			//
 			vector<NRPG::CAttackPortion> attack;
-			pRPG->CreateAttack( &attack, true );
-			if ( attack.empty() )
+			if ( !pRPG->CreateAttack( &attack, true, true ) || attack.empty() )
 				return;
 			//
 			vector<NRPG::IAttackable *> ignores;
@@ -231,12 +233,15 @@ public:
 				pTrailEffect = pWeapon->pTrailEffect->CreateModel( &sRand );
 			}
 			//
+			NDb::CRPGGrenade *pGrenade = 0;
+			if ( pWeaponItem->GetInnerClip() && pWeaponItem->GetInnerClip()->GetDBAmmo() )
+				pGrenade = pWeaponItem->GetInnerClip()->GetDBAmmo()->pExplosiveBullet;
 			ray.ptOrigin += ray.ptDir * pUS->GetMinClearDistance();
 			for ( typename vector<NRPG::CAttackPortion>::const_iterator i = attack.begin(); i != attack.end(); ++i )
 			{
 				NRPG::SAttackRayInfo rayInfo;
 				NRPG::MakeAccidentalShot( &rayInfo, pUS, pUS->GetPosition(), *i, ray.ptOrigin, ray.ptDir, 30.0f );
-				pUS->GetWorld()->PerformRangedAttack( rayInfo, pUS->GetWorld()->GetTime()->GetValue(), pTrailEffect, pWeapon->fTrailSpeed );
+				pUS->GetWorld()->PerformRangedAttack( rayInfo, pUS->GetWorld()->GetTime()->GetValue(), pTrailEffect, pWeapon->fTrailSpeed, pGrenade, pWeapon->nShotEffectType );
 			}
 			pUS->CreateFlash( false, false );   // @0x3b6d10 accidental shot -> right barrel, single sound
 		}
@@ -457,9 +462,19 @@ public:
 			Finished();
 			return;
 		}
+		// Keep a holstered item hidden until the activation animation draws it.
+		if ( !bActive )
+			pUS->SetUndrawItem( true, false );
 		if ( !pUS->animator.CanActivateItem() ) // on ladder, for example
 		{
 			NRPG::IUnitMission *pRPG = pUS->GetUnitRPG();
+			// Fix of a retail v1.2 bug: switching to an empty slot here kept bActiveItem=1 with
+			// WT_DEFAULT -> WEAPON_ITEM pose ("holding a grenade"), no melee clip.
+			if (bActive && !pInventory->Get(slot))
+			{
+				pUS->animator.SetActiveItem(false);
+				bActive = false;
+			}
 			pUS->animator.SetWeaponAnimation( bActive ? pRPG->GetWeaponType() : NDb::WT_DEFAULT );
 			pUS->SetUndrawItem( !bActive );
 			Finished();
@@ -545,10 +560,13 @@ void CExecLoadWeapon::Run()
 	StartAction( pUS->GetWorld(), SKIPPABLE );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-bool CExecLoadWeapon::TimeLabelReached()
+bool CExecLoadWeapon::LoadClip()
 {
 	CDynamicCast<NRPG::IClipItem> pClipItem( sClip.pItem );
-	if ( IsValid( pClipItem ) && pUS->GetUnitRPG()->LoadWeapon( pWeapon, pClipItem ) && ( pClipItem->GetQuantity() == 0 ) )
+	if ( !IsValid( pClipItem ) || !IsValid( pWeapon ) || !IsValid( pWeapon->GetInnerClip() ) ||
+		!pUS->GetUnitRPG()->LoadWeapon( pWeapon, pClipItem ) )
+		return false;
+	if ( pClipItem->GetIncQuantity() == 0 )
 	{
 		NRPG::IInventory *pInventory = pUS->GetUnitRPG()->GetInventory();
 		switch( sClip.eType )
@@ -573,6 +591,12 @@ bool CExecLoadWeapon::TimeLabelReached()
 			break;
 		}
 	}
+	return true;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+bool CExecLoadWeapon::TimeLabelReached()
+{
+	LoadClip();
 
 	NDb::CSound *pSound = pWeapon->GetDBWeapon()->pSoundReload;
 	NDb::SAISound sound = { NDb::GetAISound( 26 ), 0, 1.0f };   // retail @0x394df0: no silencer on load
@@ -584,11 +608,13 @@ bool CExecLoadWeapon::TimeLabelReached()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 EUnitCommandResult CExecLoadWeapon::CanDoIt()
 {
+	if ( !pUS->GetPosition().pos.p.IsIntegral() )
+		return UCR_UNAVAILABLE;
 	if ( sClip.pUnit.GetPtr() != pUS.GetPtr() )
 		return UCR_GENERAL_FAILURE;
 
 	CDynamicCast<NRPG::IClipItem> pClipItem( sClip.pItem );
-	if ( !IsValid( pClipItem ) )
+	if ( !IsValid( pClipItem ) || !IsValid( pWeapon ) || !IsValid( pWeapon->GetInnerClip() ) )
 		return UCR_GENERAL_FAILURE;
 
 	if ( !pWeapon->CanLoad( pClipItem ) )
@@ -673,6 +699,10 @@ public:
 	{
 		pUS->SetWishPose( pose );
 		pUS->SetRunning( pose == NAI::RUN );
+		// Retail v1.2 0x7b5820: run/crawl orders end strafing. Keep this
+		// in the executor; AI path probes also temporarily set the wish pose.
+		if ( pose == NAI::RUN || pose == NAI::CRAWL )
+			pUS->SetStrafe( false );
 		Finished();
 	}
 };
@@ -806,6 +836,9 @@ EUnitCommandResult CExecHide::CanDoIt()
 		const vector< CMObj<CUnitServer> > &units = (*i)->GetPlayerUnits();
 		for ( typename vector< CMObj<CUnitServer> >::const_iterator u = units.begin(); u != units.end(); ++u )
 		{
+			// Retail Steam 0x7b4022..0x7b4035 skips null/deleted roster entries.
+			if ( !IsValid( *u ) )
+				continue;
 			if ( (*u)->GetDiplomacyState( pUS ) == NDb::DS_ENEMY && (*u)->IsUnitVisible( pUS ) )
 				return UCR_GENERAL_FAILURE;
 		}
@@ -866,8 +899,7 @@ EUnitCommandResult CExecTakePerk::CanDoIt()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CExecTakePerk::Run() 
 { 
-	NRPG::CPerksTree *pTree = pUS->GetUnitRPG()->GetRPGUnit()->GetPerksTree();
-	pTree->TakePerk( nID );
+	pUS->GetUnitRPG()->TakePerk( nID );
 
 	Finished(); 
 }
@@ -911,9 +943,10 @@ CCommandExecute* CreateExecutor( CUnitServer *pUS, CCmd *pCmd, EUnitCommandResul
 		vector<NAI::SPathPlace> dst;
 		dst.push_back(pCmdPath->ptDst.p);
 		CPtr<NAI::CPath> pPath = FindPath(pWorld->GetPathNetwork(), pUS,
-			position.pos.p, dst, 0, true, pCmdPath->eParams, pUS->IsStrafing(), true);
+			position.pos.p, dst, 0, true, pCmdPath->eParams, pUS->IsStrafing(), pCmdPath->bCanFindNotExact);
 		if (IsValid(pPath))
 			return CreateMoveExecutor(pUS, pPath, pCmdPath->eParams, pCmdPath->needActiveItem, pError);
+		*pError = UCR_PATH_NOT_FOUND;
 		return 0;
 	}
 	else {
@@ -928,7 +961,9 @@ CCommandExecute* CreateExecutor( CUnitServer *pUS, CCmd *pCmd, EUnitCommandResul
 			{
 				CCommandExecute* pRet = CreateMoveExecutor(pUS, pPath, NAI::PF_USE_DIR, ITEM_NO_MATTER, pError, false);
 				CDynamicCast<CExecQueue> pQueue(pRet);
-				if (pQueue)
+				// Retail charges a look only when the requested facing differs.
+				// Repeated no-op looks otherwise consume AP needed for later actions.
+				if ( pQueue && position.pos.p.GetDirection() != pCmdLook->ptDst.p.GetDirection() )
 					pQueue->AddFrontExecutor(new CExecSpendAPAndRegister(pUS, NRPG::AC_ROTATE));
 				return pRet;
 			}

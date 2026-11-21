@@ -25,6 +25,7 @@
 #include "rpgCheatConstants.h"
 
 #include "../DBFormat/DataRPG.h"
+#include "../DBFormat/DataAnimation.h"
 #include "../DBFormat/DataMap.h"
 #include "../DBFormat/DataDifficulty.h"   // NDb::CDBDifficulty::nHideProbability (ctor hide-prob seed)
 
@@ -160,6 +161,7 @@ public:
 			return pUnitServer->GetDiplomacyState( pUnit->GetUnitServer() );
 		return NDb::DS_NEUTRAL;
 	}
+	virtual void SetPosition( const SUnitPosition &_position ) { pos = _position; }
 	virtual void SetPosition( SPosition _ptPrevPosition );
 	virtual void SetPosition( SPathPlace _ptPrevPosition );
 	virtual SPosition GetPrevPosition();
@@ -216,6 +218,7 @@ public:
 	virtual int GetHideProbability() { return nHideProbability; }   // @0xaef00 (CAIUnit+0x100)
 	virtual void SetHideProbability( int n ) { nHideProbability = n; }   // @0xaef10 (the lua UnitSetHideProbability setter deferred)
 	virtual int GetNonFreezeCounter() { return nNonFreezeCounter; }   // @0xaef20
+	virtual void AddNonFreezeCounter( int n ) { nNonFreezeCounter += n; }
 	virtual void ClearNonFreezeCounter() { nNonFreezeCounter = 0; }   // @0xaef30
 	virtual bool IsShootModeDisabled( NDb::EShootMode eMode ) const { return disabledShootModes.find( (int)eMode ) != disabledShootModes.end(); }   // @0xad590
 	virtual void DisableShootMode( NDb::EShootMode eMode ) { disabledShootModes[ (int)eMode ] = 1; }   // @0xad740
@@ -256,7 +259,7 @@ public:
 			return;
 		CancelCommand();
 		if ( pLogic.GetPtr() != 0 )
-			++nNonFreezeCounter;
+			nNonFreezeCounter += 200;
 		if ( IsValid( pLogic ) )
 			pLogic->StopThinking();
 		pLogic = 0;
@@ -285,7 +288,7 @@ public:
 		SetLogic( 0 );
 		pReaction = _pReaction;
 		state.Modified();
-		++nNonFreezeCounter;
+		nNonFreezeCounter += 200;
 	}
 	virtual SAIUnitState* GetAIUnitState() { return &state; }
 	// AI-convergence Stage 2 reaction pump (see aiUnit.h). GetReactionForUpdate @0xad260: only hand the
@@ -315,12 +318,18 @@ public:
 			SetLogic( 0 );
 		state.Modified();
 	}
-	// CancelCommand @0xad820 (vtbl 0x28): cancel the unit's current world command (the reaction is about to
-	// re-decide). Dev analog of CAIUnit::DeactivateCurrentControl's CCmdCancel; the exit-cannon tail is elided.
+	// Retail 0x4adb90: cancelling a mounted unit also queues its dismount.
 	virtual void CancelCommand()
 	{
-		if ( IsValid( pUnitServer ) && pUnitServer->CanFight() )
-			pUnitServer->Do( new NWorld::CCmdCancel( pUnitServer ) );
+		if ( !IsValid( pUnitServer ) || !pUnitServer->CanFight() )
+			return;
+		pUnitServer->Do( new NWorld::CCmdCancel( pUnitServer ) );
+		CDynamicCast<NWorld::CCommander> pCommander( pUnitServer->GetPlayer()->GetCommander() );
+		if ( IsValid( pCommander ) && pUnitServer->GetState() == NWorld::CUnit::ST_MACHINE_GUN )
+		{
+			pCommander->Do( new NWorld::CCmdSetCommand( pUnitServer, new NWorld::CCmdExitCannon() ) );
+			pCommander->Do( new NWorld::CCmdSetCommand( pUnitServer, new NWorld::CCmdContinue() ) );
+		}
 	}
 	// release CAIUnit::OnAISegment @0xad2c0: per-segment tick. Repair the event tracker after deserialization
 	// (where the (CUnitServer*,bool) ctor never runs), then ProcessAISegment (the corpse scan @0xab7a0, now LIVE -- IsCorpseVisible probe over the
@@ -383,7 +392,7 @@ CAIUnit::CAIUnit( NWorld::CUnitServer *_pUnitServer, bool _bUnderAIControl ) :
 void CAIUnit::SetCurrentLogicInner( IAILogic *_pLogic )
 {
 	if ( pLogic.GetPtr() != _pLogic )
-		++nNonFreezeCounter;
+		nNonFreezeCounter += 200;
 	if ( IsValid( pLogic ) )
 		pLogic->StopThinking();
 	pLogic = _pLogic;
@@ -671,8 +680,24 @@ float CAIUnit::GetCoverForFixedUnit( const NAI::SUnitPosition &pos,
 	{
 		// Retail v1.2 GetCover 0x4ae4d0 probes from the weapon origin, not the eyes.
 		CVec3 ptOrigin = GetUnitServer()->GetAttackOrigin( pos, false );
+		// Original retail bug: a fixed 1.0 clearance let the AI accept shots
+		// whose target blocks every ray at the weapon's actual minimum distance.
+		// Use the candidate weapon, which need not be the currently held item.
+		// Mounted weapons supply their own clearance; weaponless cover probes
+		// retain the generic clearance used for movement evaluation.
+		float fMinClearDistance = 1.f;
+		if ( IsValid( pWeaponItem ) )
+		{
+			if ( GetUnitServer()->animator.GetCannon() )
+				fMinClearDistance = GetUnitServer()->GetMinClearDistance();
+			else
+			{
+				NDb::CAnimWeaponType *pType = pWeaponItem->GetDBWeapon()->pAnimWeaponType;
+				fMinClearDistance = pType ? pType->fMinDistance : 0.f;
+			}
+		}
 		CPtr<NRPG::IGame> pGame = GetUnitServer()->GetWorld()->GetGame();
-		return pGame->GetCoverForAIUnit( ptOrigin, GetUnitServer(), pTarget, atts.front(), HitLocation );
+		return pGame->GetCoverForAIUnit( ptOrigin, GetUnitServer(), pTarget, atts.front(), HitLocation, fMinClearDistance );
 	}
 	return 0;
 }
@@ -777,12 +802,17 @@ int CAIUnit::GetToHit( IAIUnit *pTarget, const NAI::SUnitPosition &pos, NAI::EHi
 	// Retail v1.2 0x4ad8e0 uses the supplied weapon, falling back to OUR inventory.
 	if ( !IsValid( pTarget ) )
 		return 0;
-	if ( !IsValid( pWeapon ) )
-		pWeapon = GetAIInventory()->GetCurrentFireArms();
-	if ( IsValid( pWeapon ) && IsValid( GetUnitServer() ) )
+	CAIFireArmsWeaponBase *pFirearm = pWeapon;
+	if ( !IsValid( pFirearm ) )
+		pFirearm = CDynamicCast<CAIFireArmsWeaponBase>( GetAIInventory()->GetCurrentItem() );
+	if ( IsValid( pFirearm ) && IsValid( pFirearm->GetItem() ) && IsValid( GetUnitServer() ) )
 	{
-		float fCover = GetCoverForFixedUnit( GetUnitPosition(), pTarget->GetUnitServer(), pWeapon->GetItem(), hl );
-		CPtr<NRPG::CAIUnitToHitCalcer> pCalcer = new NRPG::CAIUnitToHitCalcer( this, pos, pTarget, fCover, hl, 0, pWeapon->GetItem(), 0 );
+		float fCover = GetCoverForFixedUnit( pos, pTarget->GetUnitServer(), pFirearm->GetItem(), hl );
+		// A fully blocked AI ray set can produce NaN (zero penetrating rays).
+		// Do not let it bypass the calculator's <= 0 check and become a viable shot.
+		if ( !( fCover > 0 ) )
+			return 0;
+		CPtr<NRPG::CAIUnitToHitCalcer> pCalcer = new NRPG::CAIUnitToHitCalcer( this, pos, pTarget, fCover, hl, 0, pFirearm->GetItem(), 0 );
 		return pCalcer->GetToHit();
 	}
 	return 0;

@@ -391,6 +391,7 @@ public:
 	virtual bool IsUnitVisible( const CUnit *pUnit ) const = 0;
 	virtual bool IsUnitAudible( const CUnit *pUnit ) const = 0;
 	virtual bool CanTalk() const = 0;
+	virtual bool NeedChangePose( NAI::EPose pose ) const = 0;
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CAckEvent
@@ -700,6 +701,7 @@ public:
 	virtual void GetActiveUnits( IPlayer *pPlayer, list<CUnit*> *pRes ) = 0;
 	virtual bool IsFirstTurn() const = 0;
 	virtual bool IsInterrupt() const = 0;
+	virtual bool NeedShowInterrupt() const { return true; }
 	virtual void ClickOfDeath( const CRay &ray, int nMaxFloor ) = 0;
 	virtual CUnit* GetUnit( const NAI::SUnitPosition &pos ) = 0;
 	virtual CUnit* GetUnitInTile( const NAI::SUnitPosition &pos ) = 0;

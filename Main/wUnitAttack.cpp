@@ -121,18 +121,18 @@ void GetMeleeAttackPlaces( CUnitServer *pUS, const CVec3 &ptTarget, vector<NAI::
 {
 	NAI::IPathNetwork *pNet = pUS->GetWorld()->GetPathNetwork();
 	SSphere s;
-	s.ptCenter = pUS->GetPosition().GetCP();
+	s.ptCenter = ptTarget;
 	s.fRadius = 5; // CRAP need more grounded number then this
 	vector<NAI::SPathPlace> res;
 	pNet->GetNearPlaces( s, &res );
 	NAI::SUnitPosition from( pUS->GetPosition() );
 	for ( int k = 0; k < res.size(); ++k )
 	{
-		if ( !pNet->IsNativePassable( res[k] ) )
+		if ( pNet->GetPassability( res[k] ) == NAI::AIP_NOT_PASSABLE )
 			continue;
 		from.pos.p = res[k];
 		float fDist = F_MELEE_DISTANCE;
-		if ( pUS->IsWearingPK() )
+		if ( IsValid( pUS->GetWearingDBPK() ) )
 			fDist *= 2;
 		if ( IsWithinHumanReach( from.GetCP(), ptTarget, fDist ) )
 			GetDirectedPoints( pNet, from.pos.p, ptTarget, pRes );
@@ -161,7 +161,7 @@ void GetHumanReachPlaces( CUnitServer *pUS, const CVec3 &ptTarget, vector<NAI::S
 	NAI::SUnitPosition from( pUS->GetPosition() );
 	for ( int k = 0; k < res.size(); ++k )
 	{
-		if ( !pNet->IsNativePassable( res[k] ) )
+		if ( pNet->GetPassability( res[k] ) == NAI::AIP_NOT_PASSABLE )
 			continue;
 		from.pos.p = res[k];
 		if ( IsWithinHumanReach( from.GetCP(), ptTarget, fPlaneDist ) )
@@ -270,7 +270,7 @@ static EUnitCommandResult GetActionValidPlaces( CUnitServer *pUS, CCmdHeal *pCmd
 		if ( dx == 0 || dy == 0 )
 		{
 			place.SetXY( target.GetX() - 2 * dx, target.GetY() - 2 * dy );
-			if ( pNet->IsNativePassable( place ) )
+			if ( pNet->IsValidPoint( place ) )
 				pRes->push_back( place );
 		}
 		else
@@ -279,7 +279,7 @@ static EUnitCommandResult GetActionValidPlaces( CUnitServer *pUS, CCmdHeal *pCmd
 			for ( int i = 0; i < 4; ++i )
 			{
 				place.SetXY( target.GetX() + offsets[i][0], target.GetY() + offsets[i][1] );
-				if ( pNet->IsNativePassable( place ) )
+				if ( pNet->IsValidPoint( place ) )
 					GetDirectedPoints( pNet, place, pTarget->GetPosition().GetCP(), pRes, PM_STAND );
 			}
 		}
@@ -330,7 +330,7 @@ static void GetMinePlaces( const CVec3 &ptTarget, NAI::IPathNetwork *pNet, vecto
 	from.SetNetwork( pNet );
 	for ( int k = 0; k < res.size(); ++k )
 	{
-		if ( !pNet->IsNativePassable( res[k] ) )
+		if ( pNet->GetPassability( res[k] ) == NAI::AIP_NOT_PASSABLE )
 			continue;
 		from.p = res[k];
 		CVec3 vFrom = from.GetCP();
@@ -403,18 +403,38 @@ static EUnitCommandResult GetActionValidPlaces( CUnitServer *pUS, CCmdTakeCorpse
 
 	CDynamicCast<CUnitServer> pDeadUnit( pCmd->pCorpse );
 	NAI::IPathNetwork *pNet = pUS->GetWorld()->GetPathNetwork();
+	NAI::IAIMap *pMap = pUS->GetWorld()->GetAIMap();
 	CVec3 ptTarget(0,0,0);
-	pUS->GetWorld()->GetAIMap()->GetUnitHLPos( &ptTarget, pUS->GetWorld()->GetAIMap()->GetHull(pDeadUnit), -1 );
-	SSphere s;
-	s.ptCenter = ptTarget - CVec3(0,0,0.5f);
-	s.fRadius = 1; // CRAP need more grounded number then this
-	if ( pDeadUnit->IsEmptyPK() )
-		s.fRadius = 1.5f;
+	pMap->GetUnitHLPos( &ptTarget, pMap->GetHull( pDeadUnit ), -1 );
+	const bool bEmptyPK = pDeadUnit->IsEmptyPK();
+	// Retail 0x79d320: only ordinary bodies lower the search center.
+	SSphere s( bEmptyPK ? ptTarget : ptTarget - CVec3(0,0,0.5f), bEmptyPK ? 1.5f : 1.0f );
 	vector<NAI::SPathPlace> res;
 	pNet->GetNearPlaces( s, &res );
+	NAI::CCollider collider;
+	bool bTargetBlocked = false;
+	if ( bEmptyPK )
+	{
+		SBound bound;
+		bound.SphereInit( s.ptCenter, s.fRadius + 1.0f );
+		pMap->PrepareCollider( &collider, bound, 0.5f, TS_PASS_BLOCKER );
+		// An embedded center cannot be approached with a clear sweep; retail
+		// permits nearby candidates in that case instead of rejecting them all.
+		bTargetBlocked = collider.DoesIntersect( ptTarget, 0.31f );
+	}
 	for ( int k = 0; k < res.size(); ++k )
+	{
+		if ( bEmptyPK && !bTargetBlocked )
+		{
+			NAI::SPosition candidate;
+			candidate.p = res[k];
+			candidate.SetNetwork( pNet );
+			SSphere approach( candidate.GetCP() + CVec3(0,0,0.5f), 0.31f );
+			if ( collider.CollideBool( approach, ptTarget - approach.ptCenter, &NCollider::skipAnalyzer ) )
+				continue;
+		}
 		GetDirectedPoints( pNet, res[k], ptTarget, pRes, PM_STAND );
-
+	}
 	return UCR_OK;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -640,6 +660,9 @@ static CCommandExecute* CreateActionQueueOrReload( CUnitServer *pUS, TCommand *p
 CCommandExecute* CreateActionExecutor( CUnitServer *pUS, CCmd *pCmd, EUnitCommandResult *pError )
 {
 	*pError = UCR_OK;
+	// Retail v1.2 0x79efd3: construct directly, without an action/animation queue.
+	if ( CDynamicCast<CCmdDropItemFromHand>( pCmd ) )
+		return new CExecDropItemFromHand( pUS );
 	CDynamicCast<CCmdReload> pReload( pCmd );
 	if ( pReload )
 	{
@@ -735,6 +758,11 @@ CCommandExecute* CreateActionExecutor( CUnitServer *pUS, CCmd *pCmd, EUnitComman
 					*pError = UCR_GENERAL_FAILURE;
 					return 0;
 				}
+				if ( pAttackObject->pTarget != 0 && !IsValid( pAttackObject->pTarget ) )
+				{
+					*pError = UCR_GENERAL_FAILURE;
+					return 0;
+				}
 				CDynamicCast<NWorld::CUnitServer> pUnitTarget(pAttackObject->pTarget);
 				EActionType eType = GetActionType(pUS);
 				if ( IsValid( pUnitTarget ) &&
@@ -745,10 +773,15 @@ CCommandExecute* CreateActionExecutor( CUnitServer *pUS, CCmd *pCmd, EUnitComman
 					return 0;
 				}
 				CDynamicCast<NRPG::IWeaponItem> pWeapon(pUS->GetUnitRPG()->GetInventory()->GetActive());
-				if (pWeapon)
+				if ( eType == AT_SHOOT )
 				{
 					if (IsValid(pWeapon) && pWeapon->GetShootMode() == NDb::SM_Snipe && !pUS->IsSniping())
 					{
+						if ( pAttackObject->pTarget != 0 && !IsValid( pUnitTarget ) )
+						{
+							*pError = UCR_UNAVAILABLE;
+							return 0;
+						}
 						if ( IsValid( pUnitTarget ) && !IsVisibleTarget( pUS, pUnitTarget ) )
 						{
 							*pError = UCR_CANT_SEE_TARGET;
@@ -792,9 +825,9 @@ CCommandExecute* CreateActionExecutor( CUnitServer *pUS, CCmd *pCmd, EUnitComman
 							*pError = UCR_CANT_SEE_TARGET;
 							return 0;
 						}
-						return CreateActionQueueOrReload(pUS, pAttackObject.GetPtr(), new CExecShootUnit(pUS, pUnitTarget, pAttackObject->eHL, pAttackObject->nExtraAttackAP), pError);
+						return CreateActionQueueOrReload(pUS, pAttackObject.GetPtr(), new CExecShootUnit(pUS, pUnitTarget, pAttackObject->eHL, pAttackObject->nExtraAttackAP, pAttackObject->bOnlyPrepareToShoot), pError);
 					case AT_CANNON:
-						return CreateSimpleActionOrReload(pUS, pAttackObject.GetPtr(), new CExecShootUnit(pUS, pUnitTarget, pAttackObject->eHL, pAttackObject->nExtraAttackAP), pError);
+						return CreateSimpleActionOrReload(pUS, pAttackObject.GetPtr(), new CExecShootUnit(pUS, pUnitTarget, pAttackObject->eHL, pAttackObject->nExtraAttackAP, pAttackObject->bOnlyPrepareToShoot), pError);
 					case AT_THROW:
 						// Retail v1.2 0x79dc83 / 0x79dd35: turn toward the target
 						// before throwing. A targetless order-bar query falls through
@@ -807,7 +840,7 @@ CCommandExecute* CreateActionExecutor( CUnitServer *pUS, CCmd *pCmd, EUnitComman
 
 				if ( IsValid( pAttackObject->pTarget ) && (eType == AT_SHOOT || eType == AT_CANNON) )
 				{
-					CExecShootObject *pShot = new CExecShootObject( pUS, pAttackObject->pTarget, pAttackObject->nExtraAttackAP );
+					CExecShootObject *pShot = new CExecShootObject( pUS, pAttackObject->pTarget, pAttackObject->nExtraAttackAP, pAttackObject->bOnlyPrepareToShoot );
 					if ( eType == AT_CANNON )
 						return CreateSimpleActionOrReload( pUS, pAttackObject.GetPtr(), pShot, pError );
 					return CreateActionQueueOrReload( pUS, pAttackObject.GetPtr(), pShot, pError );
@@ -956,6 +989,16 @@ CCommandExecute* CreateActionExecutor( CUnitServer *pUS, CCmd *pCmd, EUnitComman
 													CDynamicCast<CCmdMoveInventoryItem> pMoveItem(pCmd);
 													if (pMoveItem)
 													{
+														// A cursor clip dropped onto an equipped weapon is a reload, including non-UI commands.
+														const SItem &source = pMoveItem->GetSource();
+														const SItem &target = pMoveItem->GetTarget();
+														CDynamicCast<NRPG::IClipItem> pClip( source.pItem );
+														if ( IsValid( pClip ) && source.eType == SItem::HAND && target.eType == SItem::SLOT )
+														{
+															CDynamicCast<NRPG::IWeaponItemInfo> pWeapon( pUS->GetUnitRPG()->GetInventory()->Get( (NDb::ESlot)target.nSlot ) );
+															if ( IsValid( pWeapon ) )
+																return pUS->CreateExecutor( new CCmdLoadWeapon( pWeapon, source ), pError );
+														}
 														if (pMoveItem->GetSource().eType == SItem::GROUND)
 															return CreateActionQueue(pUS, pMoveItem.GetPtr(), new CExecMoveInventoryItem(pUS, pMoveItem), ITEM_NO_MATTER, pError, true);
 														else if ((pMoveItem->GetSource().eType == SItem::STORAGE) || (pMoveItem->GetTarget().eType == SItem::STORAGE))
@@ -998,7 +1041,7 @@ CCommandExecute* CreateActionExecutor( CUnitServer *pUS, CCmd *pCmd, EUnitComman
 																	else {
 																		CDynamicCast<CCmdCollectSnipeAP> pCollectSnipeAP(pCmd);
 																		if (pCollectSnipeAP)
-																			return CreateSimpleAction(pUS, new CExecCollectSnipeAP(pUS, pCollectSnipeAP->eAP), pError);
+																			return CreateSimpleAction(pUS, new CExecCollectSnipeAP(pUS, pCollectSnipeAP->eAP, pCollectSnipeAP->nAP), pError);
 																		else {
 																			CDynamicCast<CCmdTalk> pTalk(pCmd);
 																			if (pTalk)

@@ -962,12 +962,13 @@ void CDBTableBase::PreCreate( int nTypeID )
 			if ( !pRes )
 				break;
 			pRes->nID = pStorageSource->GetInt( "ID" );
-			records[ pRes->nID ] = pRes;
+			SetRecord( pRes->nID, pRes );
 		}
 		return;
 	}
 	// iterate through recordset & create records
 	records.clear();
+	recordOrder.Clear();
 	for ( ; !table.IsEof(); table.MoveNext() )
 	{
 		CDBRecord *pRes = GetRecordTypes().CreateObject( nTypeID );
@@ -980,7 +981,7 @@ void CDBTableBase::PreCreate( int nTypeID )
 		if ( i != records.end() )
 			ASSERT(0);  // record with this ID already created
 #endif
-		records[ pRes->nID ] = pRes;
+		SetRecord( pRes->nID, pRes );
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -989,6 +990,7 @@ void CDBTableBase::Refresh( int nTypeID )
 	Sleep(0); // transfer control to the other thread (writing to DB usually happens not in the current thread)
 	const CRecordHash copy = records;
   records.clear();
+	recordOrder.Clear();
 	// iterate through recordset & create records
 	for ( ; !table.IsEof(); table.MoveNext() )
 	{
@@ -1005,7 +1007,7 @@ void CDBTableBase::Refresh( int nTypeID )
 		if ( i != records.end() )
 			ASSERT(0);  // record with this ID already created
 #endif
-		records[ pRes->nID ] = pRes;
+		SetRecord( pRes->nID, pRes );
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1069,7 +1071,7 @@ CDBRecord* CDBTableBase::GetDBRecord( int nID )
 								if ( pRes )
 								{
 									pRes->nID = tbl.GetInt( "ID" );
-									records[ pRes->nID ] = pRes;
+									SetRecord( pRes->nID, pRes );
 									COLETable holder;
 									holder = table; // CRAP
 									table = tbl;

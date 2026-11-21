@@ -60,6 +60,7 @@ protected:
 	ZDATA_(CCommandExecute)
 	SItem sClip;
 	CPtr<NRPG::IWeaponItemInfo> pWeapon;
+	bool LoadClip();
 public:
 	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CCommandExecute*)this); f.Add(2,&sClip); f.Add(3,&pWeapon); return 0; }
 	CExecLoadWeapon();
@@ -154,8 +155,8 @@ protected:
 	bool  bShotInitiated = false;        // retail +0x28 -- a bullet is committed in flight
 	int   nBulletPrepared = 0;           // retail +0x2c
 	int   nBulletGone = 0;               // retail +0x118
-	bool  bOnlyPrepareToShoot = false;   // retail +0x115 -- aim-and-hold selector (dormant: not yet threaded from the cmd)
-	bool  bUpdateVision = true;          // retail +0x120 -- ctor default true
+	bool  bOnlyPrepareToShoot = false;   // retail +0x115 -- aim-and-hold selector
+	bool  bUpdateVision = false;         // retail +0x120 -- set when this shot unhides the shooter
 public:
 	// full retail tag table (CExecShoot::operator& @0x3b0ef0): 1=base, 2=nExtraAP, 3=longBurstSnd,
 	// 4=tNextBulletPrepare, 5=bShotInitiated, 6=nBulletPrepared, 7=attack, 8=rayInfo, 9=ptAnimTarget,
@@ -184,7 +185,7 @@ protected:
 
 public:
 	CExecShoot() {}
-	CExecShoot( CUnitServer *_pUS, int _nExtraAP );
+	CExecShoot( CUnitServer *_pUS, int _nExtraAP, bool _bOnlyPrepareToShoot = false );
 
 	virtual EUnitCommandResult CanDoIt( const NAI::SUnitPosition &from, bool bIgnoreTarget = false ) const;
 	virtual int GetStartAP() const;
@@ -227,7 +228,7 @@ class CExecShootObject: public CExecShoot
 public:
 	int operator&( CStructureSaver &f ) { f.Add(1,(CExecShoot*)this); f.Add(2,&pTarget); return 0; }
 	CExecShootObject() {}
-	CExecShootObject( CUnitServer *pUS, CObjectBase *pTarget, int nExtraAP );
+	CExecShootObject( CUnitServer *pUS, CObjectBase *pTarget, int nExtraAP, bool bOnlyPrepareToShoot = false );
 	virtual EUnitCommandResult CanDoIt( const NAI::SUnitPosition &from, bool bIgnoreTarget = false ) const;
 	virtual void SelectRay();
 	virtual void CheckShotResult();
@@ -246,7 +247,7 @@ private:
 
 public:
 	CExecShootUnit() {}
-	CExecShootUnit( CUnitServer *_pUS, NWorld::CUnitServer *_pTarget, NAI::EHitLocation _eHL, int _nExtraAttackAP );
+	CExecShootUnit( CUnitServer *_pUS, NWorld::CUnitServer *_pTarget, NAI::EHitLocation _eHL, int _nExtraAttackAP, bool _bOnlyPrepareToShoot = false );
 
 	virtual EUnitCommandResult CanDoIt( const NAI::SUnitPosition &from, bool bIgnoreTarget = false ) const;
 	virtual void UpdateCamera();   // BUG 5: retail CExecShootUnit::UpdateCamera @0x3a47c0 -- focus with the shot target
@@ -654,12 +655,13 @@ class CExecCollectSnipeAP: public CCommandExecute
 private:
 	ZDATA_( CCommandExecute )
 	ECollectSnipeAP eAP;
-	ZEND int operator&( CStructureSaver &f ) { f.Add(1,( CCommandExecute *)this); f.Add(2,&eAP); return 0; }
+	int nAP;
+	ZEND int operator&( CStructureSaver &f ) { f.Add(1,( CCommandExecute *)this); f.Add(2,&eAP); f.Add(3,&nAP); return 0; }
 	//
 	int GetResiduaryAP() const;
 public:
-	CExecCollectSnipeAP () {}
-	CExecCollectSnipeAP ( CUnitServer *pUnitServer, ECollectSnipeAP eAP );
+	CExecCollectSnipeAP (): eAP(CSAP_1AP), nAP(0) {}
+	CExecCollectSnipeAP ( CUnitServer *pUnitServer, ECollectSnipeAP eAP, int nAP = 0 );
 
 	virtual EUnitCommandResult CanDoIt( const NAI::SUnitPosition &from, bool bIgnoreTarget = false ) const;
 	virtual int GetStartAP() const;
@@ -696,6 +698,18 @@ public:
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CExecArrangeInventory
+////////////////////////////////////////////////////////////////////////////////////////////////////
+class CExecDropItemFromHand: public CCommandExecute
+{
+	OBJECT_BASIC_METHODS(CExecDropItemFromHand);
+	ZDATA_(CCommandExecute)
+	ZEND int operator&( CStructureSaver &f ) { f.Add(1,(CCommandExecute*)this); return 0; }
+public:
+	CExecDropItemFromHand() {}
+	CExecDropItemFromHand( CUnitServer *pUS ): CCommandExecute(pUS) {}
+	EUnitCommandResult CanDoIt( const NAI::SUnitPosition &from, bool bIgnoreTarget = false ) const;
+	virtual void Run();
+};
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 class CExecArrangeInventory: public CCommandExecute
 {
