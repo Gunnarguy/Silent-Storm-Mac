@@ -1,6 +1,6 @@
 # Silent Storm for Mac: Original vs Enhanced, and what differs from 2003
 
-Checked against this repository's code on 2026-11-03. Four parts:
+Checked against this repository's code on 2026-11-03; the game rules section was added on 2026-11-21 with the merge of the reconstruction's November commits. Four parts:
 
 1. What the **Original / Enhanced switch** changes.
 2. Enhanced options that are **neutral by default**, so they change nothing until you move them.
@@ -125,6 +125,38 @@ Ground friction (0.6) and skeleton stiffness (1) stay at the original values.
 - The developers' own cheats, each as a switch. They stay on until you turn them off, whether you set them in the game or in the companion app.
 - Advanced renderer options and a console log file.
 
+### Game rules and enemy behaviour
+
+The game logic here is met-nikita's reconstruction of v1.2, merged up to its commit `ae4c7f2` of 2026-11-19. Its aim is the retail game's behaviour, checked against the retail executable, and most of what follows is the reconstruction getting closer to retail than earlier builds of this port were. Where it departs from retail on purpose, the list says so.
+
+Matched to retail in the November 2026 merge (187 commits; earlier builds of this port behaved differently):
+
+- Hit chances are cut to a whole number, where they were rounded: 67.6 shows and rolls as 67. Hit rolls run from 1 to 99.
+- Cover keeps its fractions through the calculation. The shot itself and the preview on the cursor use different trace masks, as retail does.
+- Bursts: later bullets stay near the previous one, and a burst is at least 1 bullet. Rockets use real cover and explode where they collide.
+- Enemies aim at the head when their chance is above 50% and the head is more than 5% exposed. Earlier builds always fired at the body.
+- Enemies fire a shorter burst when they cannot afford the full one, switch weapons when out of ammunition, and choose targets by threat. Enemy snipers check the pose they will fire from and keep their aim between turns.
+- Enemies in a Panzerklein only use the actions retail allows them. Enemy rockets are held when an ally stands near the aim point.
+- New enemy and neutral units carry only the equipment listed for the current difficulty.
+- Action point costs for hiding, climbing, jumping, doors, ladders, stance changes and turning come from the game's database. With the retail database, one cost differs from earlier builds: the first climb costs 12, was 10.
+- Units route around mines their side knows about. Reloads top up a clip from same-type ammunition. A Look order in the direction already faced is free. Criticals end one turn sooner. Fall damage is at least 2.
+- Medal points accrue for kills, for disarming traps and for disabling a Panzerklein.
+- Voice lines follow retail's rules for who speaks and when. World sounds no longer replay after a skipped cutscene.
+
+Deliberate departures from the 2003 game, made by the reconstruction and carried here. Each is marked `ORIGINAL RETAIL BUG FIXED` in the source (23 markers):
+
+| Area | 2003 behaviour | Here |
+|---|---|---|
+| Action point floor | Skill and perk discounts could make a paid action or a paid shot cost 0, and a negative cost could award points | A paid cost is at least 1 after reductions; a treatment needs at least 1 available point |
+| Perks that did not do what their description says | Perk 88 (throw range) scaled velocity; perk 75 (night camouflage) helped the observer; perk 70 applied its melee bonus to an unused value; perk 52 added its lockpicking bonus to the final score; perk 22 left the full preparation cost in place; perk 19 cancelled only part of the movement penalty; perk 30 halved recoil decay; perk 47 reduced the wrong input | Each follows its description |
+| Units and movement | A walk-and-open order could kill the unit; a unit interrupted at a blocked ledge was trapped; cancelling during a door opening bypassed the interrupt; a unit could not use items after a ladder; path smoothing could move a stance change to another tile | Fixed |
+| Enemy AI | Reactions could run for a dead or unconscious unit; a sniper lost its aim on every refresh; point-blank shots that could not connect were accepted; switching to bare hands stowed the gun from the wrong place | Fixed |
+| Bodies and scripts | A fresh kill in a crowded room could vanish; the script command that prepares a shot spent ammunition | Fixed |
+| Saves | Some commands and one visitor record were saved as raw memory, which could restore a dangling address | Saved as structured data |
+| Interface and sound | A dialogue hit test compared screen pixels with interface units; the sound mixer lost all but 150 ms of a skipped turn | Fixed |
+
+There is no switch for these: Original mode changes graphics, not rules. The reconstruction's commit history has the reasoning for each.
+
 ### Bugs fixed that the Windows game or earlier Mac builds had
 
 **Crashes**
@@ -162,6 +194,7 @@ No missing gameplay feature is known. What hasn't been done:
 
 - The game hasn't been played through to the end on the current build.
 - Part 3 lists the known changes. It isn't a line-by-line comparison with the Windows game, and that comparison has never been run.
+- The game rules list in Part 3 is drawn from the reconstruction's commits and source comments. The enemy behaviour and hit arithmetic in it have been run in automated tests, not judged in play.
 - The fixes in the reconstruction this is built on are checked in its own repository, not here.
 
 ## What this list can't promise
