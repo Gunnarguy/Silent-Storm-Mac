@@ -22,6 +22,7 @@
 #include "../DBFormat/DataLight.h"
 #include "../DBFormat/DataSound.h"
 #include "../DBFormat/DataFormat.h"
+void S2HorPlusHold( bool bHold );	// Camera.cpp: holds the Hor+ mission camera (macOS port) off for the front-end backdrops
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGame
 {
@@ -147,7 +148,14 @@ void CRenderBaseInterface::RenderFrame( const STime &sTime, ICamera *pCamera )
 	pRender->UpdateViewWorld( true, sTime, 0, true );
 
 	CTransformStack ts;
+	// macOS port: the Hor+ camera (Camera.cpp, approach from mrartanis/silent-storm-remaster) is for mission views.
+	// The front-end backdrops drawn here (main menu, side and hero selection, face generator, credits, scripted
+	// scenes) keep the original projection: their click areas and frames are 1024x768 rectangles laid over the 3D
+	// figures and stretched with the interface, which lines up with a fixed horizontal view only. The remaster
+	// had to remap its hero buttons after its Hor+ change for the same reason (its Main/iHeroMenu.cpp).
+	::S2HorPlusHold( true );
 	pCamera->GetTransform( &ts, pScene->GetScreenRect() );
+	::S2HorPlusHold( false );
 
 	pRender->UpdateSound( true, &ts, sTime );	// front-end views never pause the mixer clock
 

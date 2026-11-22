@@ -34,7 +34,10 @@ DWORD timeGetTime() { return GetTickCount(); }
 BOOL QueryPerformanceFrequency(LARGE_INTEGER *p) { p->QuadPart = 1000000000ll; return TRUE; }
 BOOL QueryPerformanceCounter(LARGE_INTEGER *p) { p->QuadPart = (LONGLONG)S2Nanos(); return TRUE; }
 void Sleep(DWORD ms) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); }
-DWORD GetDoubleClickTime() { return 500; }
+// Kept as a plain variable so this file stays free of the Settings code (the texture tool links it without the game):
+// settings.mm writes the player's choice, or the macOS setting, into it twice a second.
+int s2doubleClickMs = 500;
+DWORD GetDoubleClickTime() { return (DWORD)s2doubleClickMs; }
 
 static void S2TmToSystemTime(const struct tm &t, int ms, SYSTEMTIME *s)
 {

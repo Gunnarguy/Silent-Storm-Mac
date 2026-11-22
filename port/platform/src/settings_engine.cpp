@@ -5,6 +5,7 @@
 #include <vector>
 using std::string; using std::wstring; using std::vector;
 #include "MiscDll/Commands.h"
+namespace NInput { void PostEvent( const string &sEvent ); }   // Input/Bind.h: queues an event every bind of that name accepts
 #include "s2engine.h"
 namespace NGScene { void SetHDTextureSources(bool enabled); unsigned TextureSourceGeneration(); }
 
@@ -27,5 +28,6 @@ void S2EngineSet(const char *name, float value) { NGlobal::SetVar(name, NGlobal:
 void S2EngineSetString(const char *name, const char *value) { NGlobal::SetVar(name, NGlobal::CValue(Widen(value))); }
 void S2EngineCommand(const char *command) { NGlobal::ProcessCommand(Widen(command)); }
 void S2EngineSaveConfig() { NGlobal::SaveConfig(S2ConfigPath("config.cfg")); }
+void S2EngineInputEvent(const char *name) { NInput::PostEvent(name); }   // handled by whichever screen is active on the next frame
 void S2ReloadTextureSources(bool enabled) { NGScene::SetHDTextureSources(enabled); }
 unsigned S2TextureSourceGeneration() { return NGScene::TextureSourceGeneration(); }

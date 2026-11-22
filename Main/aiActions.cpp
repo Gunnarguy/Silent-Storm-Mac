@@ -43,6 +43,7 @@ namespace NWorld
 	bool IsWithinHumanReach( const CVec3 &ptFrom, const CVec3 &ptTarget, float fPlaneDist );
 }
 //
+int S2EnemyAim();	// port/platform/src/settings.mm: the Settings switch "Enemies aim for the head", 1 = retail
 namespace NAI
 {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,7 +71,8 @@ void CAIShootAction::GetInfoInner( const SPlaceWithAP &place, SInfo *pInfo ) con
 		pInfo->bCanDo = true;
 		pInfo->fCover = fCover;
 		// Retail 0x41c710: prefer a head shot only with sufficient accuracy and head exposure.
-		pInfo->hitLocation = pInfo->nToHit > 50 &&
+		// Settings switch off: HL_ANY always, as before the head-shot choice was restored.
+		pInfo->hitLocation = S2EnemyAim() && pInfo->nToHit > 50 &&
 			GetUnit()->GetCoverForFixedUnit( place.place, GetEnemy()->GetUnitServer(), pInfo->pWeapon->GetItem(), HL_HEAD ) > 5.0f
 			? HL_HEAD : HL_ANY;
 		pInfo->nAPToSpend = place.nUnitAP;        // the shot budget Do() spends down (release reads this field)

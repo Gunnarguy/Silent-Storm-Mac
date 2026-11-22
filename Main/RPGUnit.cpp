@@ -10,6 +10,7 @@
 #include "../DBFormat/DataChest.h"	// NDb::CRPGChestReal / SLootItem (ctor pBackpack consumption)
 #include "rpgPerk.h"
 #include "rpgPerkConstants.h"
+bool S2RetailRules();	// port/platform/src/settings.mm: the Settings switch "Rules", true = retail 2003 arithmetic
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NRPG
 {
@@ -792,7 +793,7 @@ bool CUnit::CreateFirstAid( SFirstAid *pRes, int nMaxSpentAP, float fKitCapacity
 {
 	// ORIGINAL RETAIL BUG FIXED: high medicine/engineering can truncate a
 	// treatment's cost to zero. A real treatment needs at least 1 available AP.
-	if ( nMaxSpentAP <= 0 )
+	if ( nMaxSpentAP <= 0 && !S2RetailRules() )	// retail rules: no such gate, and the two costs below may truncate to 0
 		return false;
 	SFirstAid tmp;
 	if ( pItem->GetDBFirstAid()->effect == NDb::FAE_REPAIR_PK )
@@ -801,7 +802,9 @@ bool CUnit::CreateFirstAid( SFirstAid *pRes, int nMaxSpentAP, float fKitCapacity
 		if ( nVPToHeal <= 0 )
 			return false;
 		int nSkill = Skills( NDb::ST_ENGINEERING );
-		int nRequiredAP = Max( 1, int( float(nVPToHeal) / Max(1, nSkill) * 20.f ) );
+		int nRequiredAP = int( float(nVPToHeal) / Max(1, nSkill) * 20.f );
+		if ( !S2RetailRules() )
+			nRequiredAP = Max( 1, nRequiredAP );
 		if ( nRequiredAP > nMaxSpentAP )
 		{
 			nRequiredAP = nMaxSpentAP;
@@ -827,7 +830,9 @@ bool CUnit::CreateFirstAid( SFirstAid *pRes, int nMaxSpentAP, float fKitCapacity
 	float fSpeed = 1.f;
 	if ( pItem->GetDBFirstAid()->effect == NDb::FAE_NORMAL && HasPerk( 63, &fPerk ) )
 		fSpeed = fPerk;
-	int nRequiredAP = Max( 1, int( nVPToHeal / Max(1.f, nSkill * fSpeed) * 60.f ) );
+	int nRequiredAP = int( nVPToHeal / Max(1.f, nSkill * fSpeed) * 60.f );
+	if ( !S2RetailRules() )
+		nRequiredAP = Max( 1, nRequiredAP );
 	if ( nRequiredAP > nMaxSpentAP )
 	{
 		nRequiredAP = nMaxSpentAP;

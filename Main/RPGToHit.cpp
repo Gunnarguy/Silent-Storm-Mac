@@ -27,6 +27,7 @@
 //
 #include "RPGToHit.h"
 #include "RPGBullet.h"
+bool S2RetailRules();	// port/platform/src/settings.mm: the Settings switch "Rules", true = retail 2003 arithmetic
 //
 namespace NRPG
 {
@@ -189,7 +190,10 @@ float GetMaxThrowVelocity( IUnitMission *pMission, IGrenadeItem *pItem, bool bFi
 	{
 		// ORIGINAL RETAIL BUG FIXED (perk 88): the description increases range,
 		// not velocity. Range is proportional to velocity squared.
-		fVelocity *= sqrt( fMultiplier );
+		if ( S2RetailRules() )
+			fVelocity *= fMultiplier;	// retail rules: the perk multiplies velocity, so range grows with its square
+		else
+			fVelocity *= sqrt( fMultiplier );
 	}
 	return fVelocity;
 }
@@ -223,7 +227,10 @@ float GetMaxThrowVelocity( IUnitMission *pMission, IMeleeWeaponItem *pItem, bool
 	{
 		// ORIGINAL RETAIL BUG FIXED (perk 88): apply the range multiplier once,
 		// through its square root in the shared grenade/blade velocity formula.
-		fVelocity *= sqrt( fMultiplier );
+		if ( S2RetailRules() )
+			fVelocity *= fMultiplier;	// retail rules: the perk multiplies velocity, so range grows with its square
+		else
+			fVelocity *= sqrt( fMultiplier );
 	}
 	return fVelocity;
 }

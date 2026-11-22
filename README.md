@@ -25,7 +25,10 @@ This project is not affiliated with or endorsed by Nival.
 
 - Native Apple silicon build, Metal renderer, Retina and HDR displays, VSync and frame pacing
 - **Original / Enhanced** graphics, switched live with **F9** or **⌘G**: the 2003 look, or ambient occlusion, bloom, higher-resolution shadows and supersampling. Every difference, in both modes, is in [ORIGINAL-VS-ENHANCED.md](ORIGINAL-VS-ENHANCED.md)
-- A native **Settings** window (**⌘,**) with every option described, including ones the original game hid
+- A native **Settings** window (**⌘,**) with over 160 options, including ones the original game hid. Each says what it changes in the game, what its values mean and which value is the 2003 one
+- **Trackpad camera**: pinch to zoom, twist to turn, and two-finger scrolling that zooms or pans the map
+- **Rules: Corrected or Retail 2003**: play with the reconstruction's fixes, or with the original arithmetic, bugs included. Two more switches turn enemy head shots and partial bursts off
+- **Wider view on wide screens (Hor+)**, optional: the mission camera shows more at the sides instead of less at the top and bottom
 - **F1** or **⌘/** shows every key, read from your own key bindings
 - **MacBook keys**: Command stands in for keys a laptop lacks (⌘8/5/4/6/1/3 aim like the numpad, ⌘↑/⌘↓ change floors, ⌘S and ⌘L quick save and load, and more)
 - **Faster enemy and ally turns**: 2×, 3× or 4× with **F2** or **⌘T**. The other sides decide exactly as at normal speed; your own turns stay normal

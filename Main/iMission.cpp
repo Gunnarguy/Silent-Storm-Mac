@@ -88,6 +88,7 @@
 #include "../DBFormat/DataDifficulty.h"
 #include "iShowClue.h"
 int S2AITurnSpeed();	// port/platform/src/settings.mm: the enemy and ally turn speed, 1 to 4
+int S2EndTurnGuardMs();	// port/platform/src/settings.mm: End turn is ignored this long after the turn changes hands (2000 is the original)
 namespace NUI { void S2CompareCheck( NWorld::CUnit *pUnit ); }	// iCommonUI.cpp: the weapon comparison check hook
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NGame
@@ -193,7 +194,7 @@ CMission::CMission():
 	bindNormalPose( "pose_normal" ), bindCrawlPose( "pose_crawl" ), bindCrouchPose( "pose_crouch" ), bindRunPose( "pose_run" ), bindStrafe( "pose_strafe" ), bindHide( "hide" ),
 	bindFocusUnit( "focus_unit" ), bindAddFloor("next_floor"), bindSubFloor("prev_floor"),
 	bindShadows("toggle_shadows"), bindFog("toggle_fog"), bindHSR("toggle_hsr"), 
-	bindNextEnemy( "next_enemy" ), bindCheatTeleport( "cheat_teleport" ),bindExplode( "explode" ), bindShowAI( "showai" ), bindRPGStats( "rpg_stats" ), bindShowSchema( "viewSchema" ), bindShowParticles("switch_particles"), bindCheckBuildings( "checkStability" ), 
+	bindNextEnemy( "nextenemy" )	/* macOS port: the shipped input.cfg and s3input.cfg bind "nextenemy" to N; the name here was "next_enemy", so the key did nothing */, bindCheatTeleport( "cheat_teleport" ),bindExplode( "explode" ), bindShowAI( "showai" ), bindRPGStats( "rpg_stats" ), bindShowSchema( "viewSchema" ), bindShowParticles("switch_particles"), bindCheckBuildings( "checkStability" ), 
 	bindShowVision( "rpg_vision" ), bindShowRAD( "showrad" ), bindShowVisibility("rpg_visibility"),
 	bindTestIsect("test_intersect"), bindClickOfDeath("click_of_death"), bindExplosion("explosion"), bindErasePart("erase_part"),
 	bindToggleTransp("toggle_transparent"), bindShowLightmap("toggle_lightmaps"),
@@ -737,7 +738,10 @@ bool CMission::CanDoCommand( NWorld::CCommand *pCmd )
 {
 	CObj<NWorld::CCommand> pHold( pCmd );
 	if ( CDynamicCast<NWorld::CCmdEndOfTurn>( pCmd ) )
-		return GetUITime() - tLastCurrentPlayerChange > 2000;
+	{
+		const STime tGuard = (STime)::S2EndTurnGuardMs();	// macOS port: a setting; retail's 2000 ms is the default
+		return tGuard == 0 || GetUITime() - tLastCurrentPlayerChange > tGuard;
+	}
 
 	return true;
 }

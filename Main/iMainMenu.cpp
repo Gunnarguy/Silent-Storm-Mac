@@ -30,6 +30,7 @@
 #include "../DBFormat/DataSound.h"
 #include "../DBFormat/DataFormat.h"
 #include "../DBFormat/DataCamera.h"
+bool S2AttractDemo();	// port/platform/src/settings.mm: the idle main menu may start the demo battle
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 const int
 	N_MAINMENU_CAMERA = 26,
@@ -275,7 +276,7 @@ void CMainMenuInterface::Step()
 		// Retail v1.2 GameStep 0x5f79a0: strictly more than two idle minutes.
 		// macOS port: S2_NO_AUTOPLAY=1 keeps hidden test runs out of the attract-mode demo
 		static const bool bNoAutoPlay = getenv( "S2_NO_AUTOPLAY" ) != 0;
-		if ( !bNoAutoPlay && GetUITime() - sAutoPlayTime > 120000 )
+		if ( !bNoAutoPlay && ::S2AttractDemo() && GetUITime() - sAutoPlayTime > 120000 )
 			NMainLoop::Command( new CICAutoPlay() );
 		// Render the 3D menu world full-screen. The predecessor derived a sub-rect from a "clientview" UI
 		// control, but the retail menu container (347) ships no such control (-> GetUIWindow fell back to a

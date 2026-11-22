@@ -8,6 +8,7 @@
 #include "iMission.h"
 #include "Interface.h"
 #include "iDesktopWindow.h"
+int S2SubtitleMs();	// port/platform/src/settings.mm: shortest time a spoken reply's words stay (N_ASK_TTL is the original)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -23,7 +24,7 @@ void CAckEvent::Set( const STime &sTime )
 {
 	bReady = true;
 	bComplete = false;
-	sEndTime = sTime + N_ASK_TTL;
+	sEndTime = sTime + ::S2SubtitleMs();	// macOS port: a setting, 3000 by default
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CAckEvent::Cancel()

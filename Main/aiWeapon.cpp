@@ -11,6 +11,7 @@
 #include "rpgUnit.h"
 //
 #include "wUnitServer.h"
+int S2EnemyPartialBursts();	// port/platform/src/settings.mm: the Settings switch "Enemies fire partial bursts", 1 = retail
 //
 namespace NAI
 {
@@ -341,7 +342,7 @@ void CAIFireArmsWeapon::GetShotParameters( const NAI::SUnitPosition &pos, IAIUni
 	{
 		int nCost = n == 0 ? GetMinAPToShoot( nAvailableAP - *nAP ) : GetBurstAP();
 		// Retail 0x4b663c: a burst may end early when only part of it is affordable.
-		if ( nAvailableAP < *nAP + nCost )
+		if ( S2EnemyPartialBursts() && nAvailableAP < *nAP + nCost )	// switch off: the whole burst is priced, as before 7359855
 			break;
 		*nAP += nCost;
 		++*nAmmo;

@@ -10,6 +10,8 @@
 #include "../Input/Bind.h"
 #include "../MiscDll/Commands.h"	// NGlobal::GetVar -- the "ui_showhints" gate of the hint-icon pass (retail @0x2130c0)
 #include "../DBFormat/DataFormat.h"
+int S2HitNumberMs();	// port/platform/src/settings.mm: how long a floating damage number lasts (N_HITPTRACKER_TTL is the original)
+int S2EdgeScrollBand();	// port/platform/src/settings.mm: pixels at each screen edge that scroll the map (the original is N_SCROLL_GUARDBAND)
 #include "../DBFormat/DataAck.h"
 #include "../DBFormat/DataInterface.h"
 #include "../DBFormat/DataRPG.h"
@@ -982,7 +984,7 @@ void CHitTracker::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 	SPoint sPosition;
 	GetParent()->ScreenToClient( SPoint( vScreenPoint.x, vScreenPoint.y ), &sPosition );
 
-	float fWeight = float( sTime - sBegTime ) / N_HITPTRACKER_TTL;
+	float fWeight = float( sTime - sBegTime ) / (float)::S2HitNumberMs();	// macOS port: a setting, 2000 by default
 	if ( fWeight > 1 )
 		return;
 
@@ -1979,22 +1981,23 @@ void CMissionUI::UpdateCameraScroll( const STime &sTime )
 	CVec3 vScrollDelta( 0, 0, 0 );
 	int nMask = 0;
 	float fStep = (float)( N_SCROLL_STEP * sDelta ) / 1000.0f;
-	if ( vPos.x < N_SCROLL_GUARDBAND )
+	const int nBand = ::S2EdgeScrollBand();	// macOS port: a setting; N_SCROLL_GUARDBAND (4) is the default
+	if ( vPos.x < nBand )
 	{
 		nMask |= 1;
 		vScrollDelta -= vStrafeDir * fStep;
 	}
-	if ( vPos.x > vScreenRect.x - N_SCROLL_GUARDBAND )
+	if ( vPos.x > vScreenRect.x - nBand )
 	{
 		nMask |= 2;
 		vScrollDelta += vStrafeDir * fStep;
 	}
-	if ( vPos.y < N_SCROLL_GUARDBAND )
+	if ( vPos.y < nBand )
 	{
 		nMask |= 4;
 		vScrollDelta += vForwardDir * fStep;
 	}
-	if ( vPos.y > vScreenRect.y - N_SCROLL_GUARDBAND )
+	if ( vPos.y > vScreenRect.y - nBand )
 	{
 		nMask |= 8;
 		vScrollDelta -= vForwardDir * fStep;

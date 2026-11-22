@@ -29,6 +29,7 @@
 #include "RPGUnitMission.h"
 #include "RPGAttackSession.h"
 #include "ModManager.h"
+bool S2RetailRules();	// port/platform/src/settings.mm: the Settings switch "Rules", true = retail 2003 arithmetic
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NRPG
 {
@@ -459,7 +460,8 @@ int CUnitMission::GetUnhideProbability( IUnitMission *pTarget, float fDistance, 
 	// ORIGINAL RETAIL BUG FIXED (perk 75): night camouflage belongs to the
 	// hidden target and improves its stealth only at night, not the observer's
 	// detection in both day and night.
-	if ( bNight && pTarget->HasPerk( N_PERK_HIDE_IN_NIGHT, &fParam ) )
+	// retail rules: the OBSERVER's perk scales the target's stealth, by day and by night
+	if ( S2RetailRules() ? HasPerk( N_PERK_HIDE_IN_NIGHT, &fParam ) : ( bNight && pTarget->HasPerk( N_PERK_HIDE_IN_NIGHT, &fParam ) ) )
 		nStealth = int( ( 1.0 + double( fParam ) ) * nStealth );
 	return Clamp( nBase + nSpot - nStealth, 0, 100 );
 }
@@ -471,7 +473,7 @@ int CUnitMission::GetSkillValue( NDb::ESkillType skill ) const
 	// damage and AP costs must use the advertised +10, not just the unused
 	// derived GetWeaponSkill branch. Do not modify or serialize the base skill.
 	float fBonus;
-	if ( skill == NDb::ST_MELEE && HasPerk( 70, &fBonus ) )
+	if ( !S2RetailRules() && skill == NDb::ST_MELEE && HasPerk( 70, &fBonus ) )	// retail rules: the raw skill
 		nSkill = int( nSkill + fBonus );
 	return nSkill;
 }
@@ -602,7 +604,7 @@ void CUnitMission::SpendAP( int nAP )
 	// ORIGINAL RETAIL BUG FIXED (v1.1 0x6bf810 / v1.2 0x6bf9c0):
 	// subtracting a negative action cost awards AP. Preserve explicit zero-cost
 	// calls (free perks, no extra aiming AP), but never treat spending as a refund.
-	if ( nAP < 0 )
+	if ( nAP < 0 && !S2RetailRules() )	// retail rules: a negative cost is subtracted as it is
 		nAP = 1;
 	ASSERT( pRPGUnit->Skills(NDb::ST_AP) >= nAP );
 	pRPGUnit->Skills(NDb::ST_AP) -= nAP;
@@ -614,7 +616,7 @@ bool CUnitMission::CanSpendAP( int nAP ) const
 		GetRPGUnit()->IsCheatEnabled( CHEAT_SCRIPTSEQUENCE ) )
 			return true;
 	//
-	if ( nAP < 0 )
+	if ( nAP < 0 && !S2RetailRules() )
 		nAP = 1; // Keep affordability consistent with SpendAP's negative-cost guard.
 	return pRPGUnit->Skills(NDb::ST_AP) >= nAP;
 }
@@ -691,6 +693,8 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action, IInventoryIte
 			{
 				// ORIGINAL RETAIL BUG FIXED (perk 22): Param1=0 describes free
 				// preparation; subtracting zero left the entire AP cost in place.
+				if ( S2RetailRules() )	// retail v1.2 0x6c0f81..0x6c1010: the perk subtracts Param1 AP and the floor is 0
+					return Min( 8, Max( 0, int( nAP - fParam ) ) );
 				if ( fParam == 0 )
 					return 0;
 				nAP = int( nAP * fParam );
@@ -754,7 +758,7 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action, IInventoryIte
 					nAP = int( ( 1.0 - double( fParam ) ) * nAP );
 				// Retail v1.1 0x6c11b1 / v1.2 0x6c1347 extrapolate below zero
 				// at high skills. Floor the final cost, not the skill itself.
-				return Max( 1, nAP );
+				return S2RetailRules() ? nAP : Max( 1, nAP );	// retail rules: no floor
 			}
 		case AC_BURST:
 			return pRPGUnit->GetWeaponBurstAP();
@@ -797,7 +801,7 @@ int CUnitMission::GetActionAP( NAI::EPose curPose, EAction action, IInventoryIte
 			{
 				float fParam;
 				if ( HasPerk( N_PERK_CHEAP_ROTATE, &fParam ) )
-					return fParam == 0 ? 0 : Max( 1, int( fParam ) );
+					return fParam == 0 ? 0 : S2RetailRules() ? int( fParam ) : Max( 1, int( fParam ) );	// retail rules: Param1 truncated, no floor
 				else
 					return GetBaseActionAP( curPose == NAI::CRAWL ? 24 : 25 );
 			}
@@ -1545,7 +1549,7 @@ float CUnitMission::GetWeaponSkill( CObjectBase *pItem, int nExtraAP, int nBulle
 		float fMove = 0;
 		// ORIGINAL RETAIL BUG FIXED (perk 19): steady hand cancels the movement
 		// penalty here too, not only the additive calcer penalty.
-		if ( !IsFirstTurn() && !HasPerk( 19 ) )
+		if ( !IsFirstTurn() && ( S2RetailRules() || !HasPerk( 19 ) ) )	// retail rules: the perk is not consulted here
 			fMove = Min( GetToHitConstants()->nSMaxMove, GetMoveInLastTurn() ) *
 				pWeapon->GetDBWeapon()->pWeaponType->fMovePenalty;
 		if ( mode == NDb::SM_Careful || mode == NDb::SM_Snipe )
@@ -1568,6 +1572,8 @@ float CUnitMission::GetWeaponSkill( CObjectBase *pItem, int nExtraAP, int nBulle
 	{
 		const float fBeforeRecoil = fSkill;
 		int nExponent = nBullet;
+		if ( S2RetailRules() && HasPerk( 30, &fBonus ) )	// retail rules: the perk divides the decay exponent
+			nExponent = int( nBullet / fBonus );
 		int nBurst = GetRPGUnit()->Skills( NDb::ST_BURST );
 		float fUnstabilized = fSkill * pow( double( nBurst ) / N_MAX_SKILL, nExponent );
 		// Retail truncates the stabilization percentage BEFORE multiplying by skill.
@@ -1582,7 +1588,7 @@ float CUnitMission::GetWeaponSkill( CObjectBase *pItem, int nExtraAP, int nBulle
 		fSkill = Max( fUnstabilized, fStabilized ) * nRecoil * 0.01f;
 		// ORIGINAL RETAIL BUG FIXED (perk 30): a 100% recoil reduction removes
 		// the complete burst accuracy loss. Halving the decay exponent did not.
-		if ( IsValid( pWeapon ) && HasPerk( 30, &fBonus ) )
+		if ( !S2RetailRules() && IsValid( pWeapon ) && HasPerk( 30, &fBonus ) )
 			fSkill += ( fBeforeRecoil - fSkill ) * Clamp( fBonus - 1.f, 0.f, 1.f );
 	}
 	return fSkill * GetVPPenalty( GetRPGUnit()->Skills( NDb::ST_VP ),
@@ -2097,7 +2103,12 @@ float CUnitMission::GetCriticalDmgModifier( NWorld::IWorld *pWorld, NAI::EHitLoc
 	// Dividing severity by Param1=1.25 gave 20% and no fixed HP reduction.
 	float fCriticalDamageMultiplier = 1.0f;
 	if ( HasPerk( N_PERK_REDUCED_CRITICAL_SEVERITY, &fParam ) )
-		fCriticalDamageMultiplier = 2.0f - fParam;
+	{
+		if ( !S2RetailRules() )
+			fCriticalDamageMultiplier = 2.0f - fParam;
+		else if ( fParam != 0 )	// retail rules: the perk divides the injury-selection severity instead
+			nCriticalDifficulty = int( nCriticalDifficulty / fParam );
+	}
 	if ( IsValid( pGame ) )
 		nCriticalDifficulty = Min( nCriticalDifficulty, pGame->GetMaxCriticalSeverity() );
 

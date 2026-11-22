@@ -9,6 +9,7 @@
 #include "Interface.h"
 #include "iLogPanel.h"
 #include "UIWrap.h"
+int S2LogLineMs();	// port/platform/src/settings.mm: how long a combat log line stays (N_LINE_TTL is the original); 0 hides the log
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace NUI
 {
@@ -109,7 +110,8 @@ void CLogPanel::Draw( const STime &sTime, NGScene::I2DGameView *pView )
 		if ( linesSet[i].sTime == 0 )
 			linesSet[i].sTime = sTime;				// first-seen: stamp current time
 
-		if ( ( sTime - linesSet[i].sTime ) > N_LINE_TTL )
+		const int nLineTTL = ::S2LogLineMs();	// macOS port: a setting, 8000 by default
+		if ( nLineTTL == 0 || ( sTime - linesSet[i].sTime ) > (STime)nLineTTL )
 		{
 			// expired -> unlink from the ring, free the slot (nNext left intact so the walk advances).
 			linesSet[linesSet[i].nPrev].nNext = linesSet[i].nNext;

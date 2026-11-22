@@ -37,6 +37,7 @@
 #include "aiLogic.h"          // IAILogic (phase-7 supersede: was aiCompoundAction.h CAILogic)
 
 #include "aiUnit.h"
+bool S2RetailRules();	// port/platform/src/settings.mm: the Settings switch "Rules", true = retail 2003 arithmetic
 
 namespace NAI
 {
@@ -792,7 +793,7 @@ void CAIUnit::SpendAP( int _nAP )
 {
 	// Keep the AI's simulated balance consistent with mission AP spending:
 	// a negative cost cannot award AP; explicit free actions remain free.
-	if ( _nAP < 0 )
+	if ( _nAP < 0 && !S2RetailRules() )	// retail rules: no guard, as CUnitMission::SpendAP
 		_nAP = 1;
 	SetAP( Max( 0, skills[0].nValue - _nAP ), skills[0].nMaxValue );
 }

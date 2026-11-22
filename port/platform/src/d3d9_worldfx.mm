@@ -137,6 +137,28 @@ fragment float4 bup(V in [[stage_in]], texture2d<float> t [[texture(0)]], consta
 }
 
 struct CompP { float4x4 inv; float aoOn, bloom, haze, debug; float4 hazeColor; };
+// FXAA on the finished 3D world only, before the interface is drawn over it (the Settings choice "3D world only"),
+// so text and panels keep their pixels. The same filter as the whole-image one in d3d9_metal.mm (after Timothy
+// Lottes' FXAA, PC variant). The idea of placing it between the scene and the interface is the remaster's
+// (mrartanis/silent-storm-remaster).
+fragment float4 wfxaa(V in [[stage_in]], texture2d<float> t [[texture(0)]])
+{
+	constexpr sampler s(filter::linear, address::clamp_to_edge);
+	const float3 kLuma = float3(0.299, 0.587, 0.114);
+	float2 r = 1.0 / float2(t.get_width(), t.get_height()), uv = in.uv;
+	float3 nw = t.sample(s, uv + float2(-1, -1) * r).rgb, ne = t.sample(s, uv + float2(1, -1) * r).rgb;
+	float3 sw = t.sample(s, uv + float2(-1, 1) * r).rgb, se = t.sample(s, uv + float2(1, 1) * r).rgb, m = t.sample(s, uv).rgb;
+	float lNW = dot(nw, kLuma), lNE = dot(ne, kLuma), lSW = dot(sw, kLuma), lSE = dot(se, kLuma), lM = dot(m, kLuma);
+	float lMin = min(lM, min(min(lNW, lNE), min(lSW, lSE))), lMax = max(lM, max(max(lNW, lNE), max(lSW, lSE)));
+	if (lMax - lMin < max(0.0312, lMax * 0.125)) return float4(m, 1);
+	float2 dir = float2(-((lNW + lNE) - (lSW + lSE)), (lNW + lSW) - (lNE + lSE));
+	float reduce = max((lNW + lNE + lSW + lSE) * (0.25 / 8.0), 1.0 / 128.0);
+	dir = clamp(dir / (min(abs(dir.x), abs(dir.y)) + reduce), -8.0, 8.0) * r;
+	float3 a = 0.5 * (t.sample(s, uv + dir * (1.0 / 3.0 - 0.5)).rgb + t.sample(s, uv + dir * (2.0 / 3.0 - 0.5)).rgb);
+	float3 b = a * 0.5 + 0.25 * (t.sample(s, uv - dir * 0.5).rgb + t.sample(s, uv + dir * 0.5).rgb);
+	float lB = dot(b, kLuma);
+	return float4((lB < lMin || lB > lMax) ? a : b, 1);
+}
 fragment float4 wcomp(V in [[stage_in]], texture2d<float> scene [[texture(0)]], texture2d<float> aot [[texture(1)]], texture2d<float> bl [[texture(2)]],
 	depth2d<float> dt [[texture(3)]], constant CompP &p [[buffer(0)]])
 {
@@ -205,14 +227,15 @@ static id<MTLTexture> Ensure(id<MTLDevice> mtl, id<MTLTexture> t, MTLPixelFormat
 
 void Device::WorldEffects(const float *clipToWorld, const float *worldToClip, const float *screenRect)
 {
-	const S2Settings &cfg = g_s2;
+	const S2Settings &cfg = S2EffectiveSettings();
 	if (getenv("S2_RENDER_AUDIT") && rt && rt->Texture())
 	{
 		wfx.sceneWidth = rt->Texture().width; wfx.sceneHeight = rt->Texture().height;
 		wfx.scenePresent = presentCount;
 	}
 	bool aoOn = cfg.ao && cfg.aoStrength > 0, bloomOn = cfg.bloom && cfg.bloomStrength > 0, hazeOn = cfg.haze > 0;
-	if (!aoOn && !bloomOn && !hazeOn && !cfg.worldFxDebug && !cfg.edr) return;
+	const bool worldFxaa = cfg.fxaa == 2;   // FXAA on the 3D world only
+	if (!aoOn && !bloomOn && !hazeOn && !cfg.worldFxDebug && !cfg.edr && !worldFxaa) return;
 	std::lock_guard<std::recursive_mutex> l(lock);
 	static int logged;
 	if (!rt || !ds || !rt->Texture() || !ds->Texture()) { if (logged++ < 3) fprintf(stderr, "[worldfx] no target (rt %p ds %p)\n", rt, ds); return; }
@@ -300,6 +323,12 @@ void Device::WorldEffects(const float *clipToWorld, const float *worldToClip, co
 	blit = [cmd blitCommandEncoder];
 	[blit copyFromTexture:color toTexture:wfx.world];
 	[blit endEncoding];
+	if (worldFxaa && !cfg.worldFxDebug)
+	{
+		// read the copy just made, write the smoothed world back into the game's target; the interface is drawn after this
+		id<MTLTexture> worldT = wfx.world;
+		pass(color, WfxPipe("wfxaa", MTLPixelFormatBGRA8Unorm, false), false, ^(id<MTLRenderCommandEncoder> e) { [e setFragmentTexture:worldT atIndex:0]; });
+	}
 	memcpy(wfx.rect, screenRect, sizeof wfx.rect);
 	wfx.worldPresent = presentCount;
 	passDirty = true;

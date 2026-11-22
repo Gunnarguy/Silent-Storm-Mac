@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "../Misc/HPTimer.h"
 #include "aiJob.h"
+float S2AIThinkSeconds();	// port/platform/src/settings.mm: the planning budget per world step (F_AI_TIME_TO_THINK is the original)
 //
 namespace NAI
 {
@@ -221,7 +222,7 @@ void CAIJobManager::Segment()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 IAIJobManager *CreateAIJobManager()
 {
-	return new CAIJobManager( F_AI_TIME_TO_THINK );
+	return new CAIJobManager( ::S2AIThinkSeconds() );	// macOS port: a setting, 0.010 by default; copied when a world is created
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 }

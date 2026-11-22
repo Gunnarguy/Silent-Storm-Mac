@@ -9,3 +9,4 @@ void S2EngineSet(const char *name, float value);
 void S2EngineSetString(const char *name, const char *value);
 void S2EngineCommand(const char *command);              // a console line, e.g. "gfx_recreate"
 void S2EngineSaveConfig();                              // write cfg/config.cfg now
+void S2EngineInputEvent(const char *name);              // fire a bind action by name, as the game's own on-screen buttons do (e.g. "hideinterface")

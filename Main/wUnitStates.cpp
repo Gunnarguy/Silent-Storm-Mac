@@ -22,6 +22,7 @@
 #include "RPGMedals.h"
 
 #include "wUnitStates.h"
+bool S2RetailRules();	// port/platform/src/settings.mm: the Settings switch "Rules", true = retail 2003 arithmetic
 
 namespace NWorld
 {
@@ -546,7 +547,7 @@ void CUnitStateHealer::DoHealing( int nUnitAP )
 	}
 	// Paid treatment now needs at least 1 AP. Wait for the next turn rather
 	// than treating an exhausted AP budget as a finished/failed treatment.
-	if ( nUnitAP <= 0 )
+	if ( nUnitAP <= 0 && !S2RetailRules() )	// retail rules: no wait, as before the 1-AP treatment floor
 		return;
 	int nRequiredAP = 0;
 	NRPG::SFirstAid fa;

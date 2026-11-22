@@ -57,9 +57,9 @@ The switch manages these too, but by default they match Original, so they make n
 | Option | Default | Range |
 |---|---|---|
 | Upscaler | Bilinear, same as Original | MetalFX spatial, bilinear, nearest |
-| FXAA anti-aliasing | Off | On or off |
+| FXAA anti-aliasing | Off | Off, whole image, or 3D world only (the interface is left untouched) |
 | Distance haze | 0 | 0 to 1 |
-| Texture sharpness (LOD bias) | 0 | -2 to 2 |
+| Distant texture sharpness (LOD bias) | 0 | -2 to 1 |
 | Brightness | 0 | -0.25 to 0.25 |
 | Contrast | 1 | 0.5 to 1.5 |
 | Saturation | 1 | 0 to 2 |
@@ -72,7 +72,7 @@ The switch manages these too, but by default they match Original, so they make n
 
 ### Original game options, the same in both modes
 
-By default all of these are on or at their high setting, and the switch leaves them alone: shadows, cached lighting, fog (per pixel), specular highlights, point-light highlights, soft sun shadows, soft lighting, decals, bump-mapped lighting, bump mapping on everything, precise point-light shadows, particles, weather effects, texture compression, full texture detail, 32-bit textures, gamma 1, no FSAA, fastest mode off.
+By default all of these are on or at their high setting, and the switch leaves them alone: shadows, fog (per pixel), specular highlights, point-light highlights, soft sun shadows, soft lighting, decals, bump-mapped lighting, bump mapping on everything, precise point-light shadows, tree crowns (the option the game calls particles hides only these), weather effects, texture compression, full texture detail, 32-bit textures, gamma 1, no FSAA, fastest mode off. Cached lighting is always on, because the engine forces it whenever pixel shaders are in use, so it is not offered as an option.
 
 ---
 
@@ -85,8 +85,9 @@ The switch deliberately leaves all of this alone, so it applies to Original too.
 - Runs natively on Apple silicon, with no Wine or emulation.
 - Graphics run on Metal instead of Direct3D 9.
 - Sound runs on Core Audio instead of FMOD. Speech and music use macOS's decoder when the bundled one refuses a file.
-- A native Mac Settings window (⌘,) with over 100 options, each described, and a Mac menu bar.
-- Retina and HDR support, VSync, triple buffering, a frame-rate limit and a performance overlay.
+- A native Mac Settings window (⌘,) with over 160 options, and a Mac menu bar. Each option says what it changes in the game, what its values mean and which value is the 2003 one.
+- Retina and HDR support, VSync, triple buffering, a frame-rate limit and a performance overlay. HDR highlights step down when macOS asks apps to limit HDR (macOS 26 and later).
+- Power: the display stays awake while the game runs, and an optional switch turns off ambient occlusion and bloom and caps the game at 30 frames per second when the Mac is hot or in Low Power Mode. Apple's Metal performance HUD is one switch.
 - Saves, settings and game data live in `~/Library/Application Support/Silent Storm`.
 - Bink videos play from MP4 copies made once from the original files (`port/tools/convert_videos.sh`, which needs ffmpeg), decoded by macOS.
 - The CD check is gone.
@@ -98,19 +99,21 @@ Settings has three presets. Original is the default.
 
 | Setting | Original (2003) | Smooth | Cinematic |
 |---|---|---|---|
-| Simulation rate | 20 per second | 60 | 120 |
-| Solver iterations | 5 | 10 | 16 |
-| Extra joint limits (left disabled by the developers) | Off | Off | On |
+| Body simulation rate | 20 per second | 60 | 120 |
+| Joint correction passes | 5 | 10 | 16 |
+| Extra knee limits (left disabled by the developers) | Off | Off | On |
 
-Ground friction (0.6) and skeleton stiffness (1) stay at the original values.
+Joint stiffness (1) stays at its default in every preset. A separate slider, Bodies come to rest, sets how still a fallen body must be before the simulation freezes it; its default, 0.06, is the original value.
 
 ### Camera and controls
 
 - Mouse wheel zoom: one tick of the original could cross the whole range. Here it takes about 12 ticks end to end (zoom speed 0.3 by default), and trackpad coasting is ignored.
-- Settings also expose field of view, closest and farthest zoom, tilt limits, and rotation and scroll speed, with Stock, Wider and Unlocked camera presets.
+- Settings also expose field of view, closest and farthest zoom, tilt limits, rotation and panning speed, how the camera speeds up when zoomed out, its glide and its lowest height, with Stock, Wider and Unlocked camera presets.
+- Wider view on wide screens (Hor+), off by default. Off is the 2003 camera: at a resolution wider than 4:3 it keeps the width of the view and shows less at the top and bottom. On, the mission camera keeps the height it has at 4:3 and shows more at the sides: 20% more at 16:10 and 33% more at 16:9. Menus do not change.
 - Mouse movement keeps fractions of a pixel and stays independent of resolution.
 - The game never moves or traps your Mac pointer, and Escape, losing focus and quitting release held keys and buttons. The trade-off is that a long camera drag can stop at the edge of the display.
-- Control-click acts as right click. Two-finger scrolling zooms.
+- Control-click acts as right click. Two-finger scrolling zooms, or pans the map if you choose that in Settings. Pinch zooms and a two-finger twist turns the camera; each can be switched off.
+- Settings set the width of the screen-edge scrolling band (or turn edge scrolling off), the double-click speed, how long the camera follows a moving unit, and how long subtitles, combat messages and damage numbers stay on screen.
 - On a MacBook, Command stands in for the keys a laptop lacks: ⌘8, 5, 4, 6, 1 and 3 aim like the numpad, ⌘↑ and ⌘↓ change floors, ⌘← centres the soldier, ⌘= and ⌘- zoom, ⌘S and ⌘L quick save and load, ⌘⇧S and ⌘O open the save and load menus, ⌘P pauses.
 - Enemy and ally turns can run at 2×, 3× or 4× (F2 or ⌘T, Settings > Gameplay, or the companion app). The other sides decide exactly as at normal speed, and your own turns stay normal.
 - A gun's tooltip compares it with the gun in the soldier's hands, using the game's own hit formula for that soldier, and says whether it suits them. Hold Shift for every stat.
@@ -119,11 +122,12 @@ Ground friction (0.6) and skeleton stiffness (1) stay at the original values.
 
 ### Options the original kept hidden, now in Settings
 
-- Turn behaviour: always turn-based, turn-based on spotting an enemy, turn-based on grenades.
-- Interface: hints, tooltips and their delay, status icons, the message log, skipping the intro videos.
+- Turn behaviour: always turn-based, turns that start as soon as you spot an enemy, and the guard time that stops one long press from ending two turns.
+- Camera shake on explosions. The game's own name for it, `game_eq_on_grenades`, reads like a turn option; "eq" is earthquake.
+- Interface: hint screens and markers, tooltips and their delay, enemy, sound and trap markers, hiding the whole interface, the demo battle on the idle main menu, skipping the videos.
 - Violence: blood, headshot decapitations.
 - The developers' own cheats, each as a switch. They stay on until you turn them off, whether you set them in the game or in the companion app.
-- Advanced renderer options and a console log file.
+- Advanced renderer options, a console log file, a script log, and the time the computer may think in each step.
 
 ### Game rules and enemy behaviour
 
@@ -155,7 +159,13 @@ Deliberate departures from the 2003 game, made by the reconstruction and carried
 | Saves | Some commands and one visitor record were saved as raw memory, which could restore a dangling address | Saved as structured data |
 | Interface and sound | A dialogue hit test compared screen pixels with interface units; the sound mixer lost all but 150 ms of a skipped turn | Fixed |
 
-There is no switch for these: Original mode changes graphics, not rules. The reconstruction's commit history has the reasoning for each.
+Settings > Gameplay > Rules and enemies has three switches for this section, and all three default to the behaviour described above:
+
+- **Rules: Corrected or Retail 2003.** Retail 2003 restores the original arithmetic for the first two rows of the table, bugs included: the action point floor (a melee attack, a knife throw, readying a weapon, turning on the spot and a medical treatment can cost 0 again, and a negative cost hands points back) and the eight perks.
+- **Enemies aim for the head.** Off: enemies always fire at the body.
+- **Enemies fire partial bursts.** Off: an enemy fires a whole burst or none.
+
+The other rows of the table have no switch. Original / Enhanced changes graphics, never rules. The reconstruction's commit history has the reasoning for each fix.
 
 ### Bugs fixed that the Windows game or earlier Mac builds had
 
@@ -183,6 +193,8 @@ There is no switch for these: Original mode changes graphics, not rules. The rec
 - Quickload could pick an empty slot.
 - Slot names with spaces can now be saved and loaded from the console and the companion app. Saving used to cut the name at the first space.
 - A wasted folder scan on every frame, up to 79% of the main thread on the chapter map.
+- The N key (next enemy) did nothing in earlier Mac builds: the code and the shipped key file used different names for the bind.
+- The Field of view option in Settings did nothing in earlier Mac builds, because the camera wrote the stock 35 degrees back on every frame. It works now.
 
 ---
 

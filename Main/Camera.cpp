@@ -16,6 +16,9 @@
 #include "wTSFlags.h"                 // NWorld::TS_VISION (the vision trace-set flag)
 #include "../Misc/RandomGen.h"        // SRand (the framing's rod fan-sweep roll)
 #include "RPGGlobal.h"                // NRPG::CGlobalGame::nSloMoTimes (the slo-mo repeat-offender tax)
+float S2CameraFOVScale();	// port/platform/src/settings.mm: the Field of view setting divided by the engine's fixed 35 degrees
+int S2FollowUnitMs();	// port/platform/src/settings.mm: how long the camera keeps following a unit (10000 is the original)
+bool S2TakeTrackpadCamera( float *pPanRight, float *pPanUp, float *pYawRadians );	// port/platform/src/settings.mm: trackpad gestures since the last call
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // BUG 4 -- camera sensitivity / invert config consumer. Retail UpdateCameraFromConfig @0xcd180 pushes the
 // game_camerasensivity / game_scrollsensivity floats and the four invert flags into the per-command input
@@ -259,11 +262,35 @@ CBaseCamera::CBaseCamera():
 	UpdateCameraFromConfig();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// macOS port, Hor+ camera (Settings, Camera & Input; off by default). The stored FOV is horizontal and was
+// authored for a 4:3 screen, so a wider game resolution keeps the width of the view and loses height. With the
+// switch on, the angle handed to MakeProjective is widened by (width / height) / (4 / 3): the vertical view stays
+// what it is at 4:3 and the extra width shows more to the sides. The stored placement and the saves do not
+// change, and picking rays, culling and the projected interface markers all read the resulting matrix.
+// Approach from mrartanis/silent-storm-remaster (S2Display::HorizontalFOV in its Game/DisplayGeometry.h, called
+// from CTransformStack::MakeProjective in its Main/Transform.cpp). Here it sits in the camera instead, so the
+// 128x128 occluder cube faces (GShadowVolume.cpp) and the 1024x768 interface previews keep their projections.
+// Switch off, a 4:3 or narrower mode, or a held call: the angle is returned untouched.
+bool S2WidescreenHorPlus();	// port/platform/src/settings.mm: the Settings switch for the Hor+ mission camera
+static int nHorPlusHold = 0;
+// iRenderWorld.cpp holds Hor+ off around the front-end backdrops' GetTransform call (reasons there).
+void S2HorPlusHold( bool bHold ) { nHorPlusHold += bHold ? 1 : -1; }
+static float GetHorPlusFOV( float fFOV, const CVec2 &vScreenSize )
+{
+	if ( nHorPlusHold > 0 || !S2WidescreenHorPlus() )
+		return fFOV;
+	if ( fFOV <= 0.0f || fFOV >= 179.0f || vScreenSize.y <= 0.0f || vScreenSize.x * 3.0f <= vScreenSize.y * 4.0f )
+		return fFOV;
+	const float fWiden = ( vScreenSize.x * 3.0f ) / ( vScreenSize.y * 4.0f );
+	return ToDegree( 2.0f * atan( tan( ToRadian( fFOV ) * 0.5f ) * fWiden ) );
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 void CBaseCamera::GetTransform( CTransformStack *pTS, const CVec2 &vScreenSize ) const
 {
 	float fShiftX = ( sScreenRect.x1 + sScreenRect.x2 ) - 1;
 	float fShiftY = ( sScreenRect.y1 + sScreenRect.y2 ) - 1;
-	pTS->MakeProjective( vScreenSize, sPlacement.fFOV, fMinClipDistance, fMaxClipDistance, CVec2( fShiftX, -fShiftY ) );
+	// Hor+ (remaster approach, see GetHorPlusFOV above): with the switch off this is sPlacement.fFOV itself
+	pTS->MakeProjective( vScreenSize, GetHorPlusFOV( sPlacement.fFOV, vScreenSize ), fMinClipDistance, fMaxClipDistance, CVec2( fShiftX, -fShiftY ) );
 	pTS->SetCamera( GetPos() );
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -711,7 +738,7 @@ void CCamera::SlowCameraAcceleration()
 void CCamera::FollowUnit( CObjectBase *pUnit )
 {
 	pFollowUnit = pUnit;
-	sMaxFollowUnitTime = sLastTime + 10000;
+	sMaxFollowUnitTime = sLastTime + ::S2FollowUnitMs();	// macOS port: a setting, 10000 by default
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void CCamera::UpdateFollowing( const STime &sTime )
@@ -1048,7 +1075,9 @@ void CCamera::Update( const STime &sTime )
 	fov.Update( sTime, sPlacement );
 	if ( !sLimits.bMovie )
 	{
-		SetFOV( fov.fFOV );
+		// macOS port: retail resets the angle to 35 degrees here on every frame, so the camera limits' field of view was
+		// never used. The Settings value is applied as a ratio, which keeps the slow-motion zoom effect in proportion.
+		SetFOV( fov.fFOV * ::S2CameraFOVScale() );
 		sPlacement.fRoll = fov.fRoll;
 	}
 	// User input mutates the desired placement; the terrain-aware tail eases the live placement.
@@ -1056,6 +1085,28 @@ void CCamera::Update( const STime &sTime )
 	float fYawDelta = rotate.GetDelta();
 	float fFwd = fwd.GetDelta() * 10.0f;
 	float fStrafe = strafe.GetDelta() * 10.0f;
+	// macOS port: trackpad gestures (two-finger pan, twist) join the key input here, so the script locks and the
+	// dominant-axis filter below treat them exactly like keys. The pan arrives in viewport heights and is turned into
+	// the ground distance on screen at this zoom (about 0.63 x rod: 2 tan( fov / 2 ) at the stock 35 degrees); both are
+	// divided by the scales ScrollAnchor and the yaw step apply later, so the net movement is the gesture's own.
+	{
+		float fPanRight = 0, fPanUp = 0, fTwist = 0;
+		if ( ::S2TakeTrackpadCamera( &fPanRight, &fPanUp, &fTwist ) )
+		{
+			const float fSpan = fabs( sPlacement.fRod ) * 0.63f;
+			const float fScrollScale = GetAccelerationFactor( sLimits.fScrollZoomAcceleration ) * sLimits.fScrollSpeed;
+			if ( fScrollScale > 0.0001f )
+			{
+				fFwd += fPanUp * fSpan / fScrollScale;
+				fStrafe += fPanRight * fSpan / fScrollScale;
+			}
+			const float fYawScale = GetAccelerationFactor( sLimits.fYawZoomAcceleration ) * sLimits.fYawSpeed;
+			if ( fYawScale > 0.0001f )
+				fYawDelta += fTwist / fYawScale;
+			if ( getenv( "S2_ZOOM_TRACE" ) )
+				fprintf( stderr, "[gesture] pan right %.4f up %.4f twist %.4f rad -> fwd %.3f strafe %.3f yaw %.4f (rod %.2f)\n", fPanRight, fPanUp, fTwist, fFwd, fStrafe, fYawDelta, sPlacement.fRod );
+		}
+	}
 	// release @0xcd930: the zoom bind is read RAW here (no input scale) -- the rod step is scaled
 	// below, once, from the LIVE rod. |delta| > 100 is treated as a device glitch and dropped.
 	float fZoom = zoom.GetDelta();

@@ -14,6 +14,7 @@
 #include "RPGItemSet.h"             // NRPG::CPicklockItem (WorkingPicklock @0x3bcd60)
 #include "RPGMedals.h"              // NRPG::MPC_PICK_LOCK
 #include "RPGUnit.h"                // NRPG::CUnit::AddMedalPoints
+bool S2RetailRules();	// port/platform/src/settings.mm: the Settings switch "Rules", true = retail 2003 arithmetic
 
 namespace NWorld
 {
@@ -619,10 +620,13 @@ bool CExecOpenClose::TimeLabelReached()
 			// ORIGINAL RETAIL BUG FIXED (perk 52): the description grants +20
 			// engineering for the entire picklock roll, not +20 to its final score.
 			float fBonus = 0;
-			if ( pRPG->HasPerk( 52, &fBonus ) )
+			const bool bBurglar = pRPG->HasPerk( 52, &fBonus );
+			if ( bBurglar && !S2RetailRules() )
 				nSkill = int( nSkill + fBonus );
 			SRand rnd;                      // retail: a fresh tick-seeded LOCAL rng, not the synced game rng
 			int nTry = ( rnd.Get( 100 ) * nSkill ) / 100 + pPick->GetDBPicklock()->nAddToEngSkill + nSkill / 2;
+			if ( bBurglar && S2RetailRules() )
+				nTry = (int)( nTry + fBonus );	// retail rules: Param1 is added to the final score, truncating, not to the skill
 			csSystem << CC_GREEN << L"Picklock used: skill " << nSkill << L", item bonus " << pPick->GetDBPicklock()->nAddToEngSkill << endl;
 			if ( pPick->GetIncQuantity() < 1 )
 			{

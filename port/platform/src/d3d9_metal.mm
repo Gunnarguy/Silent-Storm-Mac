@@ -809,11 +809,11 @@ HRESULT Device::Present(const RECT *, const RECT *, HWND, const RGNDATA *)
 				sd.minFilter = MTLSamplerMinMagFilterLinear; sd.magFilter = MTLSamplerMinMagFilterNearest;
 				presentNearest = [mtl newSamplerStateWithDescriptor:sd];
 			}
-			const S2Settings &cfg = g_s2;
+			const S2Settings &cfg = S2EffectiveSettings();
 			if (layer.displaySyncEnabled != (cfg.vsync != 0)) layer.displaySyncEnabled = cfg.vsync != 0;
 			// HDR (EDR): a 16-bit float, extended linear sRGB drawable when the display can go above SDR white
 			NSScreen *screen = ((NSView*)layer.delegate).window.screen ?: NSScreen.mainScreen;
-			bool hdr = !headless && cfg.edr && cfg.edrStrength > 0 && screen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.05 && presentPipelineHDR;
+			bool hdr = !headless && cfg.edr && !S2HDRSuppressed() && cfg.edrStrength > 0 && screen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.05 && presentPipelineHDR;
 			if (!headless && hdr != (layer.pixelFormat == MTLPixelFormatRGBA16Float))
 			{
 				layer.wantsExtendedDynamicRangeContent = hdr;
@@ -829,7 +829,7 @@ HRESULT Device::Present(const RECT *, const RECT *, HWND, const RGNDATA *)
 			if (layer.maximumDrawableCount != drawables) layer.maximumDrawableCount = drawables;
 			id<MTLTexture> src = backBuffer->own;
 			// FXAA at game resolution
-			if (cfg.fxaa && fxaaPipeline)
+			if (cfg.fxaa == 1 && fxaaPipeline)   // 1 = the whole image; 2 = the 3D world only, done in WorldEffects
 			{
 				if (!fxaaTex || fxaaTex.width != backBuffer->width || fxaaTex.height != backBuffer->height)
 				{
@@ -999,9 +999,10 @@ HRESULT Device::Present(const RECT *, const RECT *, HWND, const RGNDATA *)
 	{
 		// frame-rate cap: wait out the rest of the frame after submitting, before the engine starts the next one
 		uint64_t now = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
-		if (g_s2.frameCap > 0 && lastPresentNs)
+		const int frameCap = S2EffectiveSettings().frameCap;   // 30 at most while the heat and battery reductions are on
+		if (frameCap > 0 && lastPresentNs)
 		{
-			uint64_t target = lastPresentNs + 1000000000ull / (uint64_t)g_s2.frameCap;
+			uint64_t target = lastPresentNs + 1000000000ull / (uint64_t)frameCap;
 			if (target > now && target - now < 200000000ull) { struct timespec ts = { 0, (long)(target - now) }; nanosleep(&ts, nullptr); now = clock_gettime_nsec_np(CLOCK_UPTIME_RAW); }
 		}
 		S2SettingsFrame(lastPresentNs ? (now - lastPresentNs) / 1e6 : 0, frameInfo.srcW, frameInfo.srcH, frameInfo.outW, frameInfo.outH, frameInfo.how);

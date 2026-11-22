@@ -115,6 +115,10 @@ static void S2PushKey(BYTE dik, bool down)
 	s2in.keyEvents.push_back({ dik, (DWORD)(down ? 0x80 : 0), GetTickCount(), ++s2in.seq });
 	if (s2in.keyEvents.size() > 1024) s2in.keyEvents.pop_front();
 }
+// Which way the wheel axis and the camera's yaw run was measured with the hidden-run hooks ("pinch", "twist" in
+// _input.txt, S2_ZOOM_TRACE): see the Trackpad gestures entry in HANDOFF.md.
+#define S2_PINCH_SIGN 1.0
+#define S2_TWIST_SIGN 1.0
 static void S2PushMouseAxis(int axis, LONG delta)
 {
 	if (!delta) return;
@@ -306,9 +310,29 @@ static void S2ReleaseInput()
 {
 	// macOS keeps sending scroll events after the fingers lift; they zoomed on by themselves long after the gesture
 	if (e.momentumPhase != NSEventPhaseNone) return;
+	if (e.hasPreciseScrollingDeltas && g_s2.scrollPans)
+	{
+		// a trackpad set to pan: the ground follows the fingers, so the camera goes the other way sideways and
+		// forward when the fingers come down. Sent as a share of the view's height; Main/Camera.cpp scales it by the zoom.
+		double h = std::max<double>(200, self.bounds.size.height);
+		S2AddTrackpadCamera((float)(-e.scrollingDeltaX / h * g_s2.gestureSpeed), (float)(e.scrollingDeltaY / h * g_s2.gestureSpeed), 0);
+		return;
+	}
 	// one wheel notch is 120 units on Windows; precise trackpad deltas are scaled to match
 	double d = (e.hasPreciseScrollingDeltas ? e.scrollingDeltaY * 4.0 : e.scrollingDeltaY * 120.0) * g_s2.scrollScale;
 	S2PushMouseAxis(2, (LONG)s2motion.add(2, d));
+}
+// pinch: spreading the fingers (positive magnification) zooms in. A full doubling is five wheel notches.
+- (void)magnifyWithEvent:(NSEvent *)e
+{
+	if (!g_s2.pinchZoom) return;
+	S2PushMouseAxis(2, (LONG)s2motion.add(2, e.magnification * 600.0 * S2_PINCH_SIGN * g_s2.scrollScale));
+}
+// twist: AppKit reports degrees, counterclockwise positive
+- (void)rotateWithEvent:(NSEvent *)e
+{
+	if (!g_s2.rotateGesture) return;
+	S2AddTrackpadCamera(0, 0, (float)(e.rotation * M_PI / 180.0 * S2_TWIST_SIGN * g_s2.gestureSpeed));
 }
 - (void)s2key:(NSEvent *)e down:(bool)down
 {
@@ -487,6 +511,9 @@ static void S2RunTestInput()
 		return;
 	}
 	if (c == "wheel") { sscanf(l.c_str(), "%*s %d", &x); S2PushMouseAxis(2, x); return; }   // raw wheel units, 120 is one notch
+	if (c == "pan") { float a = 0, b = 0; sscanf(l.c_str(), "%*s %f %f", &a, &b); S2AddTrackpadCamera(a, b, 0); return; }   // camera right and up, in viewport heights
+	if (c == "twist") { float a = 0; sscanf(l.c_str(), "%*s %f", &a); S2AddTrackpadCamera(0, 0, a * (float)M_PI / 180 * S2_TWIST_SIGN); return; }   // degrees, as rotateWithEvent reports them
+	if (c == "pinch") { float a = 0; sscanf(l.c_str(), "%*s %f", &a); S2PushMouseAxis(2, (LONG)(a * 600.0f * S2_PINCH_SIGN)); return; }   // magnification, as magnifyWithEvent reports it
 	if (c == "key" || c == "keydown" || c == "keyup")
 	{
 		sscanf(l.c_str(), "%*s %63s", arg);

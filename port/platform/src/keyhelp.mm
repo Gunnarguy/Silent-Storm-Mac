@@ -215,7 +215,7 @@ std::vector<Group> BuildGroups()
 	row(g[5].rows, "Game menu", { "gamemenu" });
 	row(g[5].rows, "Console", { "console" });
 	row(g[5].rows, "Screenshot", { "screenshot" });
-	row(g[5].rows, "Particles on / off", { "switch_particles" });
+	row(g[5].rows, "Tree crowns on / off", { "switch_particles" });   // the engine's "particles" switch only hides the leaves of trees
 	g[6].title = "Mac";
 	g[6].rows = {
 		{ "This sheet", "F1, ⌘/" },
